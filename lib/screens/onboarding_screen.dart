@@ -214,6 +214,24 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
       await ReminderService.cancelAll();
       return;
     }
+    // Exact alarms are required for the nudge to actually fire.
+    // The Settings page returns immediately, so we must not schedule
+    // an inexact fallback here — the user re-arms from Profil after
+    // granting.
+    if (!await ReminderService.canScheduleExact()) {
+      await ReminderService.requestExactAlarmsPermission();
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Aktifkan "Alarm & pengingat" di pengaturan '
+                'sistem, lalu atur pengingatnya dari Profil.'),
+          ),
+        );
+      }
+      await state.setWeeklyReminder(false);
+      await ReminderService.cancelAll();
+      return;
+    }
     await state.setWeeklyReminder(true);
     await state.setReminderSchedule(
         weekdays: days, hour: _hour, minute: _minute);

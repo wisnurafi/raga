@@ -430,8 +430,21 @@ class ProfileScreen extends StatelessWidget {
       );
       return false;
     }
+    // Exact alarms are required for a reliable weekly nudge.
+    // requestExactAlarmsPermission() only OPENS Settings — it returns
+    // immediately without waiting for the toggle. Scheduling right away
+    // would silently fall back to an inexact alarm that may never fire
+    // on aggressive OEM skins, so we stop here and let the user re-arm
+    // after granting.
     if (!await ReminderService.canScheduleExact()) {
       await ReminderService.requestExactAlarmsPermission();
+      messenger.showSnackBar(
+        const SnackBar(
+          content: Text('Aktifkan "Alarm & pengingat" di pengaturan '
+              'sistem, lalu nyalakan pengingatnya lagi.'),
+        ),
+      );
+      return false;
     }
     final exact = await ReminderService.scheduleBestEffortDays(
       weekdays: days,
