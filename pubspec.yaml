@@ -32,4 +32,5 @@ flutter:
   uses-material-design: true
   assets:
     - assets/images/raga-bg.png
+    - assets/images/raga-bg-light.png
     - assets/images/raga-mark.png
