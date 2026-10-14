@@ -429,7 +429,9 @@ class _IdealBar extends StatelessWidget {
       } else if (est.days == null) {
         eta = "Log a few more weigh-ins and I'll estimate your timeline.";
       } else {
-        eta = 'About ${_prettyDays(est.days!)} at your current pace';
+        eta = est.days! <= 1
+            ? 'Almost there — keep going!'
+            : 'About ${_prettyDays(est.days!)} at your current pace';
         // Progress measured from the furthest you've been, so the bar
         // reflects the actual journey, not a made-up starting point.
         final weights = history.map((h) => h.weightKg).toList();

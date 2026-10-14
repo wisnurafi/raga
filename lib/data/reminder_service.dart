@@ -2,8 +2,8 @@ import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:timezone/data/latest_all.dart' as tzdata;
 import 'package:timezone/timezone.dart' as tz;
 
-// The weekly weigh-in nudge. One notification, every Sunday at 9 AM
-// local time. Inexact scheduling on purpose — no exact-alarm permission
+// The weekly weigh-in nudge. One notification a week, on the day and time
+// the user picks. Inexact scheduling on purpose — no exact-alarm permission
 // needed, and a reminder doesn't have to be precise to the minute.
 class ReminderService {
   static final _plugin = FlutterLocalNotificationsPlugin();
