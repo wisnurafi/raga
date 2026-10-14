@@ -4,6 +4,7 @@ import '../core/theme.dart';
 import '../core/bmi.dart';
 import '../state/app_state.dart';
 import '../models/bmi_record.dart';
+import '../widgets/glass.dart';
 import '../widgets/cards.dart';
 
 /// Layar "Riwayat": grafik tren berat/BMI + daftar catatan terakhir.
@@ -42,9 +43,13 @@ class _HistoryScreenState extends State<HistoryScreen> {
             Container(
               width: 44,
               height: 44,
-              decoration: const BoxDecoration(
-                color: Color(0xFFE8C98F),
+              decoration: BoxDecoration(
+                color: const Color(0xFFE8C98F),
                 shape: BoxShape.circle,
+                border: Border.all(
+                  color: Colors.white.withValues(alpha: 0.9),
+                  width: 2,
+                ),
               ),
               child: Center(
                 child: Text(
@@ -75,16 +80,20 @@ class _HistoryScreenState extends State<HistoryScreen> {
   }
 
   Widget _emptyCard(BuildContext context, RagaColors rc) {
-    return Container(
+    return GlassContainer(
       padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 44),
-      decoration: BoxDecoration(
-        color: rc.card,
-        borderRadius: BorderRadius.circular(30),
-      ),
       child: Column(
         children: [
-          Icon(Icons.show_chart, size: 44, color: rc.onCardMuted),
-          const SizedBox(height: 12),
+          Container(
+            width: 76,
+            height: 76,
+            decoration: BoxDecoration(
+              color: rc.mintSoft,
+              shape: BoxShape.circle,
+            ),
+            child: Icon(Icons.show_chart, size: 36, color: rc.mint),
+          ),
+          const SizedBox(height: 14),
           Text(
             'Belum ada catatan',
             style: TextStyle(
@@ -122,19 +131,8 @@ class _HistoryScreenState extends State<HistoryScreen> {
           _showWeight ? chrono[i].weightKg : chrono[i].bmi));
     }
 
-    return Container(
+    return GlassContainer(
       padding: const EdgeInsets.fromLTRB(20, 18, 20, 12),
-      decoration: BoxDecoration(
-        color: rc.card,
-        borderRadius: BorderRadius.circular(30),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.12),
-            blurRadius: 18,
-            offset: const Offset(0, 8),
-          ),
-        ],
-      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -145,14 +143,14 @@ class _HistoryScreenState extends State<HistoryScreen> {
                 _showWeight ? 'Berat badan (kg)' : 'BMI',
                 style: TextStyle(
                   fontSize: 14,
-                  fontWeight: FontWeight.w600,
+                  fontWeight: FontWeight.w700,
                   color: rc.onCardMuted,
                 ),
               ),
               Container(
                 padding: const EdgeInsets.all(4),
                 decoration: BoxDecoration(
-                  color: const Color(0xFFF0EDFF),
+                  color: rc.panel.withValues(alpha: 0.6),
                   borderRadius: BorderRadius.circular(999),
                 ),
                 child: Row(
@@ -185,15 +183,15 @@ class _HistoryScreenState extends State<HistoryScreen> {
                 padding: const EdgeInsets.symmetric(
                     horizontal: 12, vertical: 7),
                 decoration: BoxDecoration(
-                  color: const Color(0xFFE6F9EF),
+                  color: rc.mintSoft,
                   borderRadius: BorderRadius.circular(999),
                 ),
                 child: Text(
                   deltaTxt,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 12.5,
                     fontWeight: FontWeight.w700,
-                    color: Color(0xFF1E9E6A),
+                    color: rc.mint,
                   ),
                 ),
               ),
@@ -257,7 +255,14 @@ class _HistoryScreenState extends State<HistoryScreen> {
                     dotData: const FlDotData(show: true),
                     belowBarData: BarAreaData(
                       show: true,
-                      color: const Color(0xFF8B7CF0).withValues(alpha: 0.12),
+                      gradient: LinearGradient(
+                        begin: Alignment.topCenter,
+                        end: Alignment.bottomCenter,
+                        colors: [
+                          const Color(0xFF8B7CF0).withValues(alpha: 0.22),
+                          const Color(0xFF8B7CF0).withValues(alpha: 0.02),
+                        ],
+                      ),
                     ),
                   ),
                 ],
@@ -271,6 +276,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
 
   Widget _miniSeg(
       BuildContext context, String label, bool active, VoidCallback onTap) {
+    final rc = context.rc;
     return GestureDetector(
       onTap: onTap,
       child: AnimatedContainer(
@@ -278,7 +284,11 @@ class _HistoryScreenState extends State<HistoryScreen> {
         padding:
             const EdgeInsets.symmetric(horizontal: 16, vertical: 7),
         decoration: BoxDecoration(
-          color: active ? const Color(0xFF8B7CF0) : Colors.transparent,
+          gradient: active
+              ? LinearGradient(
+                  colors: [rc.primaryBtn, const Color(0xFF9A8CF5)],
+                )
+              : null,
           borderRadius: BorderRadius.circular(999),
         ),
         child: Text(
@@ -286,7 +296,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
           style: TextStyle(
             fontSize: 12.5,
             fontWeight: FontWeight.w700,
-            color: active ? Colors.white : const Color(0xFF8A86AD),
+            color: active ? rc.onPrimaryBtn : rc.onBgMuted,
           ),
         ),
       ),
@@ -296,13 +306,9 @@ class _HistoryScreenState extends State<HistoryScreen> {
   Widget _listCard(
       BuildContext context, RagaColors rc, List<BmiRecord> records) {
     final shown = records.take(8).toList();
-    return Container(
+    return GlassContainer(
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 6),
-      decoration: BoxDecoration(
-        color: rc.cardDark.withValues(alpha: 0.75),
-        borderRadius: BorderRadius.circular(28),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
-      ),
+      borderRadius: 26,
       child: Column(
         children: List.generate(shown.length, (i) {
           final r = shown[i];
@@ -316,30 +322,38 @@ class _HistoryScreenState extends State<HistoryScreen> {
                     Expanded(
                       child: Text(
                         formatDateId(r.createdAt),
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 15,
                           fontWeight: FontWeight.w600,
-                          color: Colors.white,
+                          color: rc.onBg,
                         ),
                       ),
                     ),
                     Expanded(
                       child: Text(
                         '${formatId(r.weightKg)} kg',
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 15,
                           fontWeight: FontWeight.w700,
-                          color: Colors.white,
-                          fontFeatures: [FontFeature.tabularFigures()],
+                          color: rc.onBg,
+                          fontFeatures: const [FontFeature.tabularFigures()],
                         ),
                       ),
                     ),
-                    Text(
-                      'BMI ${formatId(r.bmi)} · ${meta.label}',
-                      style: TextStyle(
-                        fontSize: 13.5,
-                        fontWeight: FontWeight.w700,
-                        color: meta.color,
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 10, vertical: 5),
+                      decoration: BoxDecoration(
+                        color: meta.color.withValues(alpha: 0.16),
+                        borderRadius: BorderRadius.circular(999),
+                      ),
+                      child: Text(
+                        'BMI ${formatId(r.bmi)} · ${meta.label}',
+                        style: TextStyle(
+                          fontSize: 12.5,
+                          fontWeight: FontWeight.w800,
+                          color: meta.color,
+                        ),
                       ),
                     ),
                   ],
@@ -347,7 +361,8 @@ class _HistoryScreenState extends State<HistoryScreen> {
               ),
               if (i != shown.length - 1)
                 Divider(
-                    height: 1, color: Colors.white.withValues(alpha: 0.12)),
+                    height: 1,
+                    color: rc.onBgMuted.withValues(alpha: 0.18)),
             ],
           );
         }),

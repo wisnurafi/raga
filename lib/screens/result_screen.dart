@@ -7,8 +7,10 @@ import '../core/theme.dart';
 import '../core/bmi.dart';
 import '../core/tips.dart';
 import '../widgets/gauge.dart';
+import '../widgets/glass.dart';
 import '../widgets/cards.dart';
 import '../state/app_state.dart';
+import '../data/cloud_sync.dart';
 
 /// Layar "Hasil BMI": gauge, angka, kategori, tips, tombol simpan & bagikan.
 class ResultScreen extends StatefulWidget {
@@ -40,7 +42,7 @@ class _ResultScreenState extends State<ResultScreen> {
     final hTxt = formatId(widget.heightCm, 0);
     final wTxt = formatId(widget.weightKg, 0);
 
-    return GradientBg(
+    return HealthBg(
       child: Scaffold(
         backgroundColor: Colors.transparent,
         body: SafeArea(
@@ -55,12 +57,22 @@ class _ResultScreenState extends State<ResultScreen> {
                       width: 46,
                       height: 46,
                       decoration: BoxDecoration(
-                        color: rc.chipInactive.withValues(alpha: 0.55),
+                        color: Colors.white.withValues(alpha: 0.65),
                         shape: BoxShape.circle,
+                        border: Border.all(
+                          color: Colors.white.withValues(alpha: 0.9),
+                        ),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withValues(alpha: 0.08),
+                            blurRadius: 12,
+                            offset: const Offset(0, 4),
+                          ),
+                        ],
                       ),
-                      child: const Icon(
+                      child: Icon(
                         Icons.arrow_back,
-                        color: Colors.white,
+                        color: rc.onBg,
                         size: 20,
                       ),
                     ),
@@ -94,25 +106,20 @@ class _ResultScreenState extends State<ResultScreen> {
               // Kartu gauge (ini yang di-screenshot saat dibagikan).
               Screenshot(
                 controller: _shot,
-                child: Container(
+                child: GlassContainer(
                   padding: const EdgeInsets.fromLTRB(20, 18, 20, 22),
-                  decoration: BoxDecoration(
-                    color: rc.cardDark.withValues(alpha: 0.85),
-                    borderRadius: BorderRadius.circular(30),
-                    border:
-                        Border.all(color: Colors.white.withValues(alpha: 0.1)),
-                  ),
+                  opacity: 0.72,
                   child: Column(
                     children: [
                       BmiGauge(bmi: bmi),
                       Text(
                         formatId(bmi),
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 64,
                           fontWeight: FontWeight.w800,
                           letterSpacing: -3,
-                          color: Colors.white,
-                          fontFeatures: [FontFeature.tabularFigures()],
+                          color: rc.onBg,
+                          fontFeatures: const [FontFeature.tabularFigures()],
                         ),
                       ),
                       Text(
@@ -129,6 +136,13 @@ class _ResultScreenState extends State<ResultScreen> {
                         decoration: BoxDecoration(
                           color: meta.color,
                           borderRadius: BorderRadius.circular(999),
+                          boxShadow: [
+                            BoxShadow(
+                              color: meta.color.withValues(alpha: 0.45),
+                              blurRadius: 14,
+                              offset: const Offset(0, 6),
+                            ),
+                          ],
                         ),
                         child: Text(
                           meta.label,
@@ -145,9 +159,9 @@ class _ResultScreenState extends State<ResultScreen> {
                       Text(
                         meta.explanation,
                         textAlign: TextAlign.center,
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 13.5,
-                          color: Color(0xFFD7DBE1),
+                          color: rc.onCardMuted,
                           height: 1.5,
                         ),
                       ),
@@ -156,23 +170,37 @@ class _ResultScreenState extends State<ResultScreen> {
                 ),
               ),
               const SizedBox(height: 16),
-              Container(
+              GlassContainer(
                 padding: const EdgeInsets.fromLTRB(22, 20, 22, 20),
-                decoration: BoxDecoration(
-                  color: rc.card,
-                  borderRadius: BorderRadius.circular(30),
-                ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      'Tips untukmu',
-                      style: TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.w800,
-                        color: rc.onCard,
-                        letterSpacing: -0.3,
-                      ),
+                    Row(
+                      children: [
+                        Container(
+                          width: 34,
+                          height: 34,
+                          decoration: BoxDecoration(
+                            color: rc.mintSoft,
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: Icon(
+                            Icons.tips_and_updates_outlined,
+                            size: 19,
+                            color: rc.mint,
+                          ),
+                        ),
+                        const SizedBox(width: 10),
+                        Text(
+                          'Tips untukmu',
+                          style: TextStyle(
+                            fontSize: 20,
+                            fontWeight: FontWeight.w800,
+                            color: rc.onCard,
+                            letterSpacing: -0.3,
+                          ),
+                        ),
+                      ],
                     ),
                     const SizedBox(height: 12),
                     ...healthTips[cat]!.take(3).map(
@@ -186,8 +214,8 @@ class _ResultScreenState extends State<ResultScreen> {
                                   height: 9,
                                   margin:
                                       const EdgeInsets.only(top: 6, right: 12),
-                                  decoration: const BoxDecoration(
-                                    color: Color(0xFF8B7CF0),
+                                  decoration: BoxDecoration(
+                                    color: rc.mint,
                                     shape: BoxShape.circle,
                                   ),
                                 ),
@@ -240,8 +268,13 @@ class _ResultScreenState extends State<ResultScreen> {
       weightKg: widget.weightKg,
     );
     if (!context.mounted) return;
+    final synced = CloudSync.isReady && CloudSync.lastError.isEmpty;
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Tersimpan ke riwayat')),
+      SnackBar(
+        content: Text(synced
+            ? 'Tersimpan ke riwayat & cloud'
+            : 'Tersimpan ke riwayat (cloud menyusul)'),
+      ),
     );
     Navigator.pop(context);
   }

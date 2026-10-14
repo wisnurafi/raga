@@ -2,8 +2,9 @@ import 'package:flutter/material.dart';
 import '../core/theme.dart';
 import '../core/bmi.dart';
 import '../state/app_state.dart';
+import 'glass.dart';
 
-/// Kartu putih untuk input angka + slider, seperti di desain referensi.
+/// Kartu kaca untuk input angka + slider.
 class MeasureCard extends StatelessWidget {
   final String label;
   final double displayValue;
@@ -25,30 +26,40 @@ class MeasureCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final rc = context.rc;
-    return Container(
-      padding: const EdgeInsets.fromLTRB(20, 16, 20, 12),
-      decoration: BoxDecoration(
-        color: rc.card,
-        borderRadius: BorderRadius.circular(28),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.12),
-            blurRadius: 18,
-            offset: const Offset(0, 8),
-          ),
-        ],
-      ),
+    return GlassContainer(
+      padding: const EdgeInsets.fromLTRB(22, 18, 22, 14),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            label,
-            style: TextStyle(
-              fontSize: 14,
-              fontWeight: FontWeight.w600,
-              color: rc.onCardMuted,
-            ),
+          Row(
+            children: [
+              Container(
+                width: 34,
+                height: 34,
+                decoration: BoxDecoration(
+                  color: rc.mintSoft,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Icon(
+                  label.contains('Tinggi')
+                      ? Icons.height
+                      : Icons.monitor_weight_outlined,
+                  size: 19,
+                  color: rc.mint,
+                ),
+              ),
+              const SizedBox(width: 10),
+              Text(
+                label,
+                style: TextStyle(
+                  fontSize: 14.5,
+                  fontWeight: FontWeight.w700,
+                  color: rc.onCardMuted,
+                ),
+              ),
+            ],
           ),
+          const SizedBox(height: 4),
           Row(
             crossAxisAlignment: CrossAxisAlignment.baseline,
             textBaseline: TextBaseline.alphabetic,
@@ -76,9 +87,9 @@ class MeasureCard extends StatelessWidget {
           ),
           SliderTheme(
             data: SliderTheme.of(context).copyWith(
-              activeTrackColor: const Color(0xFF8B7CF0),
+              activeTrackColor: rc.primaryBtn,
               inactiveTrackColor: const Color(0xFFE4DEFB),
-              thumbColor: const Color(0xFF8B7CF0),
+              thumbColor: rc.primaryBtn,
             ),
             child: Slider(
               value: displayValue.clamp(min, max),
@@ -93,7 +104,7 @@ class MeasureCard extends StatelessWidget {
   }
 }
 
-/// Toggle satuan: cm·kg / in·lb
+/// Toggle satuan: cm·kg / in·lb (pil kaca).
 class UnitToggle extends StatelessWidget {
   const UnitToggle({super.key});
 
@@ -104,8 +115,11 @@ class UnitToggle extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(4),
       decoration: BoxDecoration(
-        color: rc.chipInactive.withValues(alpha: 0.55),
+        color: Colors.white.withValues(alpha: 0.55),
         borderRadius: BorderRadius.circular(999),
+        border: Border.all(
+          color: Colors.white.withValues(alpha: 0.8),
+        ),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
@@ -128,7 +142,11 @@ class UnitToggle extends StatelessWidget {
         duration: const Duration(milliseconds: 200),
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         decoration: BoxDecoration(
-          color: active ? Colors.white : Colors.transparent,
+          gradient: active
+              ? LinearGradient(
+                  colors: [rc.primaryBtn, const Color(0xFF9A8CF5)],
+                )
+              : null,
           borderRadius: BorderRadius.circular(999),
         ),
         child: Text(
@@ -136,7 +154,7 @@ class UnitToggle extends StatelessWidget {
           style: TextStyle(
             fontSize: 13,
             fontWeight: FontWeight.w700,
-            color: active ? const Color(0xFF1B1B2F) : rc.onBgMuted,
+            color: active ? rc.onPrimaryBtn : rc.onBgMuted,
           ),
         ),
       ),
@@ -167,21 +185,21 @@ class ProfileChips extends StatelessWidget {
                     const EdgeInsets.symmetric(horizontal: 18, vertical: 10),
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(999),
+                  color: Colors.white.withValues(alpha: 0.4),
                   border: Border.all(
-                    color: Colors.white.withValues(alpha: 0.55),
+                    color: rc.onBgMuted.withValues(alpha: 0.45),
                     width: 1.5,
-                    style: BorderStyle.solid,
                   ),
                 ),
-                child: const Row(
+                child: Row(
                   children: [
-                    Icon(Icons.add, size: 16, color: Colors.white),
-                    SizedBox(width: 4),
+                    Icon(Icons.add, size: 16, color: rc.onBgMuted),
+                    const SizedBox(width: 4),
                     Text(
                       'Tambah',
                       style: TextStyle(
-                        color: Colors.white,
-                        fontWeight: FontWeight.w600,
+                        color: rc.onBgMuted,
+                        fontWeight: FontWeight.w700,
                         fontSize: 14,
                       ),
                     ),
@@ -199,8 +217,27 @@ class ProfileChips extends StatelessWidget {
               padding:
                   const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
               decoration: BoxDecoration(
-                color: active ? Colors.white : rc.chipInactive.withValues(alpha: 0.55),
+                gradient: active
+                    ? LinearGradient(
+                        colors: [rc.primaryBtn, const Color(0xFF9A8CF5)],
+                      )
+                    : null,
+                color: active
+                    ? null
+                    : Colors.white.withValues(alpha: 0.55),
                 borderRadius: BorderRadius.circular(999),
+                border: Border.all(
+                  color: Colors.white.withValues(alpha: 0.8),
+                ),
+                boxShadow: active
+                    ? [
+                        BoxShadow(
+                          color: rc.primaryBtn.withValues(alpha: 0.4),
+                          blurRadius: 12,
+                          offset: const Offset(0, 5),
+                        ),
+                      ]
+                    : null,
               ),
               child: Center(
                 child: Text(
@@ -208,7 +245,7 @@ class ProfileChips extends StatelessWidget {
                   style: TextStyle(
                     fontSize: 14,
                     fontWeight: FontWeight.w700,
-                    color: active ? const Color(0xFF1B1B2F) : Colors.white,
+                    color: active ? rc.onPrimaryBtn : rc.onBg,
                   ),
                 ),
               ),
@@ -255,7 +292,7 @@ class ProfileChips extends StatelessWidget {
   }
 }
 
-/// Tombol utama Raga (lavender, teks gelap).
+/// Tombol utama Raga.
 class RagaButton extends StatelessWidget {
   final String label;
   final VoidCallback onPressed;
@@ -276,22 +313,22 @@ class RagaButton extends StatelessWidget {
       child: FilledButton(
         onPressed: onPressed,
         style: FilledButton.styleFrom(
-          backgroundColor:
-              outlined ? Colors.transparent : rc.primaryBtn,
-          foregroundColor: rc.onPrimaryBtn,
+          backgroundColor: outlined
+              ? Colors.white.withValues(alpha: 0.5)
+              : rc.primaryBtn,
+          foregroundColor: outlined ? rc.onBg : rc.onPrimaryBtn,
           padding: const EdgeInsets.symmetric(vertical: 18),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(26),
             side: outlined
-                ? BorderSide(color: Colors.white.withValues(alpha: 0.6), width: 1.5)
+                ? BorderSide(
+                    color: rc.primaryBtn.withValues(alpha: 0.55),
+                    width: 1.5,
+                  )
                 : BorderSide.none,
           ),
           textStyle:
               const TextStyle(fontSize: 17, fontWeight: FontWeight.w700),
-        ).copyWith(
-          foregroundColor: outlined
-              ? WidgetStatePropertyAll(Colors.white)
-              : null,
         ),
         child: Text(label),
       ),

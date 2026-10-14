@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../core/theme.dart';
 import '../core/bmi.dart';
 import '../state/app_state.dart';
+import '../widgets/glass.dart';
 
 /// Layar "Kesehatan": berat badan ideal, TDEE, dan BMR.
 class HealthScreen extends StatelessWidget {
@@ -44,9 +45,13 @@ class HealthScreen extends StatelessWidget {
             Container(
               width: 44,
               height: 44,
-              decoration: const BoxDecoration(
-                color: Color(0xFFE8C98F),
+              decoration: BoxDecoration(
+                color: const Color(0xFFE8C98F),
                 shape: BoxShape.circle,
+                border: Border.all(
+                  color: Colors.white.withValues(alpha: 0.9),
+                  width: 2,
+                ),
               ),
               child: Center(
                 child: Text(
@@ -65,31 +70,38 @@ class HealthScreen extends StatelessWidget {
         Text(meta, style: TextStyle(fontSize: 13.5, color: rc.onBgMuted)),
         const SizedBox(height: 18),
         // Berat badan ideal
-        Container(
+        GlassContainer(
           padding: const EdgeInsets.fromLTRB(22, 20, 22, 22),
-          decoration: BoxDecoration(
-            color: rc.card,
-            borderRadius: BorderRadius.circular(30),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: 0.12),
-                blurRadius: 18,
-                offset: const Offset(0, 8),
-              ),
-            ],
-          ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(
-                'Berat badan ideal',
-                style: TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w600,
-                  color: rc.onCardMuted,
-                ),
+              Row(
+                children: [
+                  Container(
+                    width: 34,
+                    height: 34,
+                    decoration: BoxDecoration(
+                      color: rc.mintSoft,
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Icon(
+                      Icons.favorite_outline,
+                      size: 19,
+                      color: rc.mint,
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  Text(
+                    'Berat badan ideal',
+                    style: TextStyle(
+                      fontSize: 14.5,
+                      fontWeight: FontWeight.w700,
+                      color: rc.onCardMuted,
+                    ),
+                  ),
+                ],
               ),
-              const SizedBox(height: 6),
+              const SizedBox(height: 8),
               RichText(
                 text: TextSpan(
                   style: TextStyle(
@@ -100,7 +112,8 @@ class HealthScreen extends StatelessWidget {
                     fontFeatures: const [FontFeature.tabularFigures()],
                   ),
                   children: [
-                    TextSpan(text: '${formatId(range.min)} – ${formatId(range.max)} '),
+                    TextSpan(
+                        text: '${formatId(range.min)} – ${formatId(range.max)} '),
                     TextSpan(
                       text: 'kg',
                       style: TextStyle(
@@ -124,42 +137,55 @@ class HealthScreen extends StatelessWidget {
         ),
         const SizedBox(height: 16),
         // TDEE
-        Container(
+        GlassContainer(
           padding: const EdgeInsets.fromLTRB(22, 20, 22, 20),
-          decoration: BoxDecoration(
-            color: rc.cardDark.withValues(alpha: 0.85),
-            borderRadius: BorderRadius.circular(30),
-            border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
-          ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(
-                'Kebutuhan kalori harian (TDEE)',
-                style: TextStyle(
-                  fontSize: 14.5,
-                  fontWeight: FontWeight.w600,
-                  color: rc.onBgMuted,
-                ),
+              Row(
+                children: [
+                  Container(
+                    width: 34,
+                    height: 34,
+                    decoration: BoxDecoration(
+                      color: rc.primaryBtn.withValues(alpha: 0.14),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Icon(
+                      Icons.local_fire_department_outlined,
+                      size: 19,
+                      color: rc.primaryBtn,
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  Text(
+                    'Kebutuhan kalori harian (TDEE)',
+                    style: TextStyle(
+                      fontSize: 14.5,
+                      fontWeight: FontWeight.w700,
+                      color: rc.onCardMuted,
+                    ),
+                  ),
+                ],
               ),
               const SizedBox(height: 8),
               RichText(
                 text: TextSpan(
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 52,
                     fontWeight: FontWeight.w800,
                     letterSpacing: -2,
-                    color: Colors.white,
-                    fontFeatures: [FontFeature.tabularFigures()],
+                    color: rc.onCard,
+                    fontFeatures: const [FontFeature.tabularFigures()],
                   ),
                   children: [
                     TextSpan(text: formatIntId(tdeeVal.round())),
-                    const TextSpan(
+                    TextSpan(
                       text: ' kcal/hari',
                       style: TextStyle(
                         fontSize: 18,
                         fontWeight: FontWeight.w600,
-                        color: Color(0xFFB9B5E6),
+                        color: rc.onCardMuted,
                         letterSpacing: 0,
                       ),
                     ),
@@ -179,9 +205,17 @@ class HealthScreen extends StatelessWidget {
                       padding: const EdgeInsets.symmetric(
                           horizontal: 18, vertical: 10),
                       decoration: BoxDecoration(
+                        gradient: active
+                            ? LinearGradient(
+                                colors: [
+                                  rc.primaryBtn,
+                                  const Color(0xFF9A8CF5)
+                                ],
+                              )
+                            : null,
                         color: active
-                            ? rc.primaryBtn
-                            : Colors.white.withValues(alpha: 0.1),
+                            ? null
+                            : rc.panel.withValues(alpha: 0.55),
                         borderRadius: BorderRadius.circular(999),
                       ),
                       child: Text(
@@ -189,7 +223,7 @@ class HealthScreen extends StatelessWidget {
                         style: TextStyle(
                           fontSize: 13.5,
                           fontWeight: FontWeight.w700,
-                          color: active ? rc.onPrimaryBtn : Colors.white,
+                          color: active ? rc.onPrimaryBtn : rc.onBgMuted,
                         ),
                       ),
                     ),
@@ -201,51 +235,47 @@ class HealthScreen extends StatelessWidget {
         ),
         const SizedBox(height: 16),
         // BMR
-        Container(
+        GlassContainer(
           padding: const EdgeInsets.fromLTRB(22, 18, 22, 18),
-          decoration: BoxDecoration(
-            color: rc.cardDark.withValues(alpha: 0.85),
-            borderRadius: BorderRadius.circular(30),
-            border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
-          ),
+          borderRadius: 26,
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text(
+                  Text(
                     'BMR (saat istirahat)',
                     style: TextStyle(
                       fontSize: 15,
                       fontWeight: FontWeight.w700,
-                      color: Colors.white,
+                      color: rc.onCard,
                     ),
                   ),
                   const SizedBox(height: 4),
                   Text(
                     'Rumus Mifflin-St Jeor',
                     style: TextStyle(
-                        fontSize: 12.5, color: rc.onBgMuted),
+                        fontSize: 12.5, color: rc.onCardMuted),
                   ),
                 ],
               ),
               RichText(
                 text: TextSpan(
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 30,
                     fontWeight: FontWeight.w800,
-                    color: Colors.white,
-                    fontFeatures: [FontFeature.tabularFigures()],
+                    color: rc.onCard,
+                    fontFeatures: const [FontFeature.tabularFigures()],
                   ),
                   children: [
                     TextSpan(text: formatIntId(bmr.round())),
-                    const TextSpan(
+                    TextSpan(
                       text: ' kcal',
                       style: TextStyle(
                           fontSize: 14,
                           fontWeight: FontWeight.w600,
-                          color: Color(0xFFB9B5E6)),
+                          color: rc.onCardMuted),
                     ),
                   ],
                 ),

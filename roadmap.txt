@@ -10,8 +10,8 @@ v1.0.0 (saat ini)
 [x] Berat badan ideal, BMR (Mifflin-St Jeor), TDEE + level aktivitas
 [x] Multi-profil (keluarga/teman)
 [x] Bagikan hasil sebagai gambar
-[x] Mode gelap/terang
-[x] Penyimpanan lokal + sinkronisasi cloud Supabase (opsional)
+[x] Mode terang glassmorphism (switch mode dihapus)
+[x] Penyimpanan lokal + sinkronisasi cloud Supabase (status & retry otomatis)
 [x] CI: build APK otomatis + keep-alive Supabase tiap jam
 [x] Dokumentasi: README, PRIVACY.md, CONTRIBUTING.md, LICENSE
 

@@ -22,8 +22,8 @@ Dibuat sebagai tugas mata kuliah **Pemrograman Mobile**.
 - **Kalkulator pelengkap** — berat badan ideal, BMR (Mifflin-St Jeor), TDEE + level aktivitas
 - **Multi-profil** — hitung BMI untuk keluarga/teman dalam satu aplikasi
 - **Bagikan hasil** — ekspor kartu hasil sebagai gambar
-- **Mode gelap/terang** + toggle satuan metrik/imperial
-- **Sinkronisasi cloud** (Supabase) — cadangan otomatis, tetap jalan 100% offline
+- **Mode terang glassmorphism** + toggle satuan metrik/imperial
+- **Sinkronisasi cloud** (Supabase) — cadangan otomatis, status kelihatan di Profil, retry otomatis, tetap jalan 100% offline
 
 ## Tangkapan layar
 
@@ -97,17 +97,17 @@ ping tiap jam agar project free-tier tidak pause.
 
 ```
 lib/
-  main.dart            # entry point, theme mode, bottom nav shell
+  main.dart            # entry point, bottom nav shell
   core/
     bmi.dart           # rumus BMI, kategori, berat ideal, BMR, TDEE
     tips.dart          # tips kesehatan per kategori
-    theme.dart         # tema ungu Raga (gelap & terang)
+    theme.dart         # tema terang Raga: palet light, HealthBg, glass
   models/              # Profile, BmiRecord
   state/app_state.dart # state global (ChangeNotifier sederhana)
   data/
     local_store.dart   # penyimpanan lokal (sumber kebenaran utama)
-    cloud_sync.dart    # sinkronisasi Supabase (opsional, gagal diam-diam)
-  widgets/             # gauge, floating nav, kartu input, chips
+    cloud_sync.dart    # sinkronisasi Supabase + status & retry otomatis
+  widgets/             # gauge, floating nav kaca, kartu kaca, kartu input, chips
   screens/             # Hitung, Hasil, Riwayat, Kesehatan, Profil
 ```
 

@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import '../core/theme.dart';
 import '../state/app_state.dart';
+import '../data/cloud_sync.dart';
+import '../widgets/glass.dart';
 
 /// Layar "Profil": info profil aktif + pengaturan aplikasi.
 class ProfileScreen extends StatelessWidget {
@@ -25,21 +27,20 @@ class ProfileScreen extends StatelessWidget {
           ),
         ),
         const SizedBox(height: 18),
-        Container(
+        GlassContainer(
           padding: const EdgeInsets.all(22),
-          decoration: BoxDecoration(
-            color: rc.cardDark.withValues(alpha: 0.85),
-            borderRadius: BorderRadius.circular(30),
-            border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
-          ),
           child: Row(
             children: [
               Container(
                 width: 64,
                 height: 64,
-                decoration: const BoxDecoration(
-                  color: Color(0xFFE8C98F),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFE8C98F),
                   shape: BoxShape.circle,
+                  border: Border.all(
+                    color: Colors.white.withValues(alpha: 0.9),
+                    width: 2,
+                  ),
                 ),
                 child: Center(
                   child: Text(
@@ -59,17 +60,17 @@ class ProfileScreen extends StatelessWidget {
                   children: [
                     Text(
                       p.name,
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 20,
                         fontWeight: FontWeight.w800,
-                        color: Colors.white,
+                        color: rc.onBg,
                       ),
                     ),
                     const SizedBox(height: 4),
                     Text(
                       '${p.isMale ? 'Pria' : 'Wanita'} · ${p.age} tahun',
-                      style: TextStyle(
-                          fontSize: 13.5, color: rc.onBgMuted),
+                      style:
+                          TextStyle(fontSize: 13.5, color: rc.onBgMuted),
                     ),
                   ],
                 ),
@@ -78,17 +79,17 @@ class ProfileScreen extends StatelessWidget {
                 onTap: () => _renameDialog(context, state, p.name),
                 child: Container(
                   padding: const EdgeInsets.symmetric(
-                      horizontal: 14, vertical: 8),
+                      horizontal: 16, vertical: 9),
                   decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: 0.12),
+                    color: rc.primaryBtn.withValues(alpha: 0.14),
                     borderRadius: BorderRadius.circular(999),
                   ),
-                  child: const Text(
+                  child: Text(
                     'Ubah',
                     style: TextStyle(
                       fontSize: 13,
                       fontWeight: FontWeight.w700,
-                      color: Colors.white,
+                      color: rc.primaryBtn,
                     ),
                   ),
                 ),
@@ -100,19 +101,10 @@ class ProfileScreen extends StatelessWidget {
         _sectionLabel(context, 'Pengaturan'),
         _tile(
           context,
-          icon: state.darkMode ? Icons.dark_mode_outlined : Icons.light_mode_outlined,
-          title: 'Mode gelap',
-          subtitle: 'Tampilan gelap atau terang',
-          trailing: Switch(
-            value: state.darkMode,
-            onChanged: state.setDarkMode,
-          ),
-        ),
-        _tile(
-          context,
           icon: Icons.straighten_outlined,
           title: 'Satuan',
-          subtitle: state.metricUnits ? 'Sentimeter · kilogram' : 'Inci · pon',
+          subtitle:
+              state.metricUnits ? 'Sentimeter · kilogram' : 'Inci · pon',
           trailing: Switch(
             value: state.metricUnits,
             onChanged: state.setMetricUnits,
@@ -124,8 +116,9 @@ class ProfileScreen extends StatelessWidget {
           context,
           icon: Icons.cloud_outlined,
           title: 'Sinkronisasi cloud',
-          subtitle: 'Cadangan otomatis ke database',
-          trailing: null,
+          subtitle: CloudSync.describe(state.records),
+          trailing: _syncDot(context),
+          onTap: () => _syncDialog(context, state),
         ),
         _tile(
           context,
@@ -154,13 +147,92 @@ class ProfileScreen extends StatelessWidget {
                   size: 14, color: rc.onBgMuted),
               const SizedBox(width: 6),
               Text(
-                'Datamu cuma tersimpan di HP ini',
+                'Datamu cuma tersimpan di HP ini & cloud pribadimu',
                 style: TextStyle(fontSize: 12.5, color: rc.onBgMuted),
               ),
             ],
           ),
         ),
       ],
+    );
+  }
+
+  Widget _syncDot(BuildContext context) {
+    final rc = context.rc;
+    final color = switch (CloudSync.state) {
+      SyncState.ready => rc.mint,
+      SyncState.notConfigured => const Color(0xFFF2B544),
+      SyncState.error => const Color(0xFFF2555A),
+    };
+    return Container(
+      width: 12,
+      height: 12,
+      decoration: BoxDecoration(color: color, shape: BoxShape.circle),
+    );
+  }
+
+  void _syncDialog(BuildContext context, AppState state) {
+    final rc = context.rc;
+    final pending = CloudSync.pendingCount(state.records);
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Sinkronisasi cloud'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                _syncDot(ctx),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    CloudSync.describe(state.records),
+                    style: const TextStyle(fontWeight: FontWeight.w700),
+                  ),
+                ),
+              ],
+            ),
+            if (pending > 0) ...[
+              const SizedBox(height: 8),
+              Text('$pending data menunggu dikirim ke Supabase.',
+                  style: TextStyle(color: rc.onCardMuted)),
+            ],
+            if (CloudSync.lastError.isNotEmpty &&
+                CloudSync.state == SyncState.error) ...[
+              const SizedBox(height: 8),
+              Text('Error: ${CloudSync.lastError}',
+                  style: TextStyle(color: rc.onCardMuted)),
+            ],
+            const SizedBox(height: 8),
+            Text(
+              'Data dikirim anonim ke database Supabase pribadimu.',
+              style: TextStyle(fontSize: 12.5, color: rc.onCardMuted),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Tutup'),
+          ),
+          FilledButton(
+            onPressed: () async {
+              Navigator.pop(ctx);
+              await state.refreshSync();
+              if (context.mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                      content: Text(
+                          CloudSync.describe(state.records))),
+                );
+              }
+            },
+            child: const Text('Sinkronkan sekarang'),
+          ),
+        ],
+      ),
     );
   }
 
@@ -188,18 +260,15 @@ class ProfileScreen extends StatelessWidget {
     VoidCallback? onTap,
   }) {
     final rc = context.rc;
+    final dangerColor = const Color(0xFFF2555A);
     return GestureDetector(
       onTap: onTap,
       behavior: HitTestBehavior.opaque,
-      child: Container(
+      child: GlassContainer(
         margin: const EdgeInsets.only(bottom: 10),
         padding:
             const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
-        decoration: BoxDecoration(
-          color: rc.cardDark.withValues(alpha: 0.75),
-          borderRadius: BorderRadius.circular(22),
-          border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
-        ),
+        borderRadius: 22,
         child: Row(
           children: [
             Container(
@@ -207,14 +276,14 @@ class ProfileScreen extends StatelessWidget {
               height: 40,
               decoration: BoxDecoration(
                 color: danger
-                    ? const Color(0xFFF2555A).withValues(alpha: 0.16)
-                    : Colors.white.withValues(alpha: 0.1),
+                    ? dangerColor.withValues(alpha: 0.14)
+                    : rc.primaryBtn.withValues(alpha: 0.14),
                 borderRadius: BorderRadius.circular(14),
               ),
               child: Icon(
                 icon,
                 size: 20,
-                color: danger ? const Color(0xFFF2555A) : Colors.white,
+                color: danger ? dangerColor : rc.primaryBtn,
               ),
             ),
             const SizedBox(width: 14),
@@ -227,16 +296,14 @@ class ProfileScreen extends StatelessWidget {
                     style: TextStyle(
                       fontSize: 15,
                       fontWeight: FontWeight.w700,
-                      color: danger
-                          ? const Color(0xFFF2555A)
-                          : Colors.white,
+                      color: danger ? dangerColor : rc.onBg,
                     ),
                   ),
                   const SizedBox(height: 2),
                   Text(
                     subtitle,
-                    style: TextStyle(
-                        fontSize: 12.5, color: rc.onBgMuted),
+                    style:
+                        TextStyle(fontSize: 12.5, color: rc.onBgMuted),
                   ),
                 ],
               ),
