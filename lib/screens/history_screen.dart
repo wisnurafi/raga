@@ -292,10 +292,10 @@ class _HistoryScreenState extends State<HistoryScreen> {
                           padding: const EdgeInsets.only(top: 8),
                           child: Text(
                             shortMonths[chrono[i].createdAt.month - 1],
-                            style: const TextStyle(
+                            style: TextStyle(
                               fontSize: 11,
                               fontWeight: FontWeight.w600,
-                              color: Color(0xFF8A86AD),
+                              color: rc.onCardMuted,
                             ),
                           ),
                         );
