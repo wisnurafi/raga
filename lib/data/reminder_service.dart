@@ -124,7 +124,12 @@ class ReminderService {
     }
   }
 
+  /// One notification id per weekday so several days can be armed at once.
+  /// 1101..1107; the legacy single-day id 1001 is kept for cancel only.
+  static int _idForDay(int weekday) => 1100 + weekday;
+
   static Future<void> _schedule({
+    required int id,
     required int weekday,
     required int hour,
     required int minute,
@@ -135,7 +140,7 @@ class ReminderService {
         ' -> $next (tz=${tz.local.name}, mode=$mode)');
     await _withIconFallback(
       (d) => _plugin.zonedSchedule(
-        _weeklyId,
+        id,
         'Weigh-in time',
         'Hop on the scale and log your weight in Raga.',
         next,
@@ -148,7 +153,7 @@ class ReminderService {
     // the worst kind of bug: everything "succeeds" and nothing fires.
     try {
       final pending = await _plugin.pendingNotificationRequests();
-      final found = pending.any((p) => p.id == _weeklyId);
+      final found = pending.any((p) => p.id == id);
       onLog('reminder: OS pending check -> '
           '${found ? "registered" : "MISSING!"} (${pending.length} total)');
     } catch (e) {
@@ -160,8 +165,10 @@ class ReminderService {
     required int weekday,
     required int hour,
     required int minute,
+    int? id,
   }) =>
       _schedule(
+        id: id ?? _weeklyId,
         weekday: weekday,
         hour: hour,
         minute: minute,
@@ -172,8 +179,10 @@ class ReminderService {
     required int weekday,
     required int hour,
     required int minute,
+    int? id,
   }) =>
       _schedule(
+        id: id ?? _weeklyId,
         weekday: weekday,
         hour: hour,
         minute: minute,
@@ -187,28 +196,62 @@ class ReminderService {
     required int weekday,
     required int hour,
     required int minute,
+    int? id,
   }) async {
     try {
       if (await canScheduleExact()) {
         try {
           await scheduleWeekly(
-              weekday: weekday, hour: hour, minute: minute);
+              weekday: weekday, hour: hour, minute: minute, id: id);
           return true;
         } catch (_) {
           // Permission lost between check and schedule — fall through.
         }
       }
       await scheduleWeeklyInexact(
-          weekday: weekday, hour: hour, minute: minute);
+          weekday: weekday, hour: hour, minute: minute, id: id);
       return false;
     } catch (_) {
       return false;
     }
   }
 
+  /// Arms the nudge on every selected weekday. Cancels stale days first
+  /// so shrinking the selection doesn't leave ghost alarms behind.
+  /// Returns true when every day got the exact path.
+  static Future<bool> scheduleBestEffortDays({
+    required List<int> weekdays,
+    required int hour,
+    required int minute,
+  }) async {
+    await cancelAll();
+    if (weekdays.isEmpty) return false;
+    var allExact = true;
+    for (final d in weekdays.toSet().toList()..sort()) {
+      final exact = await scheduleBestEffort(
+        weekday: d,
+        hour: hour,
+        minute: minute,
+        id: _idForDay(d),
+      );
+      if (!exact) allExact = false;
+    }
+    return allExact;
+  }
+
   static Future<void> cancel() async {
     try {
       await _plugin.cancel(_weeklyId);
+    } catch (_) {}
+  }
+
+  /// Cancels the legacy id plus every per-day id.
+  static Future<void> cancelAll() async {
+    try {
+      await _plugin.cancel(_weeklyId);
+      for (var d = 1; d <= 7; d++) {
+        await _plugin.cancel(_idForDay(d));
+      }
     } catch (_) {}
   }
 

@@ -4,6 +4,7 @@ import 'state/app_state.dart';
 import 'data/cloud_sync.dart';
 import 'data/reminder_service.dart';
 import 'widgets/floating_nav.dart';
+import 'widgets/raga_bg.dart';
 import 'screens/home_screen.dart';
 import 'screens/history_screen.dart';
 import 'screens/health_screen.dart';
@@ -34,8 +35,8 @@ Future<void> main() async {
   // Re-arm the weekly nudge in case the system cleared it.
   if (state.weeklyReminder) {
     try {
-      await ReminderService.scheduleBestEffort(
-        weekday: state.reminderWeekday,
+      await ReminderService.scheduleBestEffortDays(
+        weekdays: state.reminderWeekdays,
         hour: state.reminderHour,
         minute: state.reminderMinute,
       );
@@ -63,6 +64,10 @@ class RagaApp extends StatelessWidget {
         title: 'Raga',
         debugShowCheckedModeBanner: false,
         theme: AppTheme.light,
+        darkTheme: AppTheme.dark,
+        // Dark is the mockup's look and the default; the moon button
+        // in every header flips it live.
+        themeMode: state.darkMode ? ThemeMode.dark : ThemeMode.light,
         home: const SplashGate(),
       ),
     );
@@ -95,10 +100,9 @@ class _SplashGateState extends State<SplashGate> {
       );
     }
     if (!_onboardingDone) {
-      // HealthBg behind the glass fields: without it the frosted cards
-      // fall back to dark gray on black and the muted labels/placeholders
-      // become unreadable.
-      return HealthBg(
+      // RagaBg behind the glass fields: without it the frosted cards
+      // have nothing to blur and the muted labels become unreadable.
+      return RagaBg(
         child: OnboardingScreen(
           onDone: () => setState(() => _onboardingDone = true),
         ),
@@ -120,7 +124,7 @@ class _MainShellState extends State<MainShell> {
 
   @override
   Widget build(BuildContext context) {
-    return HealthBg(
+    return RagaBg(
       child: Scaffold(
         backgroundColor: Colors.transparent,
         extendBody: true,

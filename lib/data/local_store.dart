@@ -13,8 +13,10 @@ class LocalStore {
   static const _kActivity = 'raga.activity';
   static const _kReminder = 'raga.weekly_reminder';
   static const _kReminderDay = 'raga.reminder_weekday';
+  static const _kReminderDays = 'raga.reminder_weekdays';
   static const _kReminderHour = 'raga.reminder_hour';
   static const _kReminderMin = 'raga.reminder_minute';
+  static const _kDarkMode = 'raga.dark_mode';
   static const _kGoals = 'raga.goal_weights';
   static const _kBackupCode = 'raga.backup_code';
   static const _kDevMode = 'raga.dev_mode';
@@ -76,6 +78,29 @@ class LocalStore {
   int get reminderWeekday => _prefs.getInt(_kReminderDay) ?? 7;
   int get reminderHour => _prefs.getInt(_kReminderHour) ?? 9;
   int get reminderMinute => _prefs.getInt(_kReminderMin) ?? 0;
+
+  /// Days of week (1=Mon..7=Sun) the weigh-in nudge fires. Migrates the
+  /// old single-weekday setting on first read.
+  List<int> get reminderWeekdays {
+    final raw = _prefs.getString(_kReminderDays);
+    if (raw != null) {
+      try {
+        final days = (jsonDecode(raw) as List)
+            .map((e) => (e as num).toInt())
+            .where((d) => d >= 1 && d <= 7)
+            .toList();
+        if (days.isNotEmpty) return days;
+      } catch (_) {}
+    }
+    return [_prefs.getInt(_kReminderDay) ?? 7];
+  }
+
+  Future<void> saveReminderWeekdays(List<int> v) =>
+      _prefs.setString(_kReminderDays, jsonEncode(v));
+
+  /// Dark mode is the mockup's look; default on.
+  bool get darkMode => _prefs.getBool(_kDarkMode) ?? true;
+  Future<void> saveDarkMode(bool v) => _prefs.setBool(_kDarkMode, v);
   Future<void> saveReminderSchedule(
       {required int weekday, required int hour, required int minute}) async {
     await _prefs.setInt(_kReminderDay, weekday);

@@ -19,9 +19,10 @@ class AppState extends ChangeNotifier {
   bool metricUnits = true;
   String activity = 'Light';
   bool weeklyReminder = false;
-  int reminderWeekday = 7;
+  List<int> reminderWeekdays = [7];
   int reminderHour = 9;
   int reminderMinute = 0;
+  bool darkMode = true;
   Map<String, double> goalWeights = {};
   bool devMode = false;
   bool onboardingDone = false;
@@ -37,9 +38,10 @@ class AppState extends ChangeNotifier {
     state.metricUnits = store.metricUnits;
     state.activity = store.activity;
     state.weeklyReminder = store.weeklyReminder;
-    state.reminderWeekday = store.reminderWeekday;
+    state.reminderWeekdays = store.reminderWeekdays;
     state.reminderHour = store.reminderHour;
     state.reminderMinute = store.reminderMinute;
+    state.darkMode = store.darkMode;
     state.goalWeights = store.goalWeights;
     state.devMode = store.devMode;
     state.onboardingDone = store.onboardingDone;
@@ -160,15 +162,23 @@ class AppState extends ChangeNotifier {
   }
 
   Future<void> setReminderSchedule({
-    required int weekday,
+    required List<int> weekdays,
     required int hour,
     required int minute,
   }) async {
-    reminderWeekday = weekday;
+    reminderWeekdays = weekdays.toSet().toList()..sort();
+    if (reminderWeekdays.isEmpty) reminderWeekdays = [7];
     reminderHour = hour;
     reminderMinute = minute;
+    await _store.saveReminderWeekdays(reminderWeekdays);
     await _store.saveReminderSchedule(
-        weekday: weekday, hour: hour, minute: minute);
+        weekday: reminderWeekdays.first, hour: hour, minute: minute);
+    notifyListeners();
+  }
+
+  Future<void> setDarkMode(bool v) async {
+    darkMode = v;
+    await _store.saveDarkMode(v);
     notifyListeners();
   }
 
@@ -226,9 +236,11 @@ class AppState extends ChangeNotifier {
         'metricUnits': metricUnits,
         'activity': activity,
         'weeklyReminder': weeklyReminder,
-        'reminderWeekday': reminderWeekday,
+        'reminderWeekdays': reminderWeekdays,
+        'reminderWeekday': reminderWeekdays.first,
         'reminderHour': reminderHour,
         'reminderMinute': reminderMinute,
+        'darkMode': darkMode,
         'milestonesSeen': milestonesSeen,
       },
     );
@@ -253,9 +265,16 @@ class AppState extends ChangeNotifier {
     metricUnits = s['metricUnits'] as bool? ?? true;
     activity = s['activity'] as String? ?? 'Light';
     weeklyReminder = s['weeklyReminder'] as bool? ?? false;
-    reminderWeekday = (s['reminderWeekday'] as num?)?.toInt() ?? 7;
+    final days = (s['reminderWeekdays'] as List?)
+        ?.map((e) => (e as num).toInt())
+        .where((d) => d >= 1 && d <= 7)
+        .toList();
+    reminderWeekdays = (days != null && days.isNotEmpty)
+        ? days
+        : [(s['reminderWeekday'] as num?)?.toInt() ?? 7];
     reminderHour = (s['reminderHour'] as num?)?.toInt() ?? 9;
     reminderMinute = (s['reminderMinute'] as num?)?.toInt() ?? 0;
+    darkMode = s['darkMode'] as bool? ?? true;
     milestonesSeen = ((s['milestonesSeen'] as List?) ?? [])
         .map((e) => (e as num).toInt())
         .toList();
@@ -266,8 +285,12 @@ class AppState extends ChangeNotifier {
     await _store.saveMetricUnits(metricUnits);
     await _store.saveActivity(activity);
     await _store.saveWeeklyReminder(weeklyReminder);
+    await _store.saveReminderWeekdays(reminderWeekdays);
     await _store.saveReminderSchedule(
-        weekday: reminderWeekday, hour: reminderHour, minute: reminderMinute);
+        weekday: reminderWeekdays.first,
+        hour: reminderHour,
+        minute: reminderMinute);
+    await _store.saveDarkMode(darkMode);
     await _store.saveMilestonesSeen(milestonesSeen);
     // A restored phone has obviously been through onboarding.
     onboardingDone = true;
@@ -281,8 +304,8 @@ class AppState extends ChangeNotifier {
     notifyListeners();
     if (weeklyReminder) {
       try {
-        await ReminderService.scheduleBestEffort(
-          weekday: reminderWeekday,
+        await ReminderService.scheduleBestEffortDays(
+          weekdays: reminderWeekdays,
           hour: reminderHour,
           minute: reminderMinute,
         );
