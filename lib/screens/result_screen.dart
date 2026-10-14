@@ -1,19 +1,22 @@
 import 'dart:io';
 
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:screenshot/screenshot.dart';
 import 'package:share_plus/share_plus.dart';
 
 import '../core/bmi.dart';
 import '../core/theme.dart';
+import '../core/tips.dart';
 import '../state/app_state.dart';
 import '../widgets/buttons.dart';
-import '../widgets/controls.dart';
 import '../widgets/gauge.dart';
 import '../widgets/glass.dart';
+import '../widgets/headers.dart';
+import '../widgets/raga_bg.dart';
 
-// The BMI result screen from the mockup: gauge with the big number inside
+// The BMI result screen from the mockup: gauge with the big number under
 // the arc, category badge, legend, tips, and save/share actions.
 class ResultScreen extends StatefulWidget {
   final double bmi;
@@ -31,79 +34,6 @@ class ResultScreen extends StatefulWidget {
   State<ResultScreen> createState() => _ResultScreenState();
 }
 
-// Tips per category, exactly like the mockup: icon circle + title + desc.
-final Map<BmiCategory, List<({String title, String desc, IconData icon})>>
-    _tips = {
-  BmiCategory.underweight: [
-    (
-      title: 'Eat more often',
-      desc: 'Smaller portions, packed with nutrients.',
-      icon: Icons.restaurant,
-    ),
-    (
-      title: 'Snack smart',
-      desc: 'Nuts, avocado, and milk are great picks.',
-      icon: Icons.cookie,
-    ),
-    (
-      title: "Don't skip breakfast",
-      desc: "It's your morning fuel.",
-      icon: Icons.free_breakfast,
-    ),
-  ],
-  BmiCategory.normal: [
-    (
-      title: 'Stay active',
-      desc: 'Walk 30 minutes, 5 days a week.',
-      icon: Icons.bolt,
-    ),
-    (
-      title: 'Drink enough',
-      desc: 'About 2 liters of water a day.',
-      icon: Icons.water_drop,
-    ),
-    (
-      title: 'Sleep well',
-      desc: '7–8 hours every night.',
-      icon: Icons.bedtime,
-    ),
-  ],
-  BmiCategory.overweight: [
-    (
-      title: 'Cut sugary drinks',
-      desc: 'Swap them for water.',
-      icon: Icons.no_drinks,
-    ),
-    (
-      title: 'Walk daily',
-      desc: 'A relaxed 30-minute walk every day.',
-      icon: Icons.directions_walk,
-    ),
-    (
-      title: 'Eat slowly',
-      desc: "Stop when you're full.",
-      icon: Icons.restaurant,
-    ),
-  ],
-  BmiCategory.obese: [
-    (
-      title: 'Start small',
-      desc: 'Small steps you can actually stick to.',
-      icon: Icons.eco,
-    ),
-    (
-      title: 'Move more',
-      desc: '15 minutes a day, then add more.',
-      icon: Icons.directions_walk,
-    ),
-    (
-      title: 'Talk to a pro',
-      desc: 'Consider a nutritionist.',
-      icon: Icons.medical_services,
-    ),
-  ],
-};
-
 class _ResultScreenState extends State<ResultScreen> {
   final _shot = ScreenshotController();
   bool _sharing = false;
@@ -117,161 +47,137 @@ class _ResultScreenState extends State<ResultScreen> {
     final coreCat = categoryOf(bmi);
     final name = state.activeProfile.name;
 
-    return Scaffold(
-      backgroundColor: Colors.transparent,
-      body: Stack(
-        children: [
-          ListView(
-            padding: const EdgeInsets.fromLTRB(20, 8, 20, 110),
+    return RagaBg(
+      child: Scaffold(
+        backgroundColor: Colors.transparent,
+        body: SafeArea(
+          child: Stack(
             children: [
-              _topRow(rc, name),
-              const SizedBox(height: 18),
-              GlassCard(
-                child: Column(
-                  children: [
-                    SizedBox(
-                      height: 232,
-                      child: Stack(
-                        alignment: Alignment.topCenter,
-                        children: [
-                          ResultGauge(bmi: bmi),
-                          Positioned(
-                            top: 86,
-                            left: 0,
-                            right: 0,
-                            child: Column(
-                              children: [
-                                Text(
-                                  formatNum(bmi),
-                                  style: TextStyle(
-                                    fontSize: 64,
-                                    fontWeight: FontWeight.w800,
-                                    color: rc.onCard,
-                                    height: 1,
-                                  ),
-                                ),
-                                const SizedBox(height: 4),
-                                Text(
-                                  'kg/m²',
-                                  style: TextStyle(
-                                    fontSize: 15,
-                                    fontWeight: FontWeight.w600,
-                                    color: rc.onCardMuted,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    CategoryBadge(cat: cat),
-                    const SizedBox(height: 16),
-                    GaugeLegend(active: cat),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 22),
-              Text(
-                'Tips for you',
-                style: TextStyle(
-                  fontSize: 20,
-                  fontWeight: FontWeight.w800,
-                  color: rc.onBg,
-                ),
-              ),
-              const SizedBox(height: 12),
-              ..._tips[coreCat]!.map(
-                (t) => Padding(
-                  padding: const EdgeInsets.only(bottom: 12),
-                  child: GlassCard(
-                    padding: const EdgeInsets.all(16),
-                    child: Row(
+              ListView(
+                padding: const EdgeInsets.fromLTRB(22, 8, 22, 32),
+                children: [
+                  _topRow(rc, name),
+                  const SizedBox(height: 18),
+                  GlassCard(
+                    child: Column(
                       children: [
-                        Container(
-                          width: 52,
-                          height: 52,
-                          decoration: BoxDecoration(
-                            shape: BoxShape.circle,
-                            color: rc.chipInactive,
-                            border: Border.all(
-                              color: rc.cardBorder,
-                              width: 1.2,
-                            ),
-                          ),
-                          child: Icon(
-                            t.icon,
-                            color: rc.onCard,
-                            size: 24,
-                          ),
+                        BmiGauge(bmi: bmi),
+                        Text(
+                          formatNum(bmi),
+                          style: RagaType.hero(60, rc.onCard),
                         ),
-                        const SizedBox(width: 14),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment:
-                                CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                t.title,
-                                style: TextStyle(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.w700,
-                                  color: rc.onCard,
-                                ),
-                              ),
-                              const SizedBox(height: 3),
-                              Text(
-                                t.desc,
-                                style: TextStyle(
-                                  fontSize: 13.5,
-                                  color: rc.onCardMuted,
-                                  height: 1.4,
-                                ),
-                              ),
-                            ],
-                          ),
+                        const SizedBox(height: 4),
+                        Text(
+                          'kg/m²',
+                          style: RagaType.label(rc.onCardMuted),
                         ),
+                        const SizedBox(height: 12),
+                        _categoryPill(rc, cat),
+                        const SizedBox(height: 16),
+                        _legend(rc),
                       ],
                     ),
                   ),
-                ),
-              ),
-              const SizedBox(height: 10),
-              Row(
-                children: [
-                  Expanded(
-                    flex: 3,
-                    child: RagaButton(
-                      label: 'Save to history',
-                      onPressed: () => _save(),
+                  const SizedBox(height: 22),
+                  Text(
+                    'Tips untukmu',
+                    style: RagaType.section(rc.onBg),
+                  ),
+                  const SizedBox(height: 12),
+                  ...healthTips[coreCat]!.map(
+                    (t) => Padding(
+                      padding: const EdgeInsets.only(bottom: 12),
+                      child: GlassCard(
+                        padding: const EdgeInsets.all(16),
+                        child: Row(
+                          children: [
+                            Container(
+                              width: 52,
+                              height: 52,
+                              decoration: BoxDecoration(
+                                shape: BoxShape.circle,
+                                color: Colors.transparent,
+                                border: Border.all(
+                                  color: rc.cardBorder,
+                                  width: 1.2,
+                                ),
+                              ),
+                              child: Icon(
+                                t.icon,
+                                color: rc.onCard,
+                                size: 24,
+                              ),
+                            ),
+                            const SizedBox(width: 14),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment:
+                                    CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    t.title,
+                                    style: RagaType.chip(rc.onCard)
+                                        .copyWith(fontSize: 16),
+                                  ),
+                                  const SizedBox(height: 3),
+                                  Text(
+                                    t.desc,
+                                    style: RagaType.caption(
+                                        rc.onCardMuted),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
                     ),
                   ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    flex: 2,
-                    child: RagaGhostButton(
-                      label: _sharing ? 'Sharing…' : 'Share',
-                      onPressed:
-                          _sharing ? null : () => _share(bmi, cat),
-                    ),
+                  const SizedBox(height: 10),
+                  Row(
+                    children: [
+                      Expanded(
+                        flex: 3,
+                        child: RagaButton(
+                          label: 'Simpan ke riwayat',
+                          onPressed: () => _save(),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        flex: 2,
+                        child: RagaOutlineButton(
+                          label: _sharing
+                              ? 'Membagikan…'
+                              : 'Bagikan',
+                          onPressed: _sharing
+                              ? null
+                              : () => _share(bmi, cat),
+                        ),
+                      ),
+                    ],
                   ),
                 ],
               ),
+              // The share card lives off-screen; only the screenshot sees it.
+              Positioned(
+                left: -2000,
+                top: 0,
+                child: Opacity(
+                  opacity: 0,
+                  child: Screenshot(
+                    controller: _shot,
+                    child: _ShareCard(
+                      bmi: bmi,
+                      cat: cat,
+                      name: name,
+                    ),
+                  ),
+                ),
+              ),
             ],
           ),
-          // The share card lives off-screen; only the screenshot sees it.
-          Positioned(
-            left: -2000,
-            top: 0,
-            child: Opacity(
-              opacity: 0,
-              child: Screenshot(
-                controller: _shot,
-                child: _ShareCard(bmi: bmi, cat: cat),
-              ),
-            ),
-          ),
-        ],
+        ),
       ),
     );
   }
@@ -279,7 +185,7 @@ class _ResultScreenState extends State<ResultScreen> {
   Widget _topRow(RagaColors rc, String name) {
     return Row(
       children: [
-        _CircleBtn(
+        CircleBtn(
           icon: Icons.chevron_left,
           onTap: () => Navigator.pop(context),
         ),
@@ -287,48 +193,91 @@ class _ResultScreenState extends State<ResultScreen> {
           child: Column(
             children: [
               Text(
-                'BMI Result',
+                'Hasil BMI',
                 textAlign: TextAlign.center,
-                style: TextStyle(
-                  fontSize: 23,
-                  fontWeight: FontWeight.w800,
-                  color: rc.onBg,
-                ),
+                style: RagaType.title(rc.onBg),
               ),
               const SizedBox(height: 2),
               Text(
-                '$name · ${formatDate(DateTime.now())}',
+                '$name · ${formatDateId(DateTime.now())}',
                 textAlign: TextAlign.center,
-                style: TextStyle(
-                  fontSize: 13.5,
-                  fontWeight: FontWeight.w500,
-                  color: rc.onBgMuted,
-                ),
+                style: RagaType.label(rc.onBgMuted),
               ),
             ],
           ),
         ),
-        _CircleBtn(
+        CircleBtn(
           icon: Icons.ios_share,
-          onTap: _sharing ? () {} : () => _share(widget.bmi, bmiCatOf(widget.bmi)),
+          onTap: _sharing
+              ? () {}
+              : () => _share(widget.bmi, bmiCatOf(widget.bmi)),
         ),
       ],
     );
   }
 
+  Widget _categoryPill(RagaColors rc, BmiCat cat) {
+    return Container(
+      padding:
+          const EdgeInsets.symmetric(horizontal: 22, vertical: 10),
+      decoration: BoxDecoration(
+        color: rc.badgeFor(cat),
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: Text(
+        bmiCatLabel(cat),
+        style: RagaType.chip(rc.onBadge),
+      ),
+    );
+  }
+
+  // The legend stays English — exactly like the mockup.
+  Widget _legend(RagaColors rc) {
+    const cats = [
+      BmiCat.under,
+      BmiCat.normal,
+      BmiCat.over,
+      BmiCat.obese
+    ];
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        for (var i = 0; i < cats.length; i++) ...[
+          if (i > 0) const SizedBox(width: 10),
+          Container(
+            width: 8,
+            height: 8,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: rc.catColor(cats[i]),
+            ),
+          ),
+          const SizedBox(width: 5),
+          Text(
+            bmiCatLabel(cats[i]),
+            style: RagaType.caption(rc.onCard)
+                .copyWith(fontWeight: FontWeight.w700),
+          ),
+        ],
+      ],
+    );
+  }
+
   Future<void> _save() async {
+    final messenger = ScaffoldMessenger.of(context);
     await AppState.of(context).saveRecord(
       heightCm: widget.heightCm,
       weightKg: widget.weightKg,
     );
     if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Saved to history')),
+    messenger.showSnackBar(
+      const SnackBar(content: Text('Tersimpan di riwayat.')),
     );
     Navigator.pop(context);
   }
 
   Future<void> _share(double bmi, BmiCat cat) async {
+    final messenger = ScaffoldMessenger.of(context);
     setState(() => _sharing = true);
     try {
       final bytes = await _shot.capture();
@@ -340,12 +289,12 @@ class _ResultScreenState extends State<ResultScreen> {
       await Share.shareXFiles(
         [XFile(file.path)],
         text:
-            'My BMI is ${formatNum(bmi)} (${bmiCatLabel(cat)}) — calculated with Raga',
+            'BMI saya ${formatNum(bmi)} (${bmiCatLabel(cat)}) — dihitung dengan Raga',
       );
     } catch (_) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text("Couldn't create the image")),
+        messenger.showSnackBar(
+          const SnackBar(content: Text('Gagal membuat gambar.')),
         );
       }
     } finally {
@@ -354,103 +303,106 @@ class _ResultScreenState extends State<ResultScreen> {
   }
 }
 
-class _CircleBtn extends StatelessWidget {
-  final IconData icon;
-  final VoidCallback onTap;
-
-  const _CircleBtn({required this.icon, required this.onTap});
-
-  @override
-  Widget build(BuildContext context) {
-    final rc = context.rc;
-    return GestureDetector(
-      onTap: onTap,
-      behavior: HitTestBehavior.opaque,
-      child: Container(
-        width: 52,
-        height: 52,
-        decoration: BoxDecoration(
-          shape: BoxShape.circle,
-          color: rc.chipInactive,
-          border: Border.all(color: rc.cardBorder, width: 1.2),
-        ),
-        child: Icon(icon, color: rc.onBg, size: 24),
-      ),
-    );
-  }
-}
-
-// The card that gets shared: dark, self-contained, theme-independent.
+// The card that gets shared: the brand art as its backdrop, a mini gauge
+// with the BMI number, the name, and the category — Manrope throughout.
 class _ShareCard extends StatelessWidget {
   final double bmi;
   final BmiCat cat;
+  final String name;
 
-  const _ShareCard({required this.bmi, required this.cat});
-
-  static const _catColors = <BmiCat, Color>{
-    BmiCat.under: Color(0xFF60A5FA),
-    BmiCat.normal: Color(0xFF34D399),
-    BmiCat.over: Color(0xFFFBBF24),
-    BmiCat.obese: Color(0xFFFB7185),
-  };
+  const _ShareCard({
+    required this.bmi,
+    required this.cat,
+    required this.name,
+  });
 
   @override
   Widget build(BuildContext context) {
+    const onWhite = Colors.white;
+    const onWhiteMuted = Color(0xCCFFFFFF);
+    const navy = Color(0xFF1D1B3A);
+
+    TextStyle st(double size, FontWeight w, Color c) =>
+        GoogleFonts.manrope(
+          fontSize: size,
+          fontWeight: w,
+          color: c,
+          height: 1.15,
+        );
+
     return Container(
       width: 360,
-      padding: const EdgeInsets.fromLTRB(32, 36, 32, 28),
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(32),
-        gradient: const LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [Color(0xFF453A8F), Color(0xFF241D52)],
-        ),
+        color: const Color(0xFF241D55),
       ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Image.asset('assets/images/raga-mark.png', width: 76, height: 76),
-          const SizedBox(height: 18),
-          Text(
-            formatNum(bmi),
-            style: const TextStyle(
-              fontSize: 64,
-              fontWeight: FontWeight.w800,
-              color: Colors.white,
-              height: 1,
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(32),
+        child: Stack(
+          children: [
+            Positioned.fill(
+              child: Image.asset(
+                'assets/images/raga-bg.png',
+                fit: BoxFit.cover,
+              ),
             ),
-          ),
-          const SizedBox(height: 4),
-          const Text(
-            'kg/m²',
-            style: TextStyle(
-              fontSize: 15,
-              fontWeight: FontWeight.w600,
-              color: Color(0xA6FFFFFF),
+            Padding(
+              padding:
+                  const EdgeInsets.fromLTRB(32, 32, 32, 28),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  SizedBox(
+                    height: 130,
+                    child: Stack(
+                      alignment: Alignment.center,
+                      children: [
+                        BmiGauge(bmi: bmi, height: 130),
+                        Text(
+                          formatNum(bmi),
+                          style: st(44, FontWeight.w800, onWhite),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Text('kg/m²',
+                      style: st(14, FontWeight.w600, onWhiteMuted)),
+                  const SizedBox(height: 14),
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 20, vertical: 9),
+                    decoration: BoxDecoration(
+                      color: _catColor(cat),
+                      borderRadius: BorderRadius.circular(18),
+                    ),
+                    child: Text(
+                      bmiCatLabel(cat),
+                      style: st(14, FontWeight.w700, navy),
+                    ),
+                  ),
+                  const SizedBox(height: 22),
+                  Text(name,
+                      style: st(17, FontWeight.w700, onWhite)),
+                  const SizedBox(height: 10),
+                  Text(
+                    'RAGA',
+                    style: st(13, FontWeight.w800, onWhiteMuted)
+                        .copyWith(letterSpacing: 3),
+                  ),
+                ],
+              ),
             ),
-          ),
-          const SizedBox(height: 12),
-          Text(
-            bmiCatLabel(cat),
-            style: TextStyle(
-              fontSize: 20,
-              fontWeight: FontWeight.w800,
-              color: _catColors[cat],
-            ),
-          ),
-          const SizedBox(height: 22),
-          const Text(
-            'Raga',
-            style: TextStyle(
-              fontSize: 14,
-              fontWeight: FontWeight.w700,
-              color: Color(0x8CFFFFFF),
-              letterSpacing: 2,
-            ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
+
+  Color _catColor(BmiCat c) => switch (c) {
+        BmiCat.under => const Color(0xFF6FB1FF),
+        BmiCat.normal => const Color(0xFF5EE0A0),
+        BmiCat.over => const Color(0xFFF5B84B),
+        BmiCat.obese => const Color(0xFFFF7A6B),
+      };
 }

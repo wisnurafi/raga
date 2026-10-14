@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+
 import '../core/bmi.dart';
 import '../core/theme.dart';
 import '../state/app_state.dart';
@@ -9,7 +10,7 @@ import '../widgets/glass.dart';
 import '../widgets/headers.dart';
 import 'result_screen.dart';
 
-// The "Calculate BMI" screen from the mockup: profile chips, body-data
+// The "Hitung BMI" screen from the mockup: profile chips, body-data
 // sliders with a unit toggle, gender + age, and the big calculate button.
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -48,18 +49,18 @@ class _HomeScreenState extends State<HomeScreen> {
     final wDisp = metric ? _w : _w * 2.20462;
 
     return ListView(
-      padding: const EdgeInsets.fromLTRB(20, 8, 20, 110),
+      padding: const EdgeInsets.fromLTRB(22, 8, 22, 110),
       children: [
-        const RagaHeader(title: 'Calculate BMI'),
+        const RagaHeader(title: 'Hitung BMI'),
         const SizedBox(height: 18),
         _profileChips(state),
         const SizedBox(height: 18),
         _bodyDataCard(state, rc, metric, hDisp, wDisp),
         const SizedBox(height: 14),
-        _genderAgeCard(state, rc),
+        _genderAgeRow(state, rc),
         const SizedBox(height: 22),
         RagaButton(
-          label: 'Calculate BMI',
+          label: 'Hitung BMI',
           onPressed: () => _calculate(state),
         ),
       ],
@@ -76,14 +77,15 @@ class _HomeScreenState extends State<HomeScreen> {
         separatorBuilder: (_, __) => const SizedBox(width: 10),
         itemBuilder: (context, i) {
           if (i == profiles.length) {
-            return SelectChip(
-              label: '+ Add',
+            return ProfileChip(
+              label: '+ Tambah',
               selected: false,
-              onTap: () => _addProfileDialog(state),
+              isAdd: true,
+              onTap: () => _addProfileSheet(state),
             );
           }
           final pr = profiles[i];
-          return SelectChip(
+          return ProfileChip(
             label: pr.name,
             selected: pr.id == state.activeProfileId,
             showCheck: true,
@@ -102,33 +104,24 @@ class _HomeScreenState extends State<HomeScreen> {
         children: [
           Row(
             children: [
-              Text(
-                'Body data',
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.w700,
-                  color: rc.onCard,
-                ),
-              ),
+              Text('Data tubuh', style: RagaType.cardTitle(rc.onCard)),
               const Spacer(),
               SizedBox(
                 width: 170,
-                child: Segmented<String>(
-                  height: 44,
+                child: RagaSegmented(
                   options: const ['cm · kg', 'in · lb'],
-                  value: metric ? 'cm · kg' : 'in · lb',
-                  onChanged: (v) =>
-                      state.setMetricUnits(v == 'cm · kg'),
-                  labelOf: (s) => s,
+                  selected: metric ? 0 : 1,
+                  onChanged: (i) => state.setMetricUnits(i == 0),
                 ),
               ),
             ],
           ),
           const SizedBox(height: 10),
           MeasureSlider(
-            label: 'Height',
-            value: hDisp,
+            label: 'Tinggi badan',
+            value: hDisp.toStringAsFixed(0),
             unit: metric ? 'cm' : 'in',
+            sliderValue: hDisp,
             min: metric ? 130 : 51,
             max: metric ? 220 : 87,
             onChanged: (v) =>
@@ -136,9 +129,10 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
           const SizedBox(height: 6),
           MeasureSlider(
-            label: 'Weight',
-            value: wDisp,
+            label: 'Berat badan',
+            value: wDisp.toStringAsFixed(0),
             unit: metric ? 'kg' : 'lb',
+            sliderValue: wDisp,
             min: metric ? 30 : 66,
             max: metric ? 150 : 330,
             onChanged: (v) =>
@@ -149,40 +143,32 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Widget _genderAgeCard(AppState state, RagaColors rc) {
+  Widget _genderAgeRow(AppState state, RagaColors rc) {
     return GlassCard(
       radius: 28,
       padding: const EdgeInsets.all(8),
       child: Row(
         children: [
           Expanded(
-            child: Segmented<String>(
-              options: const ['Male', 'Female'],
-              value: _isMale ? 'Male' : 'Female',
-              onChanged: (v) {
-                final male = v == 'Male';
+            child: RagaSegmented(
+              options: const ['Pria', 'Wanita'],
+              selected: _isMale ? 0 : 1,
+              onChanged: (i) {
+                final male = i == 0;
                 setState(() => _isMale = male);
                 state.updateActiveProfile(
                     (p) => p.copyWith(isMale: male));
               },
-              labelOf: (s) => s,
             ),
           ),
           const SizedBox(width: 12),
-          GestureDetector(
-            onTap: () => _ageDialog(state),
-            behavior: HitTestBehavior.opaque,
-            child: Padding(
-              padding: const EdgeInsets.symmetric(
-                  horizontal: 14, vertical: 14),
-              child: Text(
-                '$_age yrs',
-                style: TextStyle(
-                  fontSize: 17,
-                  fontWeight: FontWeight.w700,
-                  color: rc.onCard,
-                ),
-              ),
+          // Display only — age is edited in Profil.
+          Padding(
+            padding: const EdgeInsets.symmetric(
+                horizontal: 14, vertical: 14),
+            child: Text(
+              '$_age tahun',
+              style: RagaType.chip(rc.onCard),
             ),
           ),
         ],
@@ -190,74 +176,77 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Future<void> _addProfileDialog(AppState state) async {
+  Future<void> _addProfileSheet(AppState state) async {
     final ctrl = TextEditingController();
-    final name = await showDialog<String>(
+    final name = await showModalBottomSheet<String>(
       context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('New profile'),
-        content: TextField(
-          controller: ctrl,
-          autofocus: true,
-          textCapitalization: TextCapitalization.words,
-          decoration: const InputDecoration(hintText: 'Name'),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: const Text('Cancel'),
+      isScrollControlled: true,
+      builder: (ctx) {
+        final rc = ctx.rc;
+        return SafeArea(
+          child: Padding(
+            padding: EdgeInsets.only(
+              left: 22,
+              right: 22,
+              top: 24,
+              bottom:
+                  MediaQuery.of(ctx).viewInsets.bottom + 24,
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text('Profil baru',
+                    style: RagaType.cardTitle(rc.onCard)),
+                const SizedBox(height: 14),
+                TextField(
+                  controller: ctrl,
+                  autofocus: true,
+                  textCapitalization: TextCapitalization.words,
+                  style: RagaType.body(rc.onCard),
+                  decoration: InputDecoration(
+                    hintText: 'Nama',
+                    hintStyle:
+                        RagaType.body(rc.onCardMuted),
+                    filled: true,
+                    fillColor: rc.chipInactive,
+                    contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 18, vertical: 16),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(18),
+                      borderSide: BorderSide(
+                          color: rc.chipBorder),
+                    ),
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(18),
+                      borderSide: BorderSide(
+                          color: rc.chipBorder),
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(18),
+                      borderSide: BorderSide(
+                          color: rc.chipActive, width: 2),
+                    ),
+                  ),
+                  onSubmitted: (_) =>
+                      Navigator.pop(ctx, ctrl.text.trim()),
+                ),
+                const SizedBox(height: 16),
+                RagaButton(
+                  label: 'Tambah',
+                  onPressed: () =>
+                      Navigator.pop(ctx, ctrl.text.trim()),
+                ),
+              ],
+            ),
           ),
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, ctrl.text.trim()),
-            child: const Text('Add'),
-          ),
-        ],
-      ),
+        );
+      },
     );
     ctrl.dispose();
-    if (name != null && name.isNotEmpty) {
+    // Empty name falls back to AppState.addProfile's default.
+    if (name != null) {
       await state.addProfile(name);
-    }
-  }
-
-  Future<void> _ageDialog(AppState state) async {
-    var age = _age;
-    final picked = await showDialog<int>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('Age'),
-        content: StatefulBuilder(
-          builder: (ctx, setS) => StepperRow(
-            value: Text(
-              '$age',
-              style: const TextStyle(
-                fontSize: 40,
-                fontWeight: FontWeight.w800,
-              ),
-            ),
-            onMinus: () => setS(() {
-              if (age > 5) age--;
-            }),
-            onPlus: () => setS(() {
-              if (age < 100) age++;
-            }),
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: const Text('Cancel'),
-          ),
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, age),
-            child: const Text('Save'),
-          ),
-        ],
-      ),
-    );
-    if (picked != null) {
-      setState(() => _age = picked);
-      await state.updateActiveProfile((p) => p.copyWith(age: picked));
     }
   }
 
