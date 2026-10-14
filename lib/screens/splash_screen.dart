@@ -67,97 +67,107 @@ class _SplashScreenState extends State<SplashScreen>
   Widget build(BuildContext context) {
     final rc = context.rc;
     return RagaBg(
-      child: SafeArea(
-        child: FadeTransition(
-          opacity: _outro,
-          child: Column(
-            children: [
-              const Spacer(flex: 5),
-              FadeTransition(
-                opacity: _intro,
-                child: ScaleTransition(
-                  scale: _introScale,
-                  child: GlassCard(
-                    radius: 32,
-                    padding: const EdgeInsets.all(12),
-                    child: Image.asset(
-                      // Light mode gets the dark-needle variant so the
-                      // needle stays readable on the light glass tile.
-                      rc.isDark
-                          ? 'assets/images/raga-mark.png'
-                          : 'assets/images/raga-mark-light.png',
-                      width: 104,
-                      height: 104,
+      // Material ancestor: without it Flutter renders Text with the
+      // "missing Material" fallback style, which draws a yellow underline
+      // (this was the mysterious yellow line under the "Raga" wordmark —
+      // splash is the only screen without a Scaffold).
+      child: Material(
+        type: MaterialType.transparency,
+        child: SafeArea(
+          child: FadeTransition(
+            opacity: _outro,
+            child: Column(
+              children: [
+                const Spacer(flex: 5),
+                FadeTransition(
+                  opacity: _intro,
+                  child: ScaleTransition(
+                    scale: _introScale,
+                    child: GlassCard(
+                      radius: 32,
+                      padding: const EdgeInsets.all(12),
+                      child: Image.asset(
+                        // Light mode gets the dark-needle variant so the
+                        // needle stays readable on the light glass tile.
+                        rc.isDark
+                            ? 'assets/images/raga-mark.png'
+                            : 'assets/images/raga-mark-light.png',
+                        width: 104,
+                        height: 104,
+                      ),
                     ),
                   ),
                 ),
-              ),
-              const SizedBox(height: 24),
-              FadeTransition(
-                opacity: _intro,
-                child: Text(
-                  'Raga',
-                  style: RagaType.hero(64, rc.onBg).copyWith(
-                    letterSpacing: -2,
-                    // Lavender glow on dark; the light canvas stays clean.
-                    shadows: rc.isDark
-                        ? [
-                            BoxShadow(
-                              color: rc.chipActive
-                                  .withValues(alpha: 0.55),
-                              blurRadius: 32,
-                              offset: const Offset(0, 6),
-                            ),
-                          ]
-                        : null,
-                  ),
-                ),
-              ),
-              const SizedBox(height: 10),
-              FadeTransition(
-                opacity: _intro,
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 32),
+                const SizedBox(height: 24),
+                FadeTransition(
+                  opacity: _intro,
                   child: Text(
-                    'Kenali tubuhmu, jaga kesehatanmu.',
-                    textAlign: TextAlign.center,
-                    style: RagaType.body(rc.onBgMuted)
-                        .copyWith(fontSize: 16),
+                    'Raga',
+                    style: RagaType.hero(64, rc.onBg).copyWith(
+                      letterSpacing: -2,
+                      // Never underlined: the wordmark must not inherit the
+                      // "missing Material" fallback decoration on any frame.
+                      decoration: TextDecoration.none,
+                      // Lavender glow on dark; the light canvas stays clean.
+                      shadows: rc.isDark
+                          ? [
+                              Shadow(
+                                color: rc.chipActive
+                                    .withValues(alpha: 0.55),
+                                blurRadius: 32,
+                                offset: const Offset(0, 6),
+                              ),
+                            ]
+                          : null,
+                    ),
                   ),
                 ),
-              ),
-              const Spacer(flex: 6),
-              AnimatedBuilder(
-                animation: _progress,
-                builder: (_, __) => Container(
-                  width: 140,
-                  height: 6,
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(3),
-                    color: rc.onBgMuted.withValues(alpha: 0.30),
+                const SizedBox(height: 10),
+                FadeTransition(
+                  opacity: _intro,
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 32),
+                    child: Text(
+                      'Kenali tubuhmu, jaga kesehatanmu.',
+                      textAlign: TextAlign.center,
+                      style: RagaType.body(rc.onBgMuted)
+                          .copyWith(fontSize: 16),
+                    ),
                   ),
-                  child: Align(
-                    alignment: Alignment.centerLeft,
-                    child: FractionallySizedBox(
-                      widthFactor:
-                          _progress.value.clamp(0.0, 1.0).toDouble(),
-                      child: Container(
-                        decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(3),
-                          color: rc.chipActive,
+                ),
+                const Spacer(flex: 6),
+                AnimatedBuilder(
+                  animation: _progress,
+                  builder: (_, __) => Container(
+                    width: 140,
+                    height: 6,
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(3),
+                      color: rc.onBgMuted.withValues(alpha: 0.30),
+                    ),
+                    child: Align(
+                      alignment: Alignment.centerLeft,
+                      child: FractionallySizedBox(
+                        widthFactor:
+                            _progress.value.clamp(0.0, 1.0).toDouble(),
+                        child: Container(
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(3),
+                            color: rc.chipActive,
+                          ),
                         ),
                       ),
                     ),
                   ),
                 ),
-              ),
-              const SizedBox(height: 12),
-              Text(
-                'Memuat...',
-                style: RagaType.body(rc.onBgMuted),
-              ),
-              const SizedBox(height: 64),
-            ],
+                const SizedBox(height: 12),
+                Text(
+                  'Memuat...',
+                  style: RagaType.body(rc.onBgMuted),
+                ),
+                const SizedBox(height: 64),
+              ],
+            ),
           ),
         ),
       ),
