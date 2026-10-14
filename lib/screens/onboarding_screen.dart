@@ -124,20 +124,22 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
               _dots(rc),
               const SizedBox(height: 28),
               Expanded(
-                child: PageView(
-                  controller: _pager,
-                  physics: const NeverScrollableScrollPhysics(),
-                  onPageChanged: (i) {
-                    setState(() {
-                      _page = i;
-                      _error = null;
-                    });
-                  },
-                  children: [
-                    _namePage(rc),
-                    _measurePage(rc),
-                    _goalPage(rc),
-                  ],
+                child: LayoutBuilder(
+                  builder: (ctx, constraints) => PageView(
+                    controller: _pager,
+                    physics: const NeverScrollableScrollPhysics(),
+                    onPageChanged: (i) {
+                      setState(() {
+                        _page = i;
+                        _error = null;
+                      });
+                    },
+                    children: [
+                      _centeredPage(constraints, _namePage(rc)),
+                      _centeredPage(constraints, _measurePage(rc)),
+                      _centeredPage(constraints, _goalPage(rc)),
+                    ],
+                  ),
                 ),
               ),
               if (_error != null) ...[
@@ -198,6 +200,21 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
           ),
         );
       }),
+    );
+  }
+
+  // Centers short pages vertically so the screen never looks half-empty;
+  // taller content still scrolls instead of clipping.
+  Widget _centeredPage(BoxConstraints c, Widget content) {
+    return SingleChildScrollView(
+      child: ConstrainedBox(
+        constraints: BoxConstraints(minHeight: c.maxHeight),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [content],
+        ),
+      ),
     );
   }
 
@@ -280,89 +297,85 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   }
 
   Widget _namePage(RagaColors rc) {
-    return SingleChildScrollView(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          _title('Hello! What\'s\nyour name?', 'This is what Raga will call you.', rc),
-          GlassContainer(
-            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 18),
-            child: TextField(
-              controller: _name,
-              autofocus: true,
-              textCapitalization: TextCapitalization.words,
-              style: TextStyle(
-                fontSize: 24,
-                fontWeight: FontWeight.w800,
-                color: rc.onCard,
-              ),
-              decoration: InputDecoration(
-                hintText: 'Your name…',
-                hintStyle: TextStyle(color: rc.onCardMuted),
-                border: InputBorder.none,
-                isDense: true,
-              ),
-              onSubmitted: (_) => _next(),
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _title('Hello! What\'s\nyour name?', 'This is what Raga will call you.', rc),
+        GlassContainer(
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 18),
+          child: TextField(
+            controller: _name,
+            autofocus: true,
+            textCapitalization: TextCapitalization.words,
+            style: TextStyle(
+              fontSize: 24,
+              fontWeight: FontWeight.w800,
+              color: rc.onCard,
             ),
+            decoration: InputDecoration(
+              hintText: 'Your name…',
+              hintStyle: TextStyle(color: rc.onCardMuted),
+              border: InputBorder.none,
+              isDense: true,
+            ),
+            onSubmitted: (_) => _next(),
           ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 
   Widget _measurePage(RagaColors rc) {
-    return SingleChildScrollView(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          _title('Your\nmeasurements?', 'To calculate your BMI and calorie needs.', rc),
-          _field(rc, ctl: _height, label: 'Height', suffix: 'cm'),
-          const SizedBox(height: 12),
-          _field(rc, ctl: _weight, label: 'Weight', suffix: 'kg'),
-          const SizedBox(height: 12),
-          Row(
-            children: [
-              Expanded(
-                child: _field(
-                  rc,
-                  ctl: _age,
-                  label: 'Age',
-                  suffix: 'yrs',
-                  keyboard: TextInputType.number,
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _title('Your\nmeasurements?', 'To calculate your BMI and calorie needs.', rc),
+        _field(rc, ctl: _height, label: 'Height', suffix: 'cm'),
+        const SizedBox(height: 12),
+        _field(rc, ctl: _weight, label: 'Weight', suffix: 'kg'),
+        const SizedBox(height: 12),
+        Row(
+          children: [
+            Expanded(
+              child: _field(
+                rc,
+                ctl: _age,
+                label: 'Age',
+                suffix: 'yrs',
+                keyboard: TextInputType.number,
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: GlassContainer(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Gender',
+                      style: TextStyle(
+                        fontSize: 12.5,
+                        fontWeight: FontWeight.w700,
+                        color: rc.onCardMuted,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Row(
+                      children: [
+                        _genderChip(rc, 'M', true),
+                        const SizedBox(width: 8),
+                        _genderChip(rc, 'F', false),
+                      ],
+                    ),
+                  ],
                 ),
               ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: GlassContainer(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Gender',
-                        style: TextStyle(
-                          fontSize: 12.5,
-                          fontWeight: FontWeight.w700,
-                          color: rc.onCardMuted,
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      Row(
-                        children: [
-                          _genderChip(rc, 'M', true),
-                          const SizedBox(width: 8),
-                          _genderChip(rc, 'F', false),
-                        ],
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ],
-      ),
+            ),
+          ],
+        ),
+      ],
     );
   }
 
@@ -394,21 +407,19 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   }
 
   Widget _goalPage(RagaColors rc) {
-    return SingleChildScrollView(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          _title('Have a weight\ntarget?', 'Optional — you can set it later too.', rc),
-          _field(rc, ctl: _goal, label: 'Target weight', suffix: 'kg'),
-          const SizedBox(height: 16),
-          Center(
-            child: TextButton(
-              onPressed: _saving ? null : () => _finish(skipGoal: true),
-              child: const Text('Skip for now'),
-            ),
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _title('Have a weight\ntarget?', 'Optional — you can set it later too.', rc),
+        _field(rc, ctl: _goal, label: 'Target weight', suffix: 'kg'),
+        const SizedBox(height: 16),
+        Center(
+          child: TextButton(
+            onPressed: _saving ? null : () => _finish(skipGoal: true),
+            child: const Text('Skip for now'),
           ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 }
