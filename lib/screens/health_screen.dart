@@ -467,7 +467,7 @@ class HealthScreen extends StatelessWidget {
                 TextButton(
                   onPressed: () async {
                     await state.setGoalWeight(state.activeProfileId, null);
-                    if (context.mounted) Navigator.pop(context);
+                    if (ctx.mounted) Navigator.pop(ctx);
                   },
                   child: const Text('Clear'),
                 ),
@@ -489,7 +489,7 @@ class HealthScreen extends StatelessWidget {
                     return;
                   }
                   await state.setGoalWeight(state.activeProfileId, v);
-                  if (context.mounted) Navigator.pop(context);
+                  if (ctx.mounted) Navigator.pop(ctx);
                 },
                 child: const Text('Save'),
               ),

@@ -11,6 +11,17 @@ import 'screens/profile_screen.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  // Trap every framework/isolate error into the developer log: if a screen
+  // ever goes blank again, the log names the exact line that threw.
+  ReminderService.onLog = CloudSync.logEvent;
+  FlutterError.onError = (details) {
+    CloudSync.logEvent('FLUTTER ERROR: ${details.exceptionAsString()}');
+    FlutterError.presentError(details);
+  };
+  WidgetsBinding.instance.platformDispatcher.onError = (error, stack) {
+    CloudSync.logEvent('UNCAUGHT: $error');
+    return true;
+  };
   final state = await AppState.load();
   // Every service init is guarded: a failing subsystem (notifications,
   // cloud) must never stop the app itself from starting.
