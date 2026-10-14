@@ -26,6 +26,11 @@ String buildInsight({
   final recent = history
       .where((h) => now.difference(h.at).inDays <= 30)
       .toList();
+  // All weigh-ins are older than 30 days: nothing recent to read.
+  // (Without this guard, recent.first throws and the home screen dies.)
+  if (recent.isEmpty) {
+    return 'It\'s been a while — log a weigh-in and I\'ll start reading your trend again.';
+  }
   final weeks =
       max(1, now.difference(recent.first.at).inDays ~/ 7);
 
