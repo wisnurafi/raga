@@ -95,8 +95,13 @@ class _SplashGateState extends State<SplashGate> {
       );
     }
     if (!_onboardingDone) {
-      return OnboardingScreen(
-        onDone: () => setState(() => _onboardingDone = true),
+      // HealthBg behind the glass fields: without it the frosted cards
+      // fall back to dark gray on black and the muted labels/placeholders
+      // become unreadable.
+      return HealthBg(
+        child: OnboardingScreen(
+          onDone: () => setState(() => _onboardingDone = true),
+        ),
       );
     }
     return const MainShell();
