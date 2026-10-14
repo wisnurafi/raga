@@ -441,44 +441,71 @@ class HealthScreen extends StatelessWidget {
     final rc = context.rc;
     showDialog(
       context: context,
-      builder: (_) => AlertDialog(
-        backgroundColor: rc.card,
-        shape:
-            RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: const Text('Weight goal'),
-        content: TextField(
-          controller: ctl,
-          keyboardType:
-              const TextInputType.numberWithOptions(decimal: true),
-          autofocus: true,
-          decoration: const InputDecoration(hintText: 'Target weight in kg'),
-        ),
-        actions: [
-          if (currentGoal != null)
-            TextButton(
-              onPressed: () async {
-                await state.setGoalWeight(state.activeProfileId, null);
-                if (context.mounted) Navigator.pop(context);
+      builder: (_) {
+        String? error;
+        return StatefulBuilder(
+          builder: (ctx, setLocal) => AlertDialog(
+            backgroundColor: rc.card,
+            shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(20)),
+            title: const Text('Weight goal'),
+            content: TextField(
+              controller: ctl,
+              keyboardType:
+                  const TextInputType.numberWithOptions(decimal: true),
+              autofocus: true,
+              decoration: InputDecoration(
+                hintText: 'Target weight in kg',
+                errorText: error,
+              ),
+              onChanged: (_) {
+                if (error != null) setLocal(() => error = null);
               },
-              child: const Text('Clear'),
             ),
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
+            actions: [
+              if (currentGoal != null)
+                TextButton(
+                  onPressed: () async {
+                    await state.setGoalWeight(state.activeProfileId, null);
+                    if (context.mounted) Navigator.pop(context);
+                  },
+                  child: const Text('Clear'),
+                ),
+              TextButton(
+                onPressed: () => Navigator.pop(ctx),
+                child: const Text('Cancel'),
+              ),
+              FilledButton(
+                onPressed: () async {
+                  final v = _parseGoalInput(ctl.text);
+                  if (v == null) {
+                    setLocal(
+                        () => error = 'Enter a number, e.g. 65 or 65,5');
+                    return;
+                  }
+                  if (v <= 20 || v >= 500) {
+                    setLocal(
+                        () => error = 'Pick something between 20 and 500 kg');
+                    return;
+                  }
+                  await state.setGoalWeight(state.activeProfileId, v);
+                  if (context.mounted) Navigator.pop(context);
+                },
+                child: const Text('Save'),
+              ),
+            ],
           ),
-          FilledButton(
-            onPressed: () async {
-              final v = double.tryParse(ctl.text.replaceAll(',', '.'));
-              if (v != null && v > 20 && v < 500) {
-                await state.setGoalWeight(state.activeProfileId, v);
-                if (context.mounted) Navigator.pop(context);
-              }
-            },
-            child: const Text('Save'),
-          ),
-        ],
-      ),
+        );
+      },
     );
+  }
+
+  // Forgiving goal parsing: trims whitespace, drops a trailing "kg",
+  // and accepts both 65.5 and 65,5. Returns null when it's not a number.
+  double? _parseGoalInput(String raw) {
+    var s = raw.trim().toLowerCase().replaceAll(RegExp(r'kgs?$'), '').trim();
+    if (s.isEmpty) return null;
+    return double.tryParse(s.replaceAll(',', '.'));
   }
 }
 
