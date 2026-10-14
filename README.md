@@ -99,6 +99,16 @@ every hour so the free-tier project doesn't get paused.
 > Heads-up: mix up the two secrets and the app will tell you — the backup
 > status in Profile shows exactly what went wrong.
 
+### Backup-code restore
+
+Each install signs in anonymously, so a reinstall gets a fresh identity —
+the backup code (Profile → Cloud backup → Backup code) is what ties it
+back to the old data. Run `supabase/restore-migration.sql` once in the
+SQL Editor: it adds the `backup_code` column, a small blob table for
+profiles/goals/settings, and two locked-down functions the app calls to
+save and restore. On the new install: Cloud backup → Restore from backup
+code → enter the code.
+
 ## Project structure
 
 ```

@@ -58,7 +58,10 @@ class BmiRecord {
       };
 
   // Payload for Supabase (column names match the SQL schema in the README).
-  Map<String, dynamic> toCloudJson(String userId) => {
+  // The backup code ties rows to a restorable identity: anonymous sign-ins
+  // get a fresh user_id on every install, but the code survives in the
+  // user's hands.
+  Map<String, dynamic> toCloudJson(String userId, String? backupCode) => {
         'user_id': userId,
         'profile_id': profileId,
         'height_cm': heightCm,
@@ -66,5 +69,21 @@ class BmiRecord {
         'bmi': bmi,
         'category': category.name,
         'created_at': createdAt.toIso8601String(),
+        'backup_code': backupCode,
       };
+
+  // A row read back through the restore_backup() RPC. The cloud uuid
+  // becomes the local id, so restored rows are never re-pushed.
+  factory BmiRecord.fromCloudJson(Map<String, dynamic> j) {
+    final bmi = (j['bmi'] as num).toDouble();
+    return BmiRecord._raw(
+      id: j['id'] as String,
+      profileId: j['profile_id'] as String,
+      heightCm: (j['height_cm'] as num).toDouble(),
+      weightKg: (j['weight_kg'] as num).toDouble(),
+      bmi: bmi,
+      category: categoryOf(bmi),
+      createdAt: DateTime.parse(j['created_at'] as String),
+    );
+  }
 }

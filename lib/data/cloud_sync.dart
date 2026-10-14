@@ -1,6 +1,8 @@
+import 'dart:math';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../models/bmi_record.dart';
+import '../models/profile.dart';
 
 // Cloud backup state, shown in the UI so it's never a mystery.
 enum SyncState {
@@ -14,18 +16,42 @@ enum SyncState {
   error,
 }
 
+// Everything a backup-code restore pulls back from the cloud.
+class BackupData {
+  final List<BmiRecord> records;
+  final List<Profile> profiles;
+  final Map<String, double> goals;
+  final Map<String, dynamic> settings;
+
+  BackupData({
+    required this.records,
+    required this.profiles,
+    required this.goals,
+    required this.settings,
+  });
+
+  bool get isEmpty => records.isEmpty && profiles.isEmpty;
+}
+
 // Backs records up to Supabase. Uses anonymous sign-in, so each device
 // gets its own identity with no login screen. Row-level security in the
 // database keeps every user to their own rows.
 //
+// Anonymous identities don't survive a reinstall (fresh sign-in = fresh
+// user_id), so every row is also stamped with a backup code the user
+// keeps. On a new install, entering the code pulls everything back
+// through the restore_backup() RPC — that's the actual restore path.
+//
 // Unlike the first version, this one doesn't fail silently:
 // - it exposes its status + last error for the UI,
 // - it remembers which records made it up, and retries the rest
-//   automatically next launch.
+//   automatically next launch,
+// - it keeps a session log for developer mode.
 class CloudSync {
   static const _url = String.fromEnvironment('SUPABASE_URL');
   static const _anonKey = String.fromEnvironment('SUPABASE_ANON_KEY');
   static const _kSyncedIds = 'raga.synced_ids';
+  static const _kBackupCode = 'raga.backup_code';
 
   static bool get isConfigured => _url.isNotEmpty && _anonKey.isNotEmpty;
 
@@ -33,6 +59,9 @@ class CloudSync {
   static String lastError = '';
   static SharedPreferences? _prefs;
   static final Set<String> _syncedIds = {};
+
+  // The restorable identity. Generated once per device, kept by the user.
+  static String? backupCode;
 
   static bool get isReady => state == SyncState.ready;
 
@@ -43,6 +72,37 @@ class CloudSync {
   static int pendingCount(List<BmiRecord> records) =>
       records.where((r) => !_syncedIds.contains(r.id)).length;
 
+  // Session log, surfaced in developer mode.
+  static final List<String> _log = [];
+  static void logEvent(String msg) {
+    final t = DateTime.now().toIso8601String().substring(11, 19);
+    _log.add('[$t] $msg');
+    if (_log.length > 120) _log.removeRange(0, _log.length - 120);
+  }
+
+  static String get logText =>
+      _log.isEmpty ? 'No sync activity yet this session.' : _log.join('\n');
+  static void clearLog() => _log.clear();
+
+  // 16 chars from an unambiguous alphabet (no 0/O/1/I/L) = 80 bits.
+  // Brute-forcing someone else's code through the RPC is infeasible.
+  static String generateBackupCode() {
+    const alphabet = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789';
+    final r = Random.secure();
+    final s = List.generate(
+        16, (_) => alphabet[r.nextInt(alphabet.length)]).join();
+    return '${s.substring(0, 4)}-${s.substring(4, 8)}-'
+        '${s.substring(8, 12)}-${s.substring(12, 16)}';
+  }
+
+  // Accepts the code with or without dashes, any casing.
+  static String normalizeCode(String raw) {
+    final clean = raw.toUpperCase().replaceAll(RegExp(r'[^A-Z0-9]'), '');
+    if (clean.length != 16) return clean;
+    return '${clean.substring(0, 4)}-${clean.substring(4, 8)}-'
+        '${clean.substring(8, 12)}-${clean.substring(12, 16)}';
+  }
+
   static Future<void> init() async {
     _prefs = await SharedPreferences.getInstance();
     _syncedIds.addAll(_prefs!.getStringList(_kSyncedIds) ?? const []);
@@ -50,7 +110,14 @@ class CloudSync {
       state = SyncState.notConfigured;
       lastError =
           'SUPABASE_URL / SUPABASE_ANON_KEY is empty (check GitHub Secrets and rebuild).';
+      logEvent('init: not configured');
       return;
+    }
+    backupCode = _prefs!.getString(_kBackupCode);
+    if (backupCode == null || backupCode!.isEmpty) {
+      backupCode = generateBackupCode();
+      await _prefs!.setString(_kBackupCode, backupCode!);
+      logEvent('init: generated backup code');
     }
     try {
       await Supabase.initialize(url: _url, publishableKey: _anonKey);
@@ -58,9 +125,11 @@ class CloudSync {
       await Supabase.instance.client.auth.signInAnonymously();
       state = SyncState.ready;
       lastError = '';
+      logEvent('init: signed in, ready');
     } catch (e) {
       state = SyncState.error;
       lastError = _short(e);
+      logEvent('init failed: $lastError');
     }
   }
 
@@ -68,32 +137,109 @@ class CloudSync {
   // startup, and can be triggered by hand from the Profile screen.
   static Future<void> syncPending(List<BmiRecord> records) async {
     if (!isReady) return;
+    var pushed = 0;
     for (final r in records) {
       if (_syncedIds.contains(r.id)) continue;
-      await pushRecord(r);
+      if (await pushRecord(r)) pushed++;
     }
+    logEvent('syncPending: $pushed pushed, ${pendingCount(records)} left');
   }
 
-  // Pushes one record. Never throws to the caller, but records the
-  // error in [lastError] so the UI can show it.
-  static Future<void> pushRecord(BmiRecord record) async {
-    if (!isReady) return;
+  // Pushes one record. Returns false on failure; never throws to the
+  // caller, but records the error in [lastError] so the UI can show it.
+  static Future<bool> pushRecord(BmiRecord record) async {
+    if (!isReady) return false;
     final uid = _userId;
     if (uid == null) {
       state = SyncState.error;
       lastError = 'Supabase anonymous session is gone (try restarting the app).';
-      return;
+      logEvent('push: no session');
+      return false;
     }
     try {
       await Supabase.instance.client
           .from('bmi_records')
-          .upsert(record.toCloudJson(uid));
+          .upsert(record.toCloudJson(uid, backupCode));
       _syncedIds.add(record.id);
       await _prefs?.setStringList(_kSyncedIds, _syncedIds.toList());
       lastError = '';
+      return true;
     } catch (e) {
       state = SyncState.error;
       lastError = _short(e);
+      logEvent('push failed: $lastError');
+      return false;
+    }
+  }
+
+  // Marks rows as uploaded without pushing (used after a restore —
+  // those rows are already in the cloud).
+  static Future<void> markSynced(Iterable<String> ids) async {
+    _syncedIds.addAll(ids);
+    await _prefs?.setStringList(_kSyncedIds, _syncedIds.toList());
+  }
+
+  // Saves profiles, goals, and settings next to the backup code, so a
+  // restore brings back more than just the weigh-in history.
+  static Future<void> saveBackupBlob({
+    required List<Profile> profiles,
+    required Map<String, double> goalWeights,
+    required Map<String, dynamic> settings,
+  }) async {
+    if (!isReady || backupCode == null) return;
+    try {
+      await Supabase.instance.client.rpc('save_backup_blob', params: {
+        'p_code': backupCode!,
+        'p_profiles': profiles.map((p) => p.toJson()).toList(),
+        'p_goals': goalWeights,
+        'p_settings': settings,
+      });
+      logEvent('backup blob saved');
+    } catch (e) {
+      logEvent('blob save failed: ${_short(e)}');
+    }
+  }
+
+  // Pulls everything tied to a backup code. Returns null on transport
+  // errors, or an empty BackupData when the code matches nothing.
+  static Future<BackupData?> restoreBackup(String rawCode) async {
+    if (!isReady) {
+      lastError = 'Cloud backup is not connected.';
+      return null;
+    }
+    final code = normalizeCode(rawCode);
+    if (code.isEmpty) return BackupData(
+        records: [], profiles: [], goals: {}, settings: {});
+    try {
+      final res = await Supabase.instance.client
+          .rpc('restore_backup', params: {'p_code': code});
+      if (res == null) {
+        return BackupData(
+            records: [], profiles: [], goals: {}, settings: {});
+      }
+      final map = Map<String, dynamic>.from(res as Map);
+      final records = ((map['records'] as List?) ?? [])
+          .map((e) =>
+              BmiRecord.fromCloudJson(Map<String, dynamic>.from(e as Map)))
+          .toList();
+      final profiles = ((map['profiles'] as List?) ?? [])
+          .map((e) => Profile.fromJson(Map<String, dynamic>.from(e as Map)))
+          .toList();
+      final goals = ((map['goals'] as Map?) ?? {})
+          .map((k, v) => MapEntry(k as String, (v as num).toDouble()));
+      final settings =
+          Map<String, dynamic>.from((map['settings'] as Map?) ?? {});
+      logEvent(
+          'restore: ${records.length} records, ${profiles.length} profiles');
+      return BackupData(
+          records: records,
+          profiles: profiles,
+          goals: goals,
+          settings: settings);
+    } catch (e) {
+      lastError = _short(e);
+      logEvent('restore failed: $lastError');
+      return null;
     }
   }
 
@@ -108,7 +254,7 @@ class CloudSync {
   }
 
   // The hostname baked into this build (from SUPABASE_URL at build time).
-  // Shown in the UI so a wrong/old value is visible immediately.
+  // Shown in developer mode so a wrong/old value is visible immediately.
   static String get configuredHost {
     if (_url.isEmpty) return '(not set)';
     try {

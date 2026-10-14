@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import '../core/theme.dart';
 import '../state/app_state.dart';
 import '../data/cloud_sync.dart';
@@ -392,9 +393,30 @@ class ProfileScreen extends StatelessWidget {
                         color: rc.onCard)),
               ],
             ],
-            const SizedBox(height: 8),
+            const SizedBox(height: 12),
+            _dialogRow(
+              ctx,
+              icon: Icons.key_outlined,
+              title: 'Backup code',
+              subtitle: 'Needed to restore on a new phone',
+              onTap: () {
+                Navigator.pop(ctx);
+                _backupCodeDialog(context);
+              },
+            ),
+            _dialogRow(
+              ctx,
+              icon: Icons.cloud_download_outlined,
+              title: 'Restore from backup code',
+              subtitle: 'Bring back data from another install',
+              onTap: () {
+                Navigator.pop(ctx);
+                _restoreCodeDialog(context, state);
+              },
+            ),
+            const SizedBox(height: 12),
             Text(
-              'Sent anonymously to your private Supabase database.',
+              'Backed up to your private cloud. No account needed — it just works.',
               style: TextStyle(fontSize: 12.5, color: rc.onCardMuted),
             ),
             const SizedBox(height: 4),
@@ -422,6 +444,198 @@ class ProfileScreen extends StatelessWidget {
               }
             },
             child: const Text('Sync now'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _dialogRow(
+    BuildContext context, {
+    required IconData icon,
+    required String title,
+    required String subtitle,
+    required VoidCallback onTap,
+  }) {
+    final rc = context.rc;
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(14),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 8),
+        child: Row(
+          children: [
+            Container(
+              width: 36,
+              height: 36,
+              decoration: BoxDecoration(
+                color: rc.primaryBtn.withValues(alpha: 0.14),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Icon(icon, size: 19, color: rc.primaryBtn),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w700,
+                      color: rc.onCard,
+                    ),
+                  ),
+                  Text(
+                    subtitle,
+                    style: TextStyle(fontSize: 12, color: rc.onCardMuted),
+                  ),
+                ],
+              ),
+            ),
+            Icon(Icons.chevron_right, color: rc.onCardMuted),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _backupCodeDialog(BuildContext context) {
+    final rc = context.rc;
+    final code = CloudSync.backupCode ?? '(not ready yet)';
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: rc.card,
+        shape:
+            RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: const Text('Backup code'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Keep this code somewhere safe. If you reinstall Raga, enter it to get your data back.',
+              style: TextStyle(
+                  fontSize: 13.5, height: 1.5, color: rc.onCardMuted),
+            ),
+            const SizedBox(height: 14),
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.symmetric(
+                  horizontal: 16, vertical: 14),
+              decoration: BoxDecoration(
+                color: rc.panel,
+                borderRadius: BorderRadius.circular(14),
+              ),
+              child: Text(
+                code,
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontSize: 17,
+                  fontWeight: FontWeight.w800,
+                  letterSpacing: 1.2,
+                  color: rc.onCard,
+                  fontFeatures: const [FontFeature.tabularFigures()],
+                ),
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Close'),
+          ),
+          FilledButton(
+            onPressed: () async {
+              await Clipboard.setData(ClipboardData(text: code));
+              if (ctx.mounted) Navigator.pop(ctx);
+              if (context.mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('Backup code copied')),
+                );
+              }
+            },
+            child: const Text('Copy'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _restoreCodeDialog(BuildContext context, AppState state) {
+    final rc = context.rc;
+    final ctl = TextEditingController();
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: rc.card,
+        shape:
+            RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: const Text('Restore from backup code'),
+        content: TextField(
+          controller: ctl,
+          autofocus: true,
+          textCapitalization: TextCapitalization.characters,
+          decoration: const InputDecoration(
+            hintText: 'XXXX-XXXX-XXXX-XXXX',
+            border: OutlineInputBorder(),
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            onPressed: () {
+              if (ctl.text.trim().isEmpty) return;
+              Navigator.pop(ctx);
+              _confirmRestore(context, state, ctl.text);
+            },
+            child: const Text('Next'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _confirmRestore(BuildContext context, AppState state, String code) {
+    final rc = context.rc;
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: rc.card,
+        shape:
+            RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: const Text('Replace everything?'),
+        content: const Text(
+          'This will replace all profiles and history on this phone with the backup. This cannot be undone.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            style: FilledButton.styleFrom(
+                backgroundColor: const Color(0xFFF2555A)),
+            onPressed: () async {
+              Navigator.pop(ctx);
+              final ok = await state.restoreFromBackupCode(code);
+              if (context.mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text(ok
+                        ? 'Backup restored — welcome back.'
+                        : 'Code not found or cloud unreachable. Check the code and try again.'),
+                  ),
+                );
+              }
+            },
+            child: const Text('Restore'),
           ),
         ],
       ),

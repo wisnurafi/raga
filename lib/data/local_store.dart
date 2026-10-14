@@ -16,6 +16,8 @@ class LocalStore {
   static const _kReminderHour = 'raga.reminder_hour';
   static const _kReminderMin = 'raga.reminder_minute';
   static const _kGoals = 'raga.goal_weights';
+  static const _kBackupCode = 'raga.backup_code';
+  static const _kDevMode = 'raga.dev_mode';
 
   final SharedPreferences _prefs;
   LocalStore(this._prefs);
@@ -100,6 +102,19 @@ class LocalStore {
     }
     await _prefs.setString(_kGoals, jsonEncode(m));
   }
+
+  Future<void> saveGoalWeights(Map<String, double> m) =>
+      _prefs.setString(_kGoals, jsonEncode(m));
+
+  // Backup code: the restorable identity for cloud backup. Anonymous
+  // sign-ins get a fresh user_id per install, so this code (kept by the
+  // user) is what ties a reinstall back to the old rows.
+  String? get backupCode => _prefs.getString(_kBackupCode);
+  Future<void> saveBackupCode(String code) =>
+      _prefs.setString(_kBackupCode, code);
+
+  bool get devMode => _prefs.getBool(_kDevMode) ?? false;
+  Future<void> saveDevMode(bool v) => _prefs.setBool(_kDevMode, v);
 
   Future<void> clearAll() async {
     await _prefs.remove(_kProfiles);

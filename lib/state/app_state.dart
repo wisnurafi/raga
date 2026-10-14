@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../data/local_store.dart';
 import '../data/cloud_sync.dart';
+import '../data/reminder_service.dart';
 import '../models/profile.dart';
 import '../models/bmi_record.dart';
 
@@ -22,6 +23,7 @@ class AppState extends ChangeNotifier {
   int reminderHour = 9;
   int reminderMinute = 0;
   Map<String, double> goalWeights = {};
+  bool devMode = false;
 
   AppState(this._store);
 
@@ -37,6 +39,7 @@ class AppState extends ChangeNotifier {
     state.reminderHour = store.reminderHour;
     state.reminderMinute = store.reminderMinute;
     state.goalWeights = store.goalWeights;
+    state.devMode = store.devMode;
     if (state.profiles.isEmpty) {
       final p = Profile(name: 'Wisnu');
       state.profiles = [p];
@@ -69,6 +72,7 @@ class AppState extends ChangeNotifier {
     profiles = [...profiles, p];
     await _store.saveProfiles(profiles);
     await setActiveProfile(p.id);
+    await _saveBackupBlob();
   }
 
   Future<void> updateActiveProfile(Profile Function(Profile) fn) async {
@@ -90,6 +94,7 @@ class AppState extends ChangeNotifier {
     } else {
       notifyListeners();
     }
+    await _saveBackupBlob();
   }
 
   // Save a result to history (local first, cloud when available).
@@ -107,6 +112,7 @@ class AppState extends ChangeNotifier {
     notifyListeners();
     // Cloud backup runs in the background; check its status in Profile.
     await CloudSync.pushRecord(r);
+    await _saveBackupBlob();
     notifyListeners();
   }
 
@@ -119,6 +125,7 @@ class AppState extends ChangeNotifier {
   // Retry pending uploads, then refresh the UI.
   Future<void> refreshSync() async {
     await CloudSync.syncPending(records);
+    await _saveBackupBlob();
     notifyListeners();
   }
 
@@ -138,6 +145,7 @@ class AppState extends ChangeNotifier {
       goalWeights[profileId] = kg;
     }
     await _store.saveGoalWeight(profileId, kg);
+    await _saveBackupBlob();
     notifyListeners();
   }
 
@@ -158,6 +166,82 @@ class AppState extends ChangeNotifier {
     await _store.saveReminderSchedule(
         weekday: weekday, hour: hour, minute: minute);
     notifyListeners();
+  }
+
+  Future<void> setDevMode(bool v) async {
+    devMode = v;
+    await _store.saveDevMode(v);
+    notifyListeners();
+  }
+
+  // Saves profiles/goals/settings next to the backup code. Cheap RPC,
+  // no-op when the cloud isn't connected.
+  Future<void> _saveBackupBlob() async {
+    await CloudSync.saveBackupBlob(
+      profiles: profiles,
+      goalWeights: goalWeights,
+      settings: {
+        'activeProfileId': activeProfileId,
+        'metricUnits': metricUnits,
+        'activity': activity,
+        'weeklyReminder': weeklyReminder,
+        'reminderWeekday': reminderWeekday,
+        'reminderHour': reminderHour,
+        'reminderMinute': reminderMinute,
+      },
+    );
+  }
+
+  // Replaces everything on this phone with the backup tied to [code].
+  // Returns false when the code matches nothing or the cloud is down.
+  Future<bool> restoreFromBackupCode(String code) async {
+    final data = await CloudSync.restoreBackup(code);
+    if (data == null || data.isEmpty || data.profiles.isEmpty) return false;
+    final profileIds = data.profiles.map((p) => p.id).toSet();
+    profiles = data.profiles;
+    records = data.records
+        .where((r) => profileIds.contains(r.profileId))
+        .toList()
+      ..sort((a, b) => b.createdAt.compareTo(a.createdAt));
+    goalWeights = data.goals;
+    final s = data.settings;
+    final apid = s['activeProfileId'] as String?;
+    activeProfileId =
+        (apid != null && profileIds.contains(apid)) ? apid : profiles.first.id;
+    metricUnits = s['metricUnits'] as bool? ?? true;
+    activity = s['activity'] as String? ?? 'Light';
+    weeklyReminder = s['weeklyReminder'] as bool? ?? false;
+    reminderWeekday = (s['reminderWeekday'] as num?)?.toInt() ?? 7;
+    reminderHour = (s['reminderHour'] as num?)?.toInt() ?? 9;
+    reminderMinute = (s['reminderMinute'] as num?)?.toInt() ?? 0;
+    await _store.saveProfiles(profiles);
+    await _store.saveRecords(records);
+    await _store.saveGoalWeights(goalWeights);
+    await _store.saveActiveProfileId(activeProfileId);
+    await _store.saveMetricUnits(metricUnits);
+    await _store.saveActivity(activity);
+    await _store.saveWeeklyReminder(weeklyReminder);
+    await _store.saveReminderSchedule(
+        weekday: reminderWeekday, hour: reminderHour, minute: reminderMinute);
+    // Adopt the code so future entries stamp it, and don't re-push
+    // rows that are already in the cloud.
+    final normalized = CloudSync.normalizeCode(code);
+    await _store.saveBackupCode(normalized);
+    CloudSync.backupCode = normalized;
+    await CloudSync.markSynced(records.map((r) => r.id));
+    notifyListeners();
+    if (weeklyReminder) {
+      try {
+        await ReminderService.scheduleBestEffort(
+          weekday: reminderWeekday,
+          hour: reminderHour,
+          minute: reminderMinute,
+        );
+      } catch (_) {
+        // The toggle flow will re-arm it on next launch.
+      }
+    }
+    return true;
   }
 
   Future<void> clearAllData() async {
