@@ -46,7 +46,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     setState(() => _error = null);
     if (_page == 0) {
       if (_name.text.trim().isEmpty) {
-        setState(() => _error = 'Isi namamu dulu');
+        setState(() => _error = 'Tell me your name first');
         return false;
       }
       return true;
@@ -56,15 +56,15 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
       final w = _num(_weight.text);
       final a = int.tryParse(_age.text.trim());
       if (h == null || h < 100 || h > 250) {
-        setState(() => _error = 'Tinggi yang wajar: 100–250 cm');
+        setState(() => _error = 'A sensible height: 100–250 cm');
         return false;
       }
       if (w == null || w < 20 || w > 500) {
-        setState(() => _error = 'Berat yang wajar: 20–500 kg');
+        setState(() => _error = 'A sensible weight: 20–500 kg');
         return false;
       }
       if (a == null || a < 5 || a > 120) {
-        setState(() => _error = 'Umur yang wajar: 5–120 tahun');
+        setState(() => _error = 'A sensible age: 5–120 years');
         return false;
       }
       return true;
@@ -80,7 +80,8 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
         curve: Curves.easeOutCubic,
       );
     } else {
-      _finish(skipGoal: true);
+      // Honor a typed goal; empty field == no goal.
+      _finish(skipGoal: false);
     }
   }
 
@@ -90,7 +91,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     if (!skipGoal && _goal.text.trim().isNotEmpty) {
       goal = _num(_goal.text);
       if (goal == null || goal <= 20 || goal >= 500) {
-        setState(() => _error = 'Target yang wajar: 20–500 kg');
+        setState(() => _error = 'A sensible target: 20–500 kg');
         return;
       }
     }
@@ -154,17 +155,17 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                         duration: const Duration(milliseconds: 280),
                         curve: Curves.easeOutCubic,
                       ),
-                      child: const Text('Kembali'),
+                      child: const Text('Back'),
                     ),
                   const Spacer(),
                   SizedBox(
                     width: 150,
                     child: RagaButton(
                       label: _saving
-                          ? 'Menyimpan…'
+                          ? 'Saving…'
                           : _page == 2
-                              ? 'Mulai'
-                              : 'Lanjut',
+                              ? 'Start'
+                              : 'Next',
                       onPressed: _saving ? () {} : _next,
                     ),
                   ),
@@ -279,7 +280,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _title('Halo! Siapa\nnamamu?', 'Raga bakal nyapa kamu pakai nama ini.', rc),
+          _title('Hello! What\'s\nyour name?', 'This is what Raga will call you.', rc),
           GlassContainer(
             padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 18),
             child: TextField(
@@ -292,7 +293,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                 color: rc.onCard,
               ),
               decoration: InputDecoration(
-                hintText: 'Namamu…',
+                hintText: 'Your name…',
                 hintStyle: TextStyle(color: rc.onCardMuted),
                 border: InputBorder.none,
                 isDense: true,
@@ -310,10 +311,10 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _title('Ukuran\nbadanmu?', 'Buat ngitung BMI & kebutuhan kalorimu.', rc),
-          _field(rc, ctl: _height, label: 'Tinggi badan', suffix: 'cm'),
+          _title('Your\nmeasurements?', 'To calculate your BMI and calorie needs.', rc),
+          _field(rc, ctl: _height, label: 'Height', suffix: 'cm'),
           const SizedBox(height: 12),
-          _field(rc, ctl: _weight, label: 'Berat badan', suffix: 'kg'),
+          _field(rc, ctl: _weight, label: 'Weight', suffix: 'kg'),
           const SizedBox(height: 12),
           Row(
             children: [
@@ -321,8 +322,8 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                 child: _field(
                   rc,
                   ctl: _age,
-                  label: 'Umur',
-                  suffix: 'thn',
+                  label: 'Age',
+                  suffix: 'yrs',
                   keyboard: TextInputType.number,
                 ),
               ),
@@ -345,9 +346,9 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                       const SizedBox(height: 8),
                       Row(
                         children: [
-                          _genderChip(rc, 'L', true),
+                          _genderChip(rc, 'M', true),
                           const SizedBox(width: 8),
-                          _genderChip(rc, 'P', false),
+                          _genderChip(rc, 'F', false),
                         ],
                       ),
                     ],
@@ -393,13 +394,13 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _title('Ada target\nberat?', 'Opsional — bisa diatur nanti juga.', rc),
-          _field(rc, ctl: _goal, label: 'Target berat badan', suffix: 'kg'),
+          _title('Have a weight\ntarget?', 'Optional — you can set it later too.', rc),
+          _field(rc, ctl: _goal, label: 'Target weight', suffix: 'kg'),
           const SizedBox(height: 16),
           Center(
             child: TextButton(
               onPressed: _saving ? null : () => _finish(skipGoal: true),
-              child: const Text('Lewati dulu'),
+              child: const Text('Skip for now'),
             ),
           ),
         ],
