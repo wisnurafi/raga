@@ -1,0 +1,24 @@
+Raga - roadmap.txt
+====================
+
+v1.0.0 (saat ini)
+-----------------
+[x] Input tinggi & berat badan (metrik + imperial)
+[x] Hitung BMI + gauge warna + kategori (Underweight/Normal/Overweight/Obese)
+[x] Tips kesehatan per kategori (Bahasa Indonesia)
+[x] Riwayat + grafik tren berat/BMI
+[x] Berat badan ideal, BMR (Mifflin-St Jeor), TDEE + level aktivitas
+[x] Multi-profil (keluarga/teman)
+[x] Bagikan hasil sebagai gambar
+[x] Mode gelap/terang
+[x] Penyimpanan lokal + sinkronisasi cloud Supabase (opsional)
+[x] CI: build APK otomatis + keep-alive Supabase tiap jam
+[x] Dokumentasi: README, PRIVACY.md, CONTRIBUTING.md, LICENSE
+
+Ide ke depan (belum terjadwal)
+------------------------------
+[ ] Pengingat timbang badan mingguan (notifikasi lokal)
+[ ] Target berat badan + proyeksi waktu tercapai
+[ ] Ekspor riwayat ke CSV
+[ ] Widget home screen Android
+[ ] Bahasa Inggris sebagai opsi kedua
