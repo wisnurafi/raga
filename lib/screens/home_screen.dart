@@ -1,15 +1,16 @@
 import 'package:flutter/material.dart';
-import '../core/theme.dart';
 import '../core/bmi.dart';
-import '../core/insight.dart';
-import '../core/streak.dart';
+import '../core/theme.dart';
 import '../state/app_state.dart';
+import '../widgets/buttons.dart';
+import '../widgets/chips.dart';
+import '../widgets/controls.dart';
 import '../widgets/glass.dart';
-import '../widgets/cards.dart';
+import '../widgets/headers.dart';
 import 'result_screen.dart';
 
-// The "Calculate" screen: height & weight input, profile picker,
-// gender, and age.
+// The "Calculate BMI" screen from the mockup: profile chips, body-data
+// sliders with a unit toggle, gender + age, and the big calculate button.
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
 
@@ -41,7 +42,6 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget build(BuildContext context) {
     final state = AppState.of(context);
     final rc = context.rc;
-    final p = state.activeProfile;
     final metric = state.metricUnits;
 
     final hDisp = metric ? _h : _h / 2.54;
@@ -50,327 +50,230 @@ class _HomeScreenState extends State<HomeScreen> {
     return ListView(
       padding: const EdgeInsets.fromLTRB(20, 8, 20, 110),
       children: [
-        _header(context, rc, p),
+        const RagaHeader(title: 'Calculate BMI'),
         const SizedBox(height: 18),
-        Text(
-          '${greetingFor(DateTime.now())}, ${p.name}',
-          style: TextStyle(
-            fontSize: 23,
-            fontWeight: FontWeight.w800,
-            color: rc.onImage,
-            letterSpacing: -0.4,
-          ),
-        ),
-        const SizedBox(height: 4),
-        Text(
-          '${_dayName(DateTime.now())}, ${formatDate(DateTime.now())} ${DateTime.now().year}',
-          style: TextStyle(fontSize: 14, color: rc.onImageMuted),
-        ),
-        const SizedBox(height: 16),
-        _insightCard(context, rc, state, p),
-        const SizedBox(height: 16),
-        const ProfileChips(),
+        _profileChips(state),
+        const SizedBox(height: 18),
+        _bodyDataCard(state, rc, metric, hDisp, wDisp),
+        const SizedBox(height: 14),
+        _genderAgeCard(state, rc),
         const SizedBox(height: 22),
-        SectionTitle('Body stats', trailing: const UnitToggle()),
-        MeasureCard(
-          label: 'Height',
-          displayValue: hDisp,
-          unit: metric ? 'cm' : 'in',
-          min: metric ? 120 : 47,
-          max: metric ? 220 : 87,
-          onChanged: (v) => setState(() => _h = metric ? v : v * 2.54),
-        ),
-        const SizedBox(height: 14),
-        MeasureCard(
-          label: 'Weight',
-          displayValue: wDisp,
-          unit: metric ? 'kg' : 'lb',
-          min: metric ? 30 : 66,
-          max: metric ? 150 : 331,
-          onChanged: (v) => setState(() => _w = metric ? v : v / 2.20462),
-        ),
-        const SizedBox(height: 14),
-        _genderAgeCard(context, state, rc),
-        const SizedBox(height: 18),
         RagaButton(
           label: 'Calculate BMI',
-          onPressed: () => _calculate(context, state, p),
+          onPressed: () => _calculate(state),
         ),
       ],
     );
   }
 
-  Widget _header(BuildContext context, RagaColors rc, dynamic p) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: [
-        Row(
-          children: [
-            Container(
-              width: 44,
-              height: 44,
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                  colors: [rc.primaryBtn, const Color(0xFF9A8CF5)],
-                ),
-                borderRadius: BorderRadius.circular(16),
-                boxShadow: [
-                  BoxShadow(
-                    color: rc.primaryBtn.withValues(alpha: 0.4),
-                    blurRadius: 14,
-                    offset: const Offset(0, 6),
-                  ),
-                ],
-              ),
-              child: const Icon(
-                Icons.monitor_heart_outlined,
-                color: Colors.white,
-                size: 24,
-              ),
-            ),
-            const SizedBox(width: 12),
-            Text(
-              'Raga',
-              style: TextStyle(
-                fontSize: 34,
-                fontWeight: FontWeight.w800,
-                color: rc.onImage,
-                letterSpacing: -0.8,
-              ),
-            ),
-          ],
-        ),
-        Container(
-          width: 46,
-          height: 46,
-          decoration: BoxDecoration(
-            color: const Color(0xFFE8C98F),
-            shape: BoxShape.circle,
-            border: Border.all(
-              color: Colors.white.withValues(alpha: 0.9),
-              width: 2,
-            ),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: 0.12),
-                blurRadius: 10,
-                offset: const Offset(0, 4),
-              ),
-            ],
-          ),
-          child: Center(
-            child: Text(
-              p.initial,
-              style: const TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.w800,
-                color: Color(0xFF1B1B2F),
-              ),
-            ),
-          ),
-        ),
-      ],
+  Widget _profileChips(AppState state) {
+    final profiles = state.profiles;
+    return SizedBox(
+      height: 50,
+      child: ListView.separated(
+        scrollDirection: Axis.horizontal,
+        itemCount: profiles.length + 1,
+        separatorBuilder: (_, __) => const SizedBox(width: 10),
+        itemBuilder: (context, i) {
+          if (i == profiles.length) {
+            return SelectChip(
+              label: '+ Add',
+              selected: false,
+              onTap: () => _addProfileDialog(state),
+            );
+          }
+          final pr = profiles[i];
+          return SelectChip(
+            label: pr.name,
+            selected: pr.id == state.activeProfileId,
+            showCheck: true,
+            onTap: () => state.setActiveProfile(pr.id),
+          );
+        },
+      ),
     );
   }
 
-  Widget _genderAgeCard(
-      BuildContext context, AppState state, RagaColors rc) {
-    return GlassContainer(
-      padding: const EdgeInsets.all(8),
-      child: Row(
+  Widget _bodyDataCard(AppState state, RagaColors rc, bool metric,
+      double hDisp, double wDisp) {
+    return GlassCard(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Expanded(
-            child: Container(
-              padding: const EdgeInsets.all(4),
-              decoration: BoxDecoration(
-                color: rc.panel.withValues(alpha: 0.6),
-                borderRadius: BorderRadius.circular(22),
-              ),
-              child: Row(
-                children: [
-                  _genderSeg(context, 'Male', _isMale, () {
-                    setState(() => _isMale = true);
-                    state.updateActiveProfile((p) => p.copyWith(isMale: true));
-                  }),
-                  _genderSeg(context, 'Female', !_isMale, () {
-                    setState(() => _isMale = false);
-                    state.updateActiveProfile((p) => p.copyWith(isMale: false));
-                  }),
-                ],
-              ),
-            ),
-          ),
-          const SizedBox(width: 12),
           Row(
             children: [
-              _ageBtn(context, Icons.remove, () {
-                if (_age > 5) {
-                  setState(() => _age--);
-                  final a = _age;
-                  state.updateActiveProfile((p) => p.copyWith(age: a));
-                }
-              }),
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 8),
-                child: Text(
-                  '$_age yrs',
-                  style: TextStyle(
-                    color: rc.onBg,
-                    fontSize: 15,
-                    fontWeight: FontWeight.w700,
-                  ),
+              Text(
+                'Body data',
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w700,
+                  color: rc.onCard,
                 ),
               ),
-              _ageBtn(context, Icons.add, () {
-                if (_age < 100) {
-                  setState(() => _age++);
-                  final a = _age;
-                  state.updateActiveProfile((p) => p.copyWith(age: a));
-                }
-              }),
+              const Spacer(),
+              SizedBox(
+                width: 170,
+                child: Segmented<String>(
+                  height: 44,
+                  options: const ['cm · kg', 'in · lb'],
+                  value: metric ? 'cm · kg' : 'in · lb',
+                  onChanged: (v) =>
+                      state.setMetricUnits(v == 'cm · kg'),
+                  labelOf: (s) => s,
+                ),
+              ),
             ],
           ),
-          const SizedBox(width: 8),
+          const SizedBox(height: 10),
+          MeasureSlider(
+            label: 'Height',
+            value: hDisp,
+            unit: metric ? 'cm' : 'in',
+            min: metric ? 130 : 51,
+            max: metric ? 220 : 87,
+            onChanged: (v) =>
+                setState(() => _h = metric ? v : v * 2.54),
+          ),
+          const SizedBox(height: 6),
+          MeasureSlider(
+            label: 'Weight',
+            value: wDisp,
+            unit: metric ? 'kg' : 'lb',
+            min: metric ? 30 : 66,
+            max: metric ? 150 : 330,
+            onChanged: (v) =>
+                setState(() => _w = metric ? v : v / 2.20462),
+          ),
         ],
       ),
     );
   }
 
-  Widget _genderSeg(
-      BuildContext context, String label, bool active, VoidCallback onTap) {
-    final rc = context.rc;
-    return Expanded(
-      child: GestureDetector(
-        onTap: onTap,
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 200),
-          padding: const EdgeInsets.symmetric(vertical: 10),
-          decoration: BoxDecoration(
-            gradient: active
-                ? LinearGradient(
-                    colors: [rc.primaryBtn, const Color(0xFF9A8CF5)],
-                  )
-                : null,
-            borderRadius: BorderRadius.circular(18),
-          ),
-          child: Center(
-            child: Text(
-              label,
-              style: TextStyle(
-                fontSize: 14,
-                fontWeight: FontWeight.w700,
-                color: active ? rc.onPrimaryBtn : rc.onBgMuted,
-              ),
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _ageBtn(BuildContext context, IconData icon, VoidCallback onTap) {
-    final rc = context.rc;
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        width: 36,
-        height: 36,
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [const Color(0xFF9A8CF5), rc.primaryBtn],
-          ),
-          shape: BoxShape.circle,
-          boxShadow: [
-            BoxShadow(
-              color: rc.primaryBtn.withValues(alpha: 0.35),
-              blurRadius: 8,
-              offset: const Offset(0, 3),
-            ),
-          ],
-        ),
-        child: Icon(icon, size: 18, color: Colors.white),
-      ),
-    );
-  }
-
-  void _calculate(BuildContext context, AppState state, dynamic p) {
-    // Remember the latest body stats on the profile.
-    state.updateActiveProfile(
-      (old) => old.copyWith(heightCm: _h, weightKg: _w),
-    );
-    Navigator.of(context).push(
-      MaterialPageRoute(
-        builder: (_) => ResultScreen(
-          heightCm: _h,
-          weightKg: _w,
-          profileName: p.name as String,
-        ),
-      ),
-    );
-  }
-
-  String _dayName(DateTime d) {
-    const days = [
-      'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'
-    ];
-    return days[d.weekday - 1];
-  }
-
-  // Smart one-liner under the greeting: trend, goal ETA, streak.
-  // Computed locally from history — no network, no waiting.
-  Widget _insightCard(
-      BuildContext context, RagaColors rc, AppState state, dynamic p) {
-    final history = state
-        .recordsOf(p.id as String)
-        .map((r) => (at: r.createdAt, weightKg: r.weightKg))
-        .toList()
-      ..sort((a, b) => a.at.compareTo(b.at));
-    final streak =
-        computeStreak(history.map((h) => h.at).toList());
-    final text = buildInsight(
-      history: history,
-      currentKg: (p.weightKg as num).toDouble(),
-      goalKg: state.goalFor(p.id as String),
-      streakWeeks: streak.weeks,
-    );
-    return GlassContainer(
-      padding: const EdgeInsets.fromLTRB(18, 14, 18, 14),
+  Widget _genderAgeCard(AppState state, RagaColors rc) {
+    return GlassCard(
+      radius: 28,
+      padding: const EdgeInsets.all(8),
       child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Container(
-            width: 34,
-            height: 34,
-            decoration: BoxDecoration(
-              color: rc.mintSoft,
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: Icon(
-              Icons.auto_awesome_outlined,
-              size: 18,
-              color: rc.mint,
+          Expanded(
+            child: Segmented<String>(
+              options: const ['Male', 'Female'],
+              value: _isMale ? 'Male' : 'Female',
+              onChanged: (v) {
+                final male = v == 'Male';
+                setState(() => _isMale = male);
+                state.updateActiveProfile(
+                    (p) => p.copyWith(isMale: male));
+              },
+              labelOf: (s) => s,
             ),
           ),
           const SizedBox(width: 12),
-          Expanded(
+          GestureDetector(
+            onTap: () => _ageDialog(state),
+            behavior: HitTestBehavior.opaque,
             child: Padding(
-              padding: const EdgeInsets.only(top: 2),
+              padding: const EdgeInsets.symmetric(
+                  horizontal: 14, vertical: 14),
               child: Text(
-                text,
+                '$_age yrs',
                 style: TextStyle(
-                  fontSize: 14,
-                  height: 1.5,
-                  fontWeight: FontWeight.w600,
+                  fontSize: 17,
+                  fontWeight: FontWeight.w700,
                   color: rc.onCard,
                 ),
               ),
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  Future<void> _addProfileDialog(AppState state) async {
+    final ctrl = TextEditingController();
+    final name = await showDialog<String>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('New profile'),
+        content: TextField(
+          controller: ctrl,
+          autofocus: true,
+          textCapitalization: TextCapitalization.words,
+          decoration: const InputDecoration(hintText: 'Name'),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, ctrl.text.trim()),
+            child: const Text('Add'),
+          ),
+        ],
+      ),
+    );
+    ctrl.dispose();
+    if (name != null && name.isNotEmpty) {
+      await state.addProfile(name);
+    }
+  }
+
+  Future<void> _ageDialog(AppState state) async {
+    var age = _age;
+    final picked = await showDialog<int>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Age'),
+        content: StatefulBuilder(
+          builder: (ctx, setS) => StepperRow(
+            value: Text(
+              '$age',
+              style: const TextStyle(
+                fontSize: 40,
+                fontWeight: FontWeight.w800,
+              ),
+            ),
+            onMinus: () => setS(() {
+              if (age > 5) age--;
+            }),
+            onPlus: () => setS(() {
+              if (age < 100) age++;
+            }),
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, age),
+            child: const Text('Save'),
+          ),
+        ],
+      ),
+    );
+    if (picked != null) {
+      setState(() => _age = picked);
+      await state.updateActiveProfile((p) => p.copyWith(age: picked));
+    }
+  }
+
+  void _calculate(AppState state) {
+    // Remember the latest body stats on the profile.
+    state.updateActiveProfile(
+      (p) => p.copyWith(heightCm: _h, weightKg: _w),
+    );
+    final bmi = calcBmi(weightKg: _w, heightCm: _h);
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => ResultScreen(
+          bmi: bmi,
+          heightCm: _h,
+          weightKg: _w,
+        ),
       ),
     );
   }
