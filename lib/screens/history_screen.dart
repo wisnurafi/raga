@@ -1,13 +1,14 @@
 import 'dart:ui';
 
-import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 
 import '../core/bmi.dart';
 import '../core/theme.dart';
 import '../models/bmi_record.dart';
 import '../state/app_state.dart';
+import '../widgets/chart.dart';
 import '../widgets/chips.dart';
+import '../widgets/gauge.dart';
 import '../widgets/glass.dart';
 import '../widgets/headers.dart';
 
@@ -32,20 +33,16 @@ class _HistoryScreenState extends State<HistoryScreen> {
     final metric = state.metricUnits;
 
     return ListView(
-      padding: const EdgeInsets.fromLTRB(20, 8, 20, 110),
+      padding: const EdgeInsets.fromLTRB(22, 8, 22, 110),
       children: [
-        const RagaHeader(title: 'History'),
+        const RagaHeader(title: 'Riwayat'),
         if (records.isEmpty) ...[
           const SizedBox(height: 72),
           Center(
             child: Text(
-              'No entries yet — calculate your BMI to start your history.',
+              'Belum ada catatan.',
               textAlign: TextAlign.center,
-              style: TextStyle(
-                fontSize: 15,
-                height: 1.6,
-                color: rc.onBgMuted,
-              ),
+              style: RagaType.body(rc.onBgMuted),
             ),
           ),
         ] else ...[
@@ -54,14 +51,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
           const SizedBox(height: 18),
           _chartCard(records, metric),
           const SizedBox(height: 22),
-          Text(
-            'Recent entries',
-            style: TextStyle(
-              fontSize: 20,
-              fontWeight: FontWeight.w800,
-              color: rc.onBg,
-            ),
-          ),
+          Text('Catatan terakhir', style: RagaType.section(rc.onBg)),
           const SizedBox(height: 14),
           ..._entryRows(records, metric),
         ],
@@ -98,13 +88,6 @@ class _HistoryScreenState extends State<HistoryScreen> {
   Widget _monthStrip(List<BmiRecord> records, bool metric) {
     final months = _lastSixMonths();
     final recs = [for (final m in months) _latestInMonth(records, m)];
-    var highlight = -1;
-    for (var i = recs.length - 1; i >= 0; i--) {
-      if (recs[i] != null) {
-        highlight = i;
-        break;
-      }
-    }
     return SingleChildScrollView(
       scrollDirection: Axis.horizontal,
       child: Row(
@@ -112,11 +95,11 @@ class _HistoryScreenState extends State<HistoryScreen> {
           for (var i = 0; i < months.length; i++) ...[
             if (i > 0) const SizedBox(width: 10),
             _MonthCard(
-              month: shortMonths[months[i].month - 1],
+              month: idShortMonths[months[i].month - 1],
               value: recs[i] == null
-                  ? '–'
+                  ? '-'
                   : _stripWeight(recs[i]!.weightKg, metric),
-              highlighted: i == highlight,
+              highlighted: i == months.length - 1,
             ),
           ],
         ],
@@ -126,150 +109,47 @@ class _HistoryScreenState extends State<HistoryScreen> {
 
   // --- trend chart card ----------------------------------------------------
 
+  double _plotValue(BmiRecord r, bool metric) => _showWeight
+      ? (metric ? r.weightKg : r.weightKg * _kgToLb)
+      : r.bmi;
+
   Widget _chartCard(List<BmiRecord> records, bool metric) {
     final rc = context.rc;
     final months = _lastSixMonths();
     final recs = [for (final m in months) _latestInMonth(records, m)];
-
-    final spots = <FlSpot>[];
-    final plotMonths = <DateTime>[];
-    for (var i = 0; i < months.length; i++) {
-      final r = recs[i];
-      if (r == null) continue;
-      final v = _showWeight
-          ? (metric ? r.weightKg : r.weightKg * _kgToLb)
-          : r.bmi;
-      spots.add(FlSpot(spots.length.toDouble(), v));
-      plotMonths.add(months[i]);
-    }
-
-    final withData = [
+    final dataIdx = [
       for (var i = 0; i < recs.length; i++)
         if (recs[i] != null) i,
     ];
-    final latest = withData.isEmpty ? null : recs[withData.last];
-    final bigTxt = latest == null
-        ? '–'
-        : _showWeight
-            ? formatNum(metric ? latest.weightKg : latest.weightKg * _kgToLb)
-            : formatNum(latest.bmi);
+    final values = [
+      for (final i in dataIdx) _plotValue(recs[i]!, metric),
+    ];
 
-    String? pillTxt;
-    if (withData.length >= 2) {
-      final a = recs[withData.first]!;
-      final b = recs[withData.last]!;
-      if (_showWeight) {
-        final dKg = b.weightKg - a.weightKg;
-        final d = metric ? dKg : dKg * _kgToLb;
-        final unit = metric ? 'kg' : 'lb';
-        pillTxt = d == 0
-            ? 'steady · 6 months'
-            : '${d < 0 ? '↓' : '↑'} ${formatNum(d.abs())} $unit · 6 months';
+    final latest = dataIdx.isEmpty ? null : recs[dataIdx.last]!;
+    final bigTxt =
+        latest == null ? '–' : formatNum(_plotValue(latest, metric));
+
+    Widget? deltaPill;
+    if (dataIdx.length >= 2) {
+      final a = recs[dataIdx.first]!;
+      final b = recs[dataIdx.last]!;
+      final d = _showWeight
+          ? (metric ? b.weightKg - a.weightKg
+                    : (b.weightKg - a.weightKg) * _kgToLb)
+          : b.bmi - a.bmi;
+      final unit = _showWeight ? (metric ? ' kg' : ' lb') : '';
+      if (d.abs() < 0.0001) {
+        deltaPill = _pill(
+            'stabil · 6 bulan', rc.onCardMuted.withValues(alpha: 0.16),
+            rc.onCardMuted);
       } else {
-        final d = b.bmi - a.bmi;
-        pillTxt = d == 0
-            ? 'steady · 6 months'
-            : '${d < 0 ? '↓' : '↑'} ${formatNum(d.abs())} · 6 months';
+        // Solid fill + dark label, like the mockup's pills.
+        deltaPill = _pill(
+          '${d < 0 ? '↓' : '↑'} ${formatNum(d.abs())}$unit · 6 bulan',
+          d < 0 ? rc.catNormal : rc.catObese,
+          const Color(0xFF1D1B3A),
+        );
       }
-    }
-
-    final Widget chartBody;
-    if (spots.isEmpty) {
-      chartBody = SizedBox(
-        height: 150,
-        child: Center(
-          child: Text(
-            'No data in the last 6 months',
-            style: TextStyle(fontSize: 14, color: rc.onCardMuted),
-          ),
-        ),
-      );
-    } else {
-      chartBody = SizedBox(
-        height: 180,
-        child: LineChart(
-          LineChartData(
-            minX: 0,
-            maxX: spots.length <= 1 ? 1.0 : (spots.length - 1).toDouble(),
-            gridData: FlGridData(
-              show: true,
-              drawVerticalLine: false,
-              getDrawingHorizontalLine: (v) => FlLine(
-                color: rc.onCardMuted.withValues(alpha: 0.2),
-                strokeWidth: 1,
-              ),
-            ),
-            titlesData: FlTitlesData(
-              show: true,
-              leftTitles: const AxisTitles(
-                sideTitles: SideTitles(showTitles: false),
-              ),
-              topTitles: const AxisTitles(
-                sideTitles: SideTitles(showTitles: false),
-              ),
-              rightTitles: const AxisTitles(
-                sideTitles: SideTitles(showTitles: false),
-              ),
-              bottomTitles: AxisTitles(
-                sideTitles: SideTitles(
-                  showTitles: true,
-                  interval: 1,
-                  getTitlesWidget: (v, meta) {
-                    final i = v.round();
-                    if (i < 0 || i >= plotMonths.length) {
-                      return const SizedBox.shrink();
-                    }
-                    return Padding(
-                      padding: const EdgeInsets.only(top: 8),
-                      child: Text(
-                        shortMonths[plotMonths[i].month - 1],
-                        style: TextStyle(
-                          fontSize: 11,
-                          fontWeight: FontWeight.w600,
-                          color: rc.onCardMuted,
-                        ),
-                      ),
-                    );
-                  },
-                ),
-              ),
-            ),
-            borderData: FlBorderData(show: false),
-            lineBarsData: [
-              LineChartBarData(
-                spots: spots,
-                isCurved: true,
-                color: rc.onCardAccent,
-                barWidth: 3,
-                isStrokeCapRound: true,
-                dotData: FlDotData(
-                  show: true,
-                  getDotPainter: (spot, percent, barData, index) {
-                    final last = index == spots.length - 1;
-                    return FlDotCirclePainter(
-                      radius: last ? 6 : 5,
-                      color: Colors.white,
-                      strokeWidth: last ? 3 : 0,
-                      strokeColor: rc.badgeOk,
-                    );
-                  },
-                ),
-                belowBarData: BarAreaData(
-                  show: true,
-                  gradient: LinearGradient(
-                    begin: Alignment.topCenter,
-                    end: Alignment.bottomCenter,
-                    colors: [
-                      rc.chipActive.withValues(alpha: 0.25),
-                      rc.chipActive.withValues(alpha: 0.0),
-                    ],
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
-      );
     }
 
     return GlassCard(
@@ -281,22 +161,17 @@ class _HistoryScreenState extends State<HistoryScreen> {
               Expanded(
                 child: Text(
                   _showWeight
-                      ? (metric ? 'Body weight (kg)' : 'Body weight (lb)')
+                      ? (metric ? 'Berat badan (kg)' : 'Berat badan (lb)')
                       : 'BMI',
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w700,
-                    color: rc.onCard,
-                  ),
+                  style: RagaType.cardTitle(rc.onCard),
                 ),
               ),
               SizedBox(
                 width: 168,
-                child: Segmented<String>(
-                  options: const ['Weight', 'BMI'],
-                  value: _showWeight ? 'Weight' : 'BMI',
-                  onChanged: (v) => setState(() => _showWeight = v == 'Weight'),
-                  labelOf: (v) => v,
+                child: RagaSegmented(
+                  options: const ['Berat', 'BMI'],
+                  selected: _showWeight ? 0 : 1,
+                  onChanged: (i) => setState(() => _showWeight = i == 0),
                 ),
               ),
             ],
@@ -306,41 +181,31 @@ class _HistoryScreenState extends State<HistoryScreen> {
             children: [
               Text(
                 bigTxt,
-                style: TextStyle(
-                  fontSize: 56,
-                  fontWeight: FontWeight.w800,
-                  height: 1.0,
-                  color: rc.onCard,
+                style: RagaType.hero(48, rc.onCard).copyWith(
                   fontFeatures: const [FontFeature.tabularFigures()],
                 ),
               ),
-              if (pillTxt != null) ...[
+              if (deltaPill != null) ...[
                 const SizedBox(width: 12),
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 14,
-                    vertical: 8,
-                  ),
-                  decoration: BoxDecoration(
-                    color: rc.badgeOk,
-                    borderRadius: BorderRadius.circular(999),
-                  ),
-                  child: Text(
-                    pillTxt,
-                    style: TextStyle(
-                      fontSize: 13,
-                      fontWeight: FontWeight.w800,
-                      color: rc.onBadgeOk,
-                    ),
-                  ),
-                ),
+                Flexible(child: deltaPill),
               ],
             ],
           ),
           const SizedBox(height: 12),
-          chartBody,
+          HistoryChart(values: values),
         ],
       ),
+    );
+  }
+
+  Widget _pill(String text, Color bg, Color fg) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+      decoration: BoxDecoration(
+        color: bg,
+        borderRadius: BorderRadius.circular(999),
+      ),
+      child: Text(text, style: RagaType.chip(fg).copyWith(fontSize: 13)),
     );
   }
 
@@ -357,22 +222,8 @@ class _HistoryScreenState extends State<HistoryScreen> {
     return rows;
   }
 
-  BmiCat _bmiCatOf(BmiCategory c) => switch (c) {
-        BmiCategory.underweight => BmiCat.under,
-        BmiCategory.normal => BmiCat.normal,
-        BmiCategory.overweight => BmiCat.over,
-        BmiCategory.obese => BmiCat.obese,
-      };
-
   Widget _entryRow(BmiRecord r, BmiRecord? older, bool metric) {
     final rc = context.rc;
-    final cat = _bmiCatOf(r.category);
-    final catColor = switch (cat) {
-      BmiCat.under => rc.catUnder,
-      BmiCat.normal => rc.catNormal,
-      BmiCat.over => rc.catOver,
-      BmiCat.obese => rc.catObese,
-    };
 
     String deltaTxt = '';
     var deltaColor = rc.onCardMuted;
@@ -382,10 +233,10 @@ class _HistoryScreenState extends State<HistoryScreen> {
       final unit = metric ? 'kg' : 'lb';
       if (d < 0) {
         deltaTxt = '−${formatNum(d.abs())} $unit';
-        deltaColor = rc.badgeOk;
+        deltaColor = rc.success;
       } else if (d > 0) {
         deltaTxt = '+${formatNum(d)} $unit';
-        deltaColor = rc.catObese;
+        deltaColor = rc.danger;
       } else {
         deltaTxt = '±0.0 $unit';
       }
@@ -396,44 +247,23 @@ class _HistoryScreenState extends State<HistoryScreen> {
         : '${formatNum(r.weightKg * _kgToLb)} lb';
 
     return GlassCard(
+      radius: 20,
       padding: const EdgeInsets.all(16),
       child: Row(
         children: [
-          Container(
-            width: 54,
-            height: 54,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              border: Border.all(color: catColor, width: 2.5),
-            ),
-            child: Center(
-              child: Text(
-                formatNum(r.bmi),
-                style: TextStyle(
-                  fontSize: 15,
-                  fontWeight: FontWeight.w800,
-                  color: rc.onCard,
-                  fontFeatures: const [FontFeature.tabularFigures()],
-                ),
-              ),
-            ),
-          ),
+          BmiRing(bmi: r.bmi),
           const SizedBox(width: 14),
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                formatDate(r.createdAt),
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w800,
-                  color: rc.onCard,
-                ),
+                formatDateId(r.createdAt),
+                style: RagaType.label(rc.onCard),
               ),
               const SizedBox(height: 3),
               Text(
-                '$weightTxt · ${bmiCatLabel(cat)}',
-                style: TextStyle(fontSize: 13.5, color: rc.onCardMuted),
+                '$weightTxt · ${bmiCatLabel(bmiCatOf(r.bmi))}',
+                style: RagaType.caption(rc.onCardMuted),
               ),
             ],
           ),
@@ -441,10 +271,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
           if (deltaTxt.isNotEmpty)
             Text(
               deltaTxt,
-              style: TextStyle(
-                fontSize: 15,
-                fontWeight: FontWeight.w700,
-                color: deltaColor,
+              style: RagaType.label(deltaColor).copyWith(
                 fontFeatures: const [FontFeature.tabularFigures()],
               ),
             ),
@@ -454,8 +281,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
   }
 }
 
-// Frosted month card with an optional highlight ring for the most
-// recent month that has data.
+// Frosted month card; the current month carries the highlight border.
 class _MonthCard extends StatelessWidget {
   final String month;
   final String value;
@@ -489,19 +315,13 @@ class _MonthCard extends StatelessWidget {
             children: [
               Text(
                 month,
-                style: TextStyle(
-                  fontSize: 15,
-                  fontWeight: FontWeight.w700,
-                  color: rc.onCard,
-                ),
+                style: RagaType.label(rc.onCardMuted),
               ),
               const SizedBox(height: 4),
               Text(
                 value,
-                style: TextStyle(
+                style: RagaType.chip(rc.onCard).copyWith(
                   fontSize: 17,
-                  fontWeight: FontWeight.w800,
-                  color: rc.onCard,
                   fontFeatures: const [FontFeature.tabularFigures()],
                 ),
               ),

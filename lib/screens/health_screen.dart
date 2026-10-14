@@ -1,5 +1,3 @@
-import 'dart:math';
-
 import 'package:flutter/material.dart';
 
 import '../core/bmi.dart';
@@ -9,26 +7,25 @@ import '../state/app_state.dart';
 import '../widgets/chips.dart';
 import '../widgets/glass.dart';
 import '../widgets/headers.dart';
+import '../widgets/ring.dart';
 
 const _kgToLb = 2.20462;
 const _cmToIn = 1 / 2.54;
 
-// Mockup chips with the mockup's factors. 'Active' is the legacy stored
-// label for what the mockup calls 'Intense' — mapped on read.
-const _activityFactors = <String, double>{
-  'Minimal': 1.2,
-  'Light': 1.375,
-  'Moderate': 1.55,
-  'Intense': 1.725,
-};
-
-String _activityLabel(String stored) =>
-    stored == 'Active' ? 'Intense' : stored;
+// Display labels (Indonesian) -> stored activity keys (English, unchanged
+// in storage so old installs keep their value).
+const _activityLabels = ['Minim', 'Ringan', 'Sedang', 'Berat'];
+const _activityKeys = ['Minimal', 'Light', 'Moderate', 'Active'];
 
 // Health: activity level, daily calorie needs + BMR donut,
 // lose/maintain/gain targets, ideal weight range.
 class HealthScreen extends StatelessWidget {
   const HealthScreen({super.key});
+
+  // 'Intense' is a legacy stored label from before the redesign; it means
+  // the highest activity band.
+  String _activityKey(String stored) =>
+      stored == 'Intense' ? 'Active' : stored;
 
   @override
   Widget build(BuildContext context) {
@@ -36,7 +33,7 @@ class HealthScreen extends StatelessWidget {
     final state = AppState.of(context);
     final p = state.activeProfile;
     final metric = state.metricUnits;
-    final activity = _activityLabel(state.activity);
+    final activityKey = _activityKey(state.activity);
 
     final range = idealWeightRange(p.heightCm);
     final bmr = bmrMifflin(
@@ -45,15 +42,15 @@ class HealthScreen extends StatelessWidget {
       age: p.age,
       isMale: p.isMale,
     );
-    final tdeeVal = tdee(bmr, _activityFactors[activity] ?? 1.375);
+    final tdeeVal = tdee(bmr, activityFactors[activityKey] ?? 1.375);
     final pct = (bmr / tdeeVal).clamp(0.0, 1.0);
 
     return ListView(
-      padding: const EdgeInsets.fromLTRB(20, 8, 20, 110),
+      padding: const EdgeInsets.fromLTRB(22, 8, 22, 110),
       children: [
-        const RagaHeader(title: 'Health'),
+        const RagaHeader(title: 'Kesehatan'),
         const SizedBox(height: 16),
-        _activityChips(state, activity),
+        _activityChips(state, activityKey),
         const SizedBox(height: 16),
         _calorieCard(context, p, metric, tdeeVal, pct),
         const SizedBox(height: 14),
@@ -63,28 +60,26 @@ class HealthScreen extends StatelessWidget {
         const SizedBox(height: 16),
         Center(
           child: Text(
-            'BMR ${formatIntNum(bmr.round())} kcal/day · Mifflin-St Jeor formula',
+            'BMR ${formatIntId(bmr.round())} kcal/hari · rumus Mifflin-St Jeor',
             textAlign: TextAlign.center,
-            style: TextStyle(fontSize: 12.5, color: rc.onCardMuted),
+            style: RagaType.caption(rc.onCardMuted),
           ),
         ),
       ],
     );
   }
 
-  Widget _activityChips(AppState state, String activity) {
-    final labels = _activityFactors.keys.toList();
+  Widget _activityChips(AppState state, String activityKey) {
     return SingleChildScrollView(
       scrollDirection: Axis.horizontal,
       child: Row(
         children: [
-          for (var i = 0; i < labels.length; i++) ...[
+          for (var i = 0; i < _activityLabels.length; i++) ...[
             if (i > 0) const SizedBox(width: 10),
             SelectChip(
-              label: labels[i],
-              selected: labels[i] == activity,
-              showCheck: true,
-              onTap: () => state.setActivity(labels[i]),
+              label: _activityLabels[i],
+              selected: _activityKeys[i] == activityKey,
+              onTap: () => state.setActivity(_activityKeys[i]),
             ),
           ],
         ],
@@ -109,12 +104,8 @@ class HealthScreen extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'Daily calorie needs',
-                  style: TextStyle(
-                    fontSize: 15,
-                    fontWeight: FontWeight.w600,
-                    color: rc.onCardMuted,
-                  ),
+                  'Kebutuhan kalori harian',
+                  style: RagaType.cardTitle(rc.onCard),
                 ),
                 const SizedBox(height: 6),
                 Row(
@@ -122,35 +113,33 @@ class HealthScreen extends StatelessWidget {
                   textBaseline: TextBaseline.alphabetic,
                   children: [
                     Text(
-                      formatIntNum(tdeeVal.round()),
-                      style: TextStyle(
-                        fontSize: 56,
-                        fontWeight: FontWeight.w800,
-                        height: 1.0,
-                        color: rc.onCard,
+                      formatIntId(tdeeVal.round()),
+                      style: RagaType.hero(52, rc.onCard).copyWith(
                         fontFeatures: const [FontFeature.tabularFigures()],
                       ),
                     ),
                     const SizedBox(width: 8),
                     Text(
                       'kcal',
-                      style: TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.w700,
-                        color: rc.onCardMuted,
-                      ),
+                      style: RagaType.label(rc.onCardMuted)
+                          .copyWith(fontSize: 20),
                     ),
                   ],
                 ),
                 const SizedBox(height: 6),
                 Text(
-                  '${p.isMale ? 'Male' : 'Female'} · ${p.age} yrs · $heightTxt · $weightTxt',
-                  style: TextStyle(fontSize: 13.5, color: rc.onCardMuted),
+                  '${p.isMale ? 'Pria' : 'Wanita'} · ${p.age} th · $heightTxt · $weightTxt',
+                  style: RagaType.body(rc.onCardMuted)
+                      .copyWith(fontSize: 13.5),
                 ),
               ],
             ),
           ),
-          _Donut(pct: pct),
+          DonutRing(
+            percent: pct,
+            centerTop: '${(pct * 100).round()}%',
+            centerBottom: 'BMR',
+          ),
         ],
       ),
     );
@@ -158,71 +147,76 @@ class HealthScreen extends StatelessWidget {
 
   Widget _goalMinis(BuildContext context, double tdeeVal) {
     final rc = context.rc;
+    final maxV = tdeeVal + 500;
     final items = [
-      ('Lose', (tdeeVal - 500).round(), rc.catUnder, 0.55),
-      ('Maintain', tdeeVal.round(), rc.catNormal, 0.75),
-      ('Gain', (tdeeVal + 500).round(), rc.catOver, 0.95),
+      ('Turun', (tdeeVal - 500).round(), rc.catUnder),
+      ('Jaga', tdeeVal.round(), rc.catNormal),
+      ('Naik', (tdeeVal + 500).round(), rc.catOver),
     ];
     return Row(
       children: [
         for (var i = 0; i < items.length; i++) ...[
           if (i > 0) const SizedBox(width: 10),
           Expanded(
-            child: GlassCard(
-              padding: const EdgeInsets.all(14),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    items[i].$1,
-                    style: TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w600,
-                      color: rc.onCardMuted,
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    formatIntNum(items[i].$2),
-                    style: TextStyle(
-                      fontSize: 24,
-                      fontWeight: FontWeight.w800,
-                      color: rc.onCard,
-                      fontFeatures: const [FontFeature.tabularFigures()],
-                    ),
-                  ),
-                  const SizedBox(height: 10),
-                  SizedBox(
-                    height: 6,
-                    child: LayoutBuilder(
-                      builder: (context, c) => Stack(
-                        children: [
-                          Container(
-                            width: c.maxWidth,
-                            height: 6,
-                            decoration: BoxDecoration(
-                              color: rc.sliderTrack,
-                              borderRadius: BorderRadius.circular(999),
-                            ),
-                          ),
-                          Container(
-                            width: c.maxWidth * items[i].$4,
-                            height: 6,
-                            decoration: BoxDecoration(
-                              color: items[i].$3,
-                              borderRadius: BorderRadius.circular(999),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ],
-              ),
+            child: _goalMini(
+              rc,
+              label: items[i].$1,
+              value: items[i].$2,
+              frac: (items[i].$2 / maxV).clamp(0.0, 1.0),
+              bar: items[i].$3,
             ),
           ),
         ],
       ],
+    );
+  }
+
+  Widget _goalMini(
+    RagaColors rc, {
+    required String label,
+    required int value,
+    required double frac,
+    required Color bar,
+  }) {
+    return GlassCard(
+      radius: 20,
+      padding: const EdgeInsets.all(14),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(label, style: RagaType.label(rc.onCardMuted)),
+          const SizedBox(height: 4),
+          Text(
+            formatIntId(value),
+            style: RagaType.hero(20, rc.onCard).copyWith(
+              fontFeatures: const [FontFeature.tabularFigures()],
+            ),
+          ),
+          const SizedBox(height: 10),
+          LayoutBuilder(
+            builder: (context, c) => Stack(
+              children: [
+                Container(
+                  width: c.maxWidth,
+                  height: 6,
+                  decoration: BoxDecoration(
+                    color: rc.sliderTrack,
+                    borderRadius: BorderRadius.circular(999),
+                  ),
+                ),
+                Container(
+                  width: c.maxWidth * frac,
+                  height: 6,
+                  decoration: BoxDecoration(
+                    color: bar,
+                    borderRadius: BorderRadius.circular(999),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
     );
   }
 
@@ -235,18 +229,15 @@ class HealthScreen extends StatelessWidget {
     final unit = metric ? 'kg' : 'lb';
     final scaleLo = metric ? 40.0 : 40 * _kgToLb;
     final scaleHi = metric ? 90.0 : 90 * _kgToLb;
+    final curTxt = formatNum(cur).replaceAll(RegExp(r'\.0$'), '');
 
     return GlassCard(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'Ideal body weight',
-            style: TextStyle(
-              fontSize: 15,
-              fontWeight: FontWeight.w600,
-              color: rc.onCardMuted,
-            ),
+            'Berat badan ideal',
+            style: RagaType.cardTitle(rc.onCard),
           ),
           const SizedBox(height: 6),
           Row(
@@ -255,21 +246,14 @@ class HealthScreen extends StatelessWidget {
             children: [
               Text(
                 '${formatNum(lo)} – ${formatNum(hi)}',
-                style: TextStyle(
-                  fontSize: 34,
-                  fontWeight: FontWeight.w800,
-                  color: rc.onCard,
+                style: RagaType.hero(32, rc.onCard).copyWith(
                   fontFeatures: const [FontFeature.tabularFigures()],
                 ),
               ),
               const SizedBox(width: 8),
               Text(
                 unit,
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.w700,
-                  color: rc.onCardMuted,
-                ),
+                style: RagaType.label(rc.onCardMuted).copyWith(fontSize: 18),
               ),
             ],
           ),
@@ -337,29 +321,16 @@ class HealthScreen extends StatelessWidget {
             children: [
               Text(
                 formatNum(scaleLo, 0),
-                style: TextStyle(
-                  fontSize: 13,
-                  fontWeight: FontWeight.w600,
-                  color: rc.onCardMuted,
-                  fontFeatures: const [FontFeature.tabularFigures()],
-                ),
+                style: RagaType.label(rc.onCardMuted),
               ),
               Text(
-                'You: ${formatNum(cur)} $unit',
-                style: TextStyle(
-                  fontSize: 13,
-                  fontWeight: FontWeight.w700,
-                  color: rc.onCardAccent,
-                ),
+                'Kamu: $curTxt $unit',
+                style: RagaType.label(rc.onCard)
+                    .copyWith(fontWeight: FontWeight.w800),
               ),
               Text(
                 formatNum(scaleHi, 0),
-                style: TextStyle(
-                  fontSize: 13,
-                  fontWeight: FontWeight.w600,
-                  color: rc.onCardMuted,
-                  fontFeatures: const [FontFeature.tabularFigures()],
-                ),
+                style: RagaType.label(rc.onCardMuted),
               ),
             ],
           ),
@@ -367,90 +338,4 @@ class HealthScreen extends StatelessWidget {
       ),
     );
   }
-}
-
-// 92px BMR donut: full track ring + chipActive sweep from the top.
-class _Donut extends StatelessWidget {
-  final double pct;
-
-  const _Donut({required this.pct});
-
-  @override
-  Widget build(BuildContext context) {
-    final rc = context.rc;
-    return SizedBox(
-      width: 92,
-      height: 92,
-      child: Stack(
-        alignment: Alignment.center,
-        children: [
-          CustomPaint(
-            size: const Size(92, 92),
-            painter: _RingPainter(
-              track: rc.sliderTrack,
-              sweep: rc.chipActive,
-              pct: pct,
-            ),
-          ),
-          Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text(
-                '${(pct * 100).round()}%',
-                style: TextStyle(
-                  fontSize: 17,
-                  fontWeight: FontWeight.w800,
-                  color: rc.onCard,
-                ),
-              ),
-              Text(
-                'BMR',
-                style: TextStyle(fontSize: 11, color: rc.onCardMuted),
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _RingPainter extends CustomPainter {
-  final Color track;
-  final Color sweep;
-  final double pct;
-
-  _RingPainter({
-    required this.track,
-    required this.sweep,
-    required this.pct,
-  });
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final center = size.center(Offset.zero);
-    final radius = size.width / 2 - 5;
-    final trackPaint = Paint()
-      ..color = track
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 10
-      ..strokeCap = StrokeCap.round;
-    canvas.drawCircle(center, radius, trackPaint);
-    final sweepPaint = Paint()
-      ..color = sweep
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 10
-      ..strokeCap = StrokeCap.round;
-    canvas.drawArc(
-      Rect.fromCircle(center: center, radius: radius),
-      -pi / 2,
-      pct * 2 * pi,
-      false,
-      sweepPaint,
-    );
-  }
-
-  @override
-  bool shouldRepaint(covariant _RingPainter old) =>
-      old.pct != pct || old.track != track || old.sweep != sweep;
 }
