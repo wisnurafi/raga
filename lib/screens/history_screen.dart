@@ -402,7 +402,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
                       padding: const EdgeInsets.symmetric(
                           horizontal: 10, vertical: 5),
                       decoration: BoxDecoration(
-                        color: meta.color.withValues(alpha: 0.16),
+                        color: meta.color.withValues(alpha: 0.22),
                         borderRadius: BorderRadius.circular(999),
                       ),
                       child: Text(
@@ -410,7 +410,9 @@ class _HistoryScreenState extends State<HistoryScreen> {
                         style: TextStyle(
                           fontSize: 12.5,
                           fontWeight: FontWeight.w800,
-                          color: meta.color,
+                          // Darkened so it stays readable on the soft pill.
+                          color:
+                              Color.lerp(meta.color, Colors.black, 0.38)!,
                         ),
                       ),
                     ),
