@@ -2,6 +2,7 @@ import 'dart:math';
 import 'package:flutter/material.dart';
 import '../core/theme.dart';
 import '../core/bmi.dart';
+import '../core/streak.dart';
 import '../state/app_state.dart';
 import '../widgets/glass.dart';
 
@@ -71,6 +72,8 @@ class HealthScreen extends StatelessWidget {
         Text(meta, style: TextStyle(fontSize: 13.5, color: rc.onImageMuted)),
         const SizedBox(height: 18),
         _goalCard(context, rc, state),
+        const SizedBox(height: 14),
+        _streakCard(context, rc, state),
         const SizedBox(height: 14),
         // Ideal weight
         GlassContainer(
@@ -432,6 +435,153 @@ class HealthScreen extends StatelessWidget {
     if (days < 14) return '$days ${days == 1 ? 'day' : 'days'}';
     final weeks = (days / 7).round();
     return '$weeks ${weeks == 1 ? 'week' : 'weeks'}';
+  }
+
+  // Weigh-in streak: consecutive weeks with a logged weigh-in, plus
+  // progress to the next milestone badge. A newly hit milestone pops
+  // a celebration exactly once (tracked in milestonesSeen).
+  Widget _streakCard(BuildContext context, RagaColors rc, AppState state) {
+    final p = state.activeProfile;
+    final streak = computeStreak(
+      state.recordsOf(p.id).map((r) => r.createdAt).toList(),
+    );
+
+    int? hit;
+    for (final m in streakMilestones) {
+      if (streak.weeks >= m && !state.milestonesSeen.contains(m)) {
+        hit = m;
+        break;
+      }
+    }
+    if (hit != null) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        state.markMilestoneSeen(hit);
+        _milestoneDialog(context, hit);
+      });
+    }
+
+    final status = streak.weeks == 0
+        ? 'Log a weigh-in to start your streak.'
+        : streak.thisWeekDone
+            ? "This week's weigh-in is in — streak safe."
+            : 'Weigh in this week to keep the streak alive.';
+    return GlassContainer(
+      padding: const EdgeInsets.fromLTRB(22, 18, 22, 18),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                width: 34,
+                height: 34,
+                decoration: BoxDecoration(
+                  color: const Color(0xFFFF9F43).withValues(alpha: 0.16),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: const Icon(
+                  Icons.local_fire_department_outlined,
+                  size: 19,
+                  color: Color(0xFFFF9F43),
+                ),
+              ),
+              const SizedBox(width: 10),
+              Text(
+                'Weigh-in streak',
+                style: TextStyle(
+                  fontSize: 14.5,
+                  fontWeight: FontWeight.w700,
+                  color: rc.onCardMuted,
+                ),
+              ),
+              const Spacer(),
+              Text(
+                '${streak.weeks}',
+                style: TextStyle(
+                  fontSize: 30,
+                  fontWeight: FontWeight.w800,
+                  letterSpacing: -1,
+                  color: rc.onCard,
+                ),
+              ),
+              Padding(
+                padding: const EdgeInsets.only(left: 6, bottom: 2),
+                child: Text(
+                  streak.weeks == 1 ? 'week' : 'weeks',
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                    color: rc.onCardMuted,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 6),
+          Text(
+            status,
+            style: TextStyle(fontSize: 13.5, color: rc.onCardMuted),
+          ),
+          if (streak.nextMilestone != null) ...[
+            const SizedBox(height: 12),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  'Next badge: ${streak.nextMilestone} weeks',
+                  style: TextStyle(
+                    fontSize: 12.5,
+                    fontWeight: FontWeight.w700,
+                    color: rc.onCardMuted,
+                  ),
+                ),
+                Text(
+                  '${streak.weeksToMilestone} to go',
+                  style: TextStyle(
+                    fontSize: 12.5,
+                    fontWeight: FontWeight.w700,
+                    color: rc.mint,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 6),
+            ClipRRect(
+              borderRadius: BorderRadius.circular(999),
+              child: LinearProgressIndicator(
+                value: (streak.weeks / streak.nextMilestone!).clamp(0.0, 1.0),
+                minHeight: 8,
+                backgroundColor: rc.panel,
+                valueColor:
+                    const AlwaysStoppedAnimation(Color(0xFFFF9F43)),
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  void _milestoneDialog(BuildContext context, int weeks) {
+    final rc = context.rc;
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: rc.card,
+        shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20)),
+        title: const Text('Streak milestone! 🔥'),
+        content: Text(
+          '$weeks weeks of consistent weigh-ins. That kind of discipline is what moves the number.',
+        ),
+        actions: [
+          FilledButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Keep going'),
+          ),
+        ],
+      ),
+    );
   }
 
   void _goalDialog(
