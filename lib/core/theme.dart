@@ -1,13 +1,19 @@
+import 'dart:ui';
+
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
-/// Palet warna Raga. Diambil dari desain referensi: gradasi ungu,
-/// kartu putih untuk input, kartu gelap untuk panel.
+/// Palet warna Raga — dikunci ke mode terang (light).
+///
+/// Arah visual: glassmorphism di atas latar "healthy care" yang lembut
+/// (putih bersih + aksen mint dan lavender pucat). Semua teks memakai
+/// warna gelap di atas permukaan terang, jadi tidak ada lagi teks putih
+/// yang hilang di atas kartu terang.
 @immutable
 class RagaColors extends ThemeExtension<RagaColors> {
   final List<Color> bgGradient;
   final Color card;
-  final Color cardDark;
+  final Color panel;
   final Color onCard;
   final Color onCardMuted;
   final Color onBg;
@@ -18,11 +24,13 @@ class RagaColors extends ThemeExtension<RagaColors> {
   final Color chipInactive;
   final Color onChipActive;
   final Color onChipInactive;
+  final Color mint;
+  final Color mintSoft;
 
   const RagaColors({
     required this.bgGradient,
     required this.card,
-    required this.cardDark,
+    required this.panel,
     required this.onCard,
     required this.onCardMuted,
     required this.onBg,
@@ -33,28 +41,14 @@ class RagaColors extends ThemeExtension<RagaColors> {
     required this.chipInactive,
     required this.onChipActive,
     required this.onChipInactive,
+    required this.mint,
+    required this.mintSoft,
   });
 
-  static const dark = RagaColors(
-    bgGradient: [Color(0xFF7E6EE8), Color(0xFF14152E)],
-    card: Color(0xFFFFFFFF),
-    cardDark: Color(0xFF23234D),
-    onCard: Color(0xFF1B1B2F),
-    onCardMuted: Color(0xFF6E6E93),
-    onBg: Color(0xFFFFFFFF),
-    onBgMuted: Color(0xFFC9C5F2),
-    primaryBtn: Color(0xFFB9A7F2),
-    onPrimaryBtn: Color(0xFF1B1B2F),
-    chipActive: Color(0xFFB9A7F2),
-    chipInactive: Color(0xFF2A2B55),
-    onChipActive: Color(0xFF1B1B2F),
-    onChipInactive: Color(0xFFFFFFFF),
-  );
-
   static const light = RagaColors(
-    bgGradient: [Color(0xFF9D8FF5), Color(0xFFF0EDFF)],
+    bgGradient: [Color(0xFFFDFEFF), Color(0xFFF1F6FA)],
     card: Color(0xFFFFFFFF),
-    cardDark: Color(0xFFE4DEFB),
+    panel: Color(0xFFEDE9FB),
     onCard: Color(0xFF1B1B2F),
     onCardMuted: Color(0xFF6E6E93),
     onBg: Color(0xFF1B1B2F),
@@ -65,13 +59,15 @@ class RagaColors extends ThemeExtension<RagaColors> {
     chipInactive: Color(0xFFFFFFFF),
     onChipActive: Color(0xFFFFFFFF),
     onChipInactive: Color(0xFF1B1B2F),
+    mint: Color(0xFF22B573),
+    mintSoft: Color(0xFFE6F9EF),
   );
 
   @override
   RagaColors copyWith({
     List<Color>? bgGradient,
     Color? card,
-    Color? cardDark,
+    Color? panel,
     Color? onCard,
     Color? onCardMuted,
     Color? onBg,
@@ -82,11 +78,13 @@ class RagaColors extends ThemeExtension<RagaColors> {
     Color? chipInactive,
     Color? onChipActive,
     Color? onChipInactive,
+    Color? mint,
+    Color? mintSoft,
   }) {
     return RagaColors(
       bgGradient: bgGradient ?? this.bgGradient,
       card: card ?? this.card,
-      cardDark: cardDark ?? this.cardDark,
+      panel: panel ?? this.panel,
       onCard: onCard ?? this.onCard,
       onCardMuted: onCardMuted ?? this.onCardMuted,
       onBg: onBg ?? this.onBg,
@@ -97,6 +95,8 @@ class RagaColors extends ThemeExtension<RagaColors> {
       chipInactive: chipInactive ?? this.chipInactive,
       onChipActive: onChipActive ?? this.onChipActive,
       onChipInactive: onChipInactive ?? this.onChipInactive,
+      mint: mint ?? this.mint,
+      mintSoft: mintSoft ?? this.mintSoft,
     );
   }
 
@@ -110,7 +110,7 @@ class RagaColors extends ThemeExtension<RagaColors> {
         lerpC(bgGradient[1], other.bgGradient[1]),
       ],
       card: lerpC(card, other.card),
-      cardDark: lerpC(cardDark, other.cardDark),
+      panel: lerpC(panel, other.panel),
       onCard: lerpC(onCard, other.onCard),
       onCardMuted: lerpC(onCardMuted, other.onCardMuted),
       onBg: lerpC(onBg, other.onBg),
@@ -121,6 +121,8 @@ class RagaColors extends ThemeExtension<RagaColors> {
       chipInactive: lerpC(chipInactive, other.chipInactive),
       onChipActive: lerpC(onChipActive, other.onChipActive),
       onChipInactive: lerpC(onChipInactive, other.onChipInactive),
+      mint: lerpC(mint, other.mint),
+      mintSoft: lerpC(mintSoft, other.mintSoft),
     );
   }
 }
@@ -130,36 +132,35 @@ extension RagaThemeX on BuildContext {
 }
 
 class AppTheme {
-  static ThemeData _base(Brightness brightness, RagaColors rc) {
+  static ThemeData get light {
     final textTheme = GoogleFonts.plusJakartaSansTextTheme(
-      ThemeData(brightness: brightness).textTheme,
+      ThemeData.light().textTheme,
     );
     return ThemeData(
-      brightness: brightness,
+      brightness: Brightness.light,
       textTheme: textTheme,
       scaffoldBackgroundColor: Colors.transparent,
       colorScheme: ColorScheme.fromSeed(
         seedColor: const Color(0xFF7E6EE8),
-        brightness: brightness,
+        brightness: Brightness.light,
       ),
-      extensions: [rc],
-      sliderTheme: SliderThemeData(
+      extensions: const [RagaColors.light],
+      sliderTheme: const SliderThemeData(
         trackHeight: 6,
         overlayShape: SliderComponentShape.noOverlay,
-        thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 13),
+        thumbShape: RoundSliderThumbShape(enabledThumbRadius: 13),
       ),
       useMaterial3: true,
     );
   }
-
-  static ThemeData get dark => _base(Brightness.dark, RagaColors.dark);
-  static ThemeData get light => _base(Brightness.light, RagaColors.light);
 }
 
-/// Latar gradasi ungu khas Raga, dipakai sebagai root tiap layar.
-class GradientBg extends StatelessWidget {
+/// Latar aplikasi: gradasi terang yang bersih dengan blob warna lembut
+/// (mint, lavender, peach) dan motif garis detak jantung (ECG) yang samar —
+/// konteks "healthy care" tanpa mengganggu keterbacaan.
+class HealthBg extends StatelessWidget {
   final Widget child;
-  const GradientBg({super.key, required this.child});
+  const HealthBg({super.key, required this.child});
 
   @override
   Widget build(BuildContext context) {
@@ -172,7 +173,88 @@ class GradientBg extends StatelessWidget {
           colors: rc.bgGradient,
         ),
       ),
-      child: child,
+      child: Stack(
+        children: [
+          const Positioned.fill(
+            child: CustomPaint(painter: _HealthBgPainter()),
+          ),
+          child,
+        ],
+      ),
     );
   }
+}
+
+class _HealthBgPainter extends CustomPainter {
+  const _HealthBgPainter();
+
+  void _blob(Canvas canvas, Offset c, double r, Color color) {
+    canvas.drawCircle(
+      c,
+      r,
+      Paint()
+        ..color = color
+        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 70),
+    );
+  }
+
+  /// Satu pola detak jantung, digambar berulang di sepanjang lebar layar.
+  void _ecg(Canvas canvas, Size size) {
+    const period = 150.0;
+    const baseY = 150.0;
+    const amp = 34.0;
+    final path = Path()..moveTo(-20, baseY);
+    for (double x = -20; x < size.width + 20; x += period) {
+      // Segmen datar, lalu spike QRS kecil, lalu kembali datar.
+      path.lineTo(x + period * 0.32, baseY);
+      path.lineTo(x + period * 0.40, baseY + amp * 0.25);
+      path.lineTo(x + period * 0.46, baseY - amp);
+      path.lineTo(x + period * 0.52, baseY + amp * 0.55);
+      path.lineTo(x + period * 0.60, baseY);
+      path.lineTo(x + period, baseY);
+    }
+    canvas.drawPath(
+      path,
+      Paint()
+        ..color = const Color(0xFF7E6EE8).withValues(alpha: 0.10)
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 3
+        ..strokeJoin = StrokeJoin.round
+        ..strokeCap = StrokeCap.round,
+    );
+  }
+
+  /// Deretan tanda plus samar ala simbol medis.
+  void _pluses(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = const Color(0xFF22B573).withValues(alpha: 0.07)
+      ..strokeWidth = 5
+      ..strokeCap = StrokeCap.round;
+    const s = 9.0;
+    final spots = [
+      Offset(size.width * 0.12, size.height * 0.30),
+      Offset(size.width * 0.85, size.height * 0.52),
+      Offset(size.width * 0.30, size.height * 0.78),
+      Offset(size.width * 0.72, size.height * 0.86),
+    ];
+    for (final o in spots) {
+      canvas.drawLine(Offset(o.dx - s, o.dy), Offset(o.dx + s, o.dy), paint);
+      canvas.drawLine(Offset(o.dx, o.dy - s), Offset(o.dx, o.dy + s), paint);
+    }
+  }
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    _blob(canvas, Offset(size.width * 0.88, size.height * 0.06),
+        size.width * 0.42, const Color(0xFFBDEFD4).withValues(alpha: 0.55));
+    _blob(canvas, Offset(size.width * 0.05, size.height * 0.42),
+        size.width * 0.38, const Color(0xFFD9CFFF).withValues(alpha: 0.50));
+    _blob(canvas, Offset(size.width * 0.80, size.height * 0.88),
+        size.width * 0.44, const Color(0xFFFFE3C2).withValues(alpha: 0.45));
+    _ecg(canvas, size);
+    _pluses(canvas, size);
+  }
+
+  @override
+  bool shouldRepaint(_HealthBgPainter old) => false;
 }

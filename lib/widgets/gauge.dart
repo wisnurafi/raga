@@ -37,7 +37,7 @@ class _GaugePainter extends CustomPainter {
 
     const trackW = 26.0;
     final trackPaint = Paint()
-      ..color = const Color(0xFF2E2F5C)
+      ..color = const Color(0xFFE7E2F8)
       ..style = PaintingStyle.stroke
       ..strokeWidth = trackW
       ..strokeCap = StrokeCap.round;
@@ -113,7 +113,9 @@ class GaugeLegend extends StatelessWidget {
               style: TextStyle(
                 fontSize: 12.5,
                 fontWeight: isActive ? FontWeight.w800 : FontWeight.w500,
-                color: isActive ? Colors.white : const Color(0xFFB9B5E6),
+                color: isActive
+                    ? const Color(0xFF1B1B2F)
+                    : const Color(0xFF8A86AD),
               ),
             ),
           ],
