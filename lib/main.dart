@@ -15,7 +15,7 @@ Future<void> main() async {
   await ReminderService.init();
   // Re-arm the weekly nudge in case the system cleared it.
   if (state.weeklyReminder) {
-    await ReminderService.scheduleWeekly(
+    await ReminderService.scheduleBestEffort(
       weekday: state.reminderWeekday,
       hour: state.reminderHour,
       minute: state.reminderMinute,

@@ -3,6 +3,8 @@
     <uses-permission android:name="android.permission.INTERNET"/>
     <!-- Weekly weigh-in reminder -->
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
+    <!-- Exact alarms so the weekly reminder fires on time -->
+    <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM"/>
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED"/>
     <application
         android:label="Raga"

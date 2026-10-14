@@ -200,11 +200,24 @@ class ProfileScreen extends StatelessWidget {
         }
         return;
       }
-      await ReminderService.scheduleWeekly(
+      // Exact alarms so the nudge fires on time, not "eventually".
+      // If the user doesn't grant it, fall back to inexact and say so.
+      if (!await ReminderService.canScheduleExact()) {
+        await ReminderService.requestExactAlarmsPermission();
+      }
+      final exact = await ReminderService.scheduleBestEffort(
         weekday: state.reminderWeekday,
         hour: state.reminderHour,
         minute: state.reminderMinute,
       );
+      if (!exact && context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Exact alarms not allowed — reminders may arrive '
+                'late. You can enable them in system settings.'),
+          ),
+        );
+      }
     } else {
       await ReminderService.cancel();
     }
@@ -321,7 +334,7 @@ class ProfileScreen extends StatelessWidget {
                   minute: time.minute,
                 );
                 if (state.weeklyReminder) {
-                  await ReminderService.scheduleWeekly(
+                  await ReminderService.scheduleBestEffort(
                     weekday: day,
                     hour: time.hour,
                     minute: time.minute,
