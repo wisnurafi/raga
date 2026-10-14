@@ -1,3 +1,4 @@
+import 'dart:math';
 import 'package:flutter/material.dart';
 import '../core/theme.dart';
 import '../core/bmi.dart';
@@ -69,7 +70,9 @@ class HealthScreen extends StatelessWidget {
         const SizedBox(height: 4),
         Text(meta, style: TextStyle(fontSize: 13.5, color: rc.onImageMuted)),
         const SizedBox(height: 18),
-        // Berat badan ideal
+        _goalCard(context, rc, state),
+        const SizedBox(height: 14),
+        // Ideal weight
         GlassContainer(
           padding: const EdgeInsets.fromLTRB(22, 20, 22, 22),
           child: Column(
@@ -399,6 +402,195 @@ class _IdealBar extends StatelessWidget {
           ],
         ),
       ],
+    );
+  }
+
+  // Weight goal card: target, progress bar, and an ETA from the trend.
+  Widget _goalCard(BuildContext context, RagaColors rc, AppState state) {
+    final p = state.activeProfile;
+    final goal = state.goalFor(p.id);
+    final current = p.weightKg;
+
+    String? eta;
+    double progress = 0;
+    if (goal != null) {
+      final history = state
+          .recordsOf(p.id)
+          .map((r) => (at: r.createdAt, weightKg: r.weightKg))
+          .toList()
+        ..sort((a, b) => a.at.compareTo(b.at));
+      final est = estimateGoal(history: history, targetKg: goal);
+      final diff = (goal - current).abs();
+      if (diff < 0.5) {
+        eta = "You've hit your goal — nice work!";
+        progress = 1;
+      } else if (est.away) {
+        eta = 'Trending the other way — small steps will turn it around.';
+      } else if (est.days == null) {
+        eta = "Log a few more weigh-ins and I'll estimate your timeline.";
+      } else {
+        eta = 'About ${_prettyDays(est.days!)} at your current pace';
+        // Progress measured from the furthest you've been, so the bar
+        // reflects the actual journey, not a made-up starting point.
+        final weights = history.map((h) => h.weightKg).toList();
+        if (weights.isNotEmpty) {
+          final start = goal < current
+              ? weights.reduce(max) // losing: from the heaviest
+              : weights.reduce(min); // gaining: from the lightest
+          final total = (goal - start).abs();
+          if (total > 0.01) {
+            progress = (1 - diff / total).clamp(0.0, 1.0);
+          }
+        }
+      }
+    }
+
+    return GlassContainer(
+      padding: const EdgeInsets.fromLTRB(22, 20, 22, 20),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Expanded(
+                child: Text(
+                  'Weight goal',
+                  style: TextStyle(
+                    fontSize: 19,
+                    fontWeight: FontWeight.w800,
+                    color: rc.onCard,
+                    letterSpacing: -0.3,
+                  ),
+                ),
+              ),
+              InkWell(
+                onTap: () => _goalDialog(context, state, goal, current),
+                borderRadius: BorderRadius.circular(20),
+                child: Container(
+                  width: 36,
+                  height: 36,
+                  decoration: BoxDecoration(
+                    color: rc.mintSoft,
+                    shape: BoxShape.circle,
+                  ),
+                  child: Icon(
+                    goal == null ? Icons.add : Icons.edit_outlined,
+                    size: 18,
+                    color: rc.mint,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          if (goal == null)
+            Text(
+              'Set a target and Raga will track your progress.',
+              style: TextStyle(fontSize: 14.5, height: 1.5, color: rc.onCardMuted),
+            )
+          else ...[
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                Text(
+                  '${formatNum(current, 1)} kg',
+                  style: TextStyle(
+                    fontSize: 26,
+                    fontWeight: FontWeight.w800,
+                    color: rc.onCard,
+                    letterSpacing: -0.5,
+                  ),
+                ),
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 4, left: 6),
+                  child: Text(
+                    '→ ${formatNum(goal, 1)} kg',
+                    style: TextStyle(
+                      fontSize: 15,
+                      fontWeight: FontWeight.w700,
+                      color: rc.onCardMuted,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 10),
+            ClipRRect(
+              borderRadius: BorderRadius.circular(999),
+              child: LinearProgressIndicator(
+                value: progress,
+                minHeight: 10,
+                backgroundColor: rc.panel,
+                valueColor: AlwaysStoppedAnimation(rc.mint),
+              ),
+            ),
+            if (eta != null) ...[
+              const SizedBox(height: 10),
+              Text(
+                eta,
+                style: TextStyle(
+                  fontSize: 13.5,
+                  fontWeight: FontWeight.w600,
+                  color: rc.onCardMuted,
+                ),
+              ),
+            ],
+          ],
+        ],
+      ),
+    );
+  }
+
+  String _prettyDays(int days) {
+    if (days < 14) return '$days ${days == 1 ? 'day' : 'days'}';
+    final weeks = (days / 7).round();
+    return '$weeks ${weeks == 1 ? 'week' : 'weeks'}';
+  }
+
+  void _goalDialog(
+      BuildContext context, AppState state, double? currentGoal, double current) {
+    final ctl = TextEditingController(
+        text: currentGoal != null ? formatNum(currentGoal, 1) : '');
+    final rc = context.rc;
+    showDialog(
+      context: context,
+      builder: (_) => AlertDialog(
+        backgroundColor: rc.card,
+        shape:
+            RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: const Text('Weight goal'),
+        content: TextField(
+          controller: ctl,
+          keyboardType:
+              const TextInputType.numberWithOptions(decimal: true),
+          autofocus: true,
+          decoration: const InputDecoration(hintText: 'Target weight in kg'),
+        ),
+        actions: [
+          if (currentGoal != null)
+            TextButton(
+              onPressed: () async {
+                await state.setGoalWeight(state.activeProfileId, null);
+                if (context.mounted) Navigator.pop(context);
+              },
+              child: const Text('Clear'),
+            ),
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            onPressed: () async {
+              final v = double.tryParse(ctl.text.replaceAll(',', '.'));
+              if (v != null && v > 20 && v < 500) {
+                await state.setGoalWeight(state.activeProfileId, v);
+                if (context.mounted) Navigator.pop(context);
+              }
+            },
+            child: const Text('Save'),
+          ),
+        ],
+      ),
     );
   }
 }

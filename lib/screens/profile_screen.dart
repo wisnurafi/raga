@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../core/theme.dart';
 import '../state/app_state.dart';
 import '../data/cloud_sync.dart';
+import '../data/reminder_service.dart';
 import '../widgets/glass.dart';
 
 // The "Profile" screen: active profile info + app settings.
@@ -110,6 +111,17 @@ class ProfileScreen extends StatelessWidget {
             onChanged: state.setMetricUnits,
           ),
         ),
+        const SizedBox(height: 10),
+        _tile(
+          context,
+          icon: Icons.notifications_outlined,
+          title: 'Weekly reminder',
+          subtitle: 'A gentle nudge every Sunday morning',
+          trailing: Switch(
+            value: state.weeklyReminder,
+            onChanged: (v) => _toggleReminder(context, v),
+          ),
+        ),
         const SizedBox(height: 22),
         _sectionLabel(context, 'Data'),
         _tile(
@@ -169,6 +181,26 @@ class ProfileScreen extends StatelessWidget {
       height: 12,
       decoration: BoxDecoration(color: color, shape: BoxShape.circle),
     );
+  }
+
+  void _toggleReminder(BuildContext context, bool v) async {
+    if (v) {
+      final ok = await ReminderService.requestPermission();
+      if (!ok) {
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Turn on notifications in system settings first'),
+            ),
+          );
+        }
+        return;
+      }
+      await ReminderService.scheduleWeekly();
+    } else {
+      await ReminderService.cancel();
+    }
+    if (context.mounted) await AppState.of(context).setWeeklyReminder(v);
   }
 
   void _syncDialog(BuildContext context, AppState state) {

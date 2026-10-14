@@ -75,6 +75,29 @@ const Map<String, double> activityFactors = {
 
 double tdee(double bmr, double activityFactor) => bmr * activityFactor;
 
+// Estimated days until targetKg at the current pace, from weigh-in history.
+// [history] is oldest-first. Returns null days when there isn't enough of
+// a trend to say anything; [away] means the trend is going the wrong way.
+({int? days, bool away}) estimateGoal({
+  required List<({DateTime at, double weightKg})> history,
+  required double targetKg,
+}) {
+  final recent = history
+      .where((h) => DateTime.now().difference(h.at).inDays <= 90)
+      .toList();
+  if (recent.length < 2) return (days: null, away: false);
+  final first = recent.first;
+  final last = recent.last;
+  final spanDays = last.at.difference(first.at).inDays;
+  if (spanDays < 3) return (days: null, away: false);
+  final diff = targetKg - last.weightKg;
+  if (diff.abs() < 0.5) return (days: 0, away: false);
+  final rate = (last.weightKg - first.weightKg) / spanDays; // kg per day
+  if (rate.abs() < 0.005) return (days: null, away: false);
+  if ((diff > 0) != (rate > 0)) return (days: null, away: true);
+  return (days: (diff / rate).round(), away: false);
+}
+
 String greetingFor(DateTime now) {
   final h = now.hour;
   if (h < 11) return 'Good morning';

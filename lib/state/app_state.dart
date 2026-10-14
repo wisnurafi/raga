@@ -17,6 +17,8 @@ class AppState extends ChangeNotifier {
   List<BmiRecord> records = [];
   bool metricUnits = true;
   String activity = 'Light';
+  bool weeklyReminder = false;
+  Map<String, double> goalWeights = {};
 
   AppState(this._store);
 
@@ -27,6 +29,8 @@ class AppState extends ChangeNotifier {
     state.records = store.records;
     state.metricUnits = store.metricUnits;
     state.activity = store.activity;
+    state.weeklyReminder = store.weeklyReminder;
+    state.goalWeights = store.goalWeights;
     if (state.profiles.isEmpty) {
       final p = Profile(name: 'Wisnu');
       state.profiles = [p];
@@ -115,6 +119,25 @@ class AppState extends ChangeNotifier {
   Future<void> setActivity(String v) async {
     activity = v;
     await _store.saveActivity(v);
+    notifyListeners();
+  }
+
+  double? goalFor(String profileId) => goalWeights[profileId];
+
+  Future<void> setGoalWeight(String profileId, double? kg) async {
+    goalWeights = {...goalWeights};
+    if (kg == null) {
+      goalWeights.remove(profileId);
+    } else {
+      goalWeights[profileId] = kg;
+    }
+    await _store.saveGoalWeight(profileId, kg);
+    notifyListeners();
+  }
+
+  Future<void> setWeeklyReminder(bool v) async {
+    weeklyReminder = v;
+    await _store.saveWeeklyReminder(v);
     notifyListeners();
   }
 

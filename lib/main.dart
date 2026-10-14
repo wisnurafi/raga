@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'core/theme.dart';
 import 'state/app_state.dart';
 import 'data/cloud_sync.dart';
+import 'data/reminder_service.dart';
 import 'widgets/floating_nav.dart';
 import 'screens/home_screen.dart';
 import 'screens/history_screen.dart';
@@ -11,6 +12,9 @@ import 'screens/profile_screen.dart';
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   final state = await AppState.load();
+  await ReminderService.init();
+  // Re-arm the weekly nudge in case the system cleared it.
+  if (state.weeklyReminder) await ReminderService.scheduleWeekly();
   await CloudSync.init();
   // Retry records that didn't make it up yet (e.g. saved while offline).
   await CloudSync.syncPending(state.records);

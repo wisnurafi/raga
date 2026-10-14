@@ -5,7 +5,7 @@ number itself, it keeps your history, draws trend charts, figures out your
 ideal weight, BMR, and daily calorie needs, handles multiple profiles, and
 can share your result as an image.
 
-Built as a **Mobile Programming** coursework project.
+A personal project — built to be genuinely useful, not just a demo.
 
 ## Features
 
@@ -24,6 +24,9 @@ Built as a **Mobile Programming** coursework project.
 - **Share result** — export the result card as an image
 - **Light glassmorphism theme** + metric/imperial unit toggle
 - **Cloud backup** (Supabase) — automatic backup, visible status in Profile, auto-retry, works 100% offline
+- **Weekly reminder** — optional local notification every Sunday morning to weigh in
+- **Weight goal** — set a target, see your progress and an estimated timeline from your trend
+- **Export CSV** — share your full history as a CSV file
 
 ## Screenshots
 

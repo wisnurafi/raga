@@ -11,6 +11,8 @@ class LocalStore {
   static const _kRecords = 'raga.records';
   static const _kMetric = 'raga.metric_units';
   static const _kActivity = 'raga.activity';
+  static const _kReminder = 'raga.weekly_reminder';
+  static const _kGoals = 'raga.goal_weights';
 
   final SharedPreferences _prefs;
   LocalStore(this._prefs);
@@ -60,9 +62,35 @@ class LocalStore {
   String get activity => _prefs.getString(_kActivity) ?? 'Light';
   Future<void> saveActivity(String v) => _prefs.setString(_kActivity, v);
 
+  bool get weeklyReminder => _prefs.getBool(_kReminder) ?? false;
+  Future<void> saveWeeklyReminder(bool v) => _prefs.setBool(_kReminder, v);
+
+  // Target weight per profile, in kg. Missing key = no goal set.
+  Map<String, double> get goalWeights {
+    final raw = _prefs.getString(_kGoals);
+    if (raw == null || raw.isEmpty) return {};
+    try {
+      return (jsonDecode(raw) as Map)
+          .map((k, v) => MapEntry(k as String, (v as num).toDouble()));
+    } catch (_) {
+      return {};
+    }
+  }
+
+  Future<void> saveGoalWeight(String profileId, double? kg) async {
+    final m = goalWeights;
+    if (kg == null) {
+      m.remove(profileId);
+    } else {
+      m[profileId] = kg;
+    }
+    await _prefs.setString(_kGoals, jsonEncode(m));
+  }
+
   Future<void> clearAll() async {
     await _prefs.remove(_kProfiles);
     await _prefs.remove(_kActiveProfile);
     await _prefs.remove(_kRecords);
+    await _prefs.remove(_kGoals);
   }
 }

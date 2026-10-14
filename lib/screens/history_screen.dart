@@ -1,5 +1,9 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:share_plus/share_plus.dart';
+import 'package:cross_file/cross_file.dart';
 import '../core/theme.dart';
 import '../core/bmi.dart';
 import '../state/app_state.dart';
@@ -40,27 +44,54 @@ class _HistoryScreenState extends State<HistoryScreen> {
                 letterSpacing: -0.8,
               ),
             ),
-            Container(
-              width: 44,
-              height: 44,
-              decoration: BoxDecoration(
-                color: const Color(0xFFE8C98F),
-                shape: BoxShape.circle,
-                border: Border.all(
-                  color: Colors.white.withValues(alpha: 0.9),
-                  width: 2,
-                ),
-              ),
-              child: Center(
-                child: Text(
-                  p.initial,
-                  style: const TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.w800,
-                    color: Color(0xFF1B1B2F),
+            Row(
+              children: [
+                InkWell(
+                  onTap: state.records.isEmpty
+                      ? null
+                      : () => _exportCsv(context),
+                  borderRadius: BorderRadius.circular(23),
+                  child: Container(
+                    width: 44,
+                    height: 44,
+                    decoration: BoxDecoration(
+                      color: Colors.white.withValues(alpha: 0.22),
+                      shape: BoxShape.circle,
+                      border: Border.all(
+                        color: Colors.white.withValues(alpha: 0.65),
+                      ),
+                    ),
+                    child: Icon(
+                      Icons.ios_share,
+                      size: 20,
+                      color: rc.onImage,
+                    ),
                   ),
                 ),
-              ),
+                const SizedBox(width: 10),
+                Container(
+                  width: 44,
+                  height: 44,
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFE8C98F),
+                    shape: BoxShape.circle,
+                    border: Border.all(
+                      color: Colors.white.withValues(alpha: 0.9),
+                      width: 2,
+                    ),
+                  ),
+                  child: Center(
+                    child: Text(
+                      p.initial,
+                      style: const TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w800,
+                        color: Color(0xFF1B1B2F),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
             ),
           ],
         ),
@@ -78,6 +109,34 @@ class _HistoryScreenState extends State<HistoryScreen> {
       ],
     );
   }
+
+  // Dumps the full history to a CSV file and opens the share sheet.
+  Future<void> _exportCsv(BuildContext context) async {
+    final state = AppState.of(context);
+    final rows = <List<String>>[
+      ['date', 'profile', 'height_cm', 'weight_kg', 'bmi', 'category'],
+      for (final r in state.records)
+        [
+          r.createdAt.toIso8601String(),
+          state.profiles
+              .where((p) => p.id == r.profileId)
+              .map((p) => p.name)
+              .join(),
+          r.heightCm.toStringAsFixed(1),
+          r.weightKg.toStringAsFixed(1),
+          r.bmi.toStringAsFixed(1),
+          categoryOf(r.bmi).name,
+        ],
+    ];
+    final csv = rows.map((r) => r.map(_csvCell).join(',')).join('\n');
+    final dir = await getTemporaryDirectory();
+    final file = File('${dir.path}/raga-history.csv');
+    await file.writeAsString(csv);
+    await Share.shareXFiles([XFile(file.path)], subject: 'Raga history');
+  }
+
+  String _csvCell(String v) =>
+      v.contains(RegExp(r'[",\n]')) ? '"${v.replaceAll('"', '""')}"' : v;
 
   Widget _emptyCard(BuildContext context, RagaColors rc) {
     return GlassContainer(
