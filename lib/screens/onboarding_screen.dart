@@ -1,14 +1,19 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
+import '../core/bmi.dart';
 import '../core/theme.dart';
 import '../data/reminder_service.dart';
 import '../state/app_state.dart';
-import '../widgets/cards.dart';
+import '../widgets/buttons.dart';
+import '../widgets/chips.dart';
+import '../widgets/controls.dart';
 import '../widgets/glass.dart';
+import '../widgets/headers.dart';
 
-// First-launch setup: name -> measurements -> goal. Creates the real
-// profile, then hands off to the main app. Shown once; the flag lives
-// in SharedPreferences (and survives restore via the backup blob).
+// First-launch setup from the mockup (p.7–10): 4 steps —
+// 1. name/age/gender, 2. measurements, 3. optional weight goal,
+// 4. optional weigh-in schedule. Metric is canonical internally;
+// imperial is display-only. Finishes via [AppState.completeOnboarding]
+// then [onDone].
 class OnboardingScreen extends StatefulWidget {
   final VoidCallback onDone;
   const OnboardingScreen({super.key, required this.onDone});
@@ -18,604 +23,761 @@ class OnboardingScreen extends StatefulWidget {
 }
 
 class _OnboardingScreenState extends State<OnboardingScreen> {
-  final _pager = PageController();
-  int _page = 0;
+  static const _dayNames = [
+    'Mon',
+    'Tue',
+    'Wed',
+    'Thu',
+    'Fri',
+    'Sat',
+    'Sun'
+  ];
+
+  int _step = 1;
   bool _saving = false;
 
+  // Step 1.
   final _name = TextEditingController();
-  final _height = TextEditingController(text: '170');
-  final _weight = TextEditingController(text: '65');
-  final _age = TextEditingController(text: '21');
-  final _goal = TextEditingController();
+  int _age = 21;
   bool _isMale = true;
+
+  // Step 2 — metric internally, always.
   bool _metric = true;
   bool _metricInit = false;
-  bool _remindWeekly = false;
-  String? _error;
+  double _heightCm = 170;
+  double _weightKg = 65;
+
+  // Step 3.
+  String _direction = 'Lose';
+  double _goalKg = 62;
+  double _pace = 0.5;
+  double? _pendingGoalKg;
+
+  // Step 4 — 1=Mon..7=Sun, like AppState.reminderWeekdays.
+  final Set<int> _days = {1, 4};
+  int _hour = 7;
+  int _minute = 0;
+  bool _reminderOn = true;
 
   @override
   void dispose() {
-    _pager.dispose();
     _name.dispose();
-    _height.dispose();
-    _weight.dispose();
-    _age.dispose();
-    _goal.dispose();
     super.dispose();
   }
-
-  double? _num(String s) => double.tryParse(s.trim().replaceAll(',', '.'));
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    // Pick up the global unit setting once; the local toggle owns it after.
     if (!_metricInit) {
       _metricInit = true;
       _metric = AppState.of(context).metricUnits;
-      if (!_metric) {
-        // Controllers start with metric defaults; rewrite them so the
-        // numbers don't silently change meaning under an imperial user
-        // (happens after clear-all-data, which keeps unit settings).
-        _height.text = _fmtV(170 / 2.54);
-        _weight.text = _fmtV(65 * 2.20462);
-      }
     }
   }
 
-  // Unit conversions. Controllers always hold DISPLAY units; metric is
-  // the canonical unit everywhere else.
-  double _hToMetric(double v) => _metric ? v : v * 2.54;
-  double _wToMetric(double v) => _metric ? v : v / 2.20462;
-  String _fmtV(double v) => v.toStringAsFixed(v >= 100 ? 0 : 1);
+  // Imperial display conversions (metric stays canonical).
+  String get _wu => _metric ? 'kg' : 'lb';
+  String get _hu => _metric ? 'cm' : 'in';
+  double _dispH() => _metric ? _heightCm : _heightCm / 2.54;
+  double _dispW(double kg) => _metric ? kg : kg * 2.20462;
 
-  void _setMetric(bool v) {
-    if (v == _metric) return;
-    // Rewrite the fields into the new units so the numbers keep meaning
-    // the same thing instead of silently changing unit under the user.
-    final h = _num(_height.text);
-    final w = _num(_weight.text);
-    final g = _num(_goal.text);
-    setState(() => _metric = v);
-    if (h != null) _height.text = _fmtV(v ? h * 2.54 : h / 2.54);
-    if (w != null) _weight.text = _fmtV(v ? w / 2.20462 : w * 2.20462);
-    if (g != null && _goal.text.trim().isNotEmpty) {
-      _goal.text = _fmtV(v ? g / 2.20462 : g * 2.20462);
-    }
-    AppState.of(context).setMetricUnits(v);
+  /// Whole numbers print clean ("62"), fractional keep one decimal.
+  String _trimNum(double v) => v == v.roundToDouble()
+      ? v.toStringAsFixed(0)
+      : v.toStringAsFixed(1);
+
+  Future<void> _setUnits(String v) async {
+    final m = v == 'cm · kg';
+    if (m == _metric) return;
+    setState(() => _metric = m);
+    await AppState.of(context).setMetricUnits(m);
   }
 
-  bool _validPage() {
-    setState(() => _error = null);
-    if (_page == 0) {
-      if (_name.text.trim().isEmpty) {
-        setState(() => _error = 'Tell me your name first');
-        return false;
-      }
-      return true;
-    }
-    if (_page == 1) {
-      final hd = _num(_height.text);
-      final wd = _num(_weight.text);
-      final a = int.tryParse(_age.text.trim());
-      final h = hd == null ? null : _hToMetric(hd);
-      final w = wd == null ? null : _wToMetric(wd);
-      if (h == null || h < 100 || h > 250) {
-        setState(() => _error = _metric
-            ? 'A sensible height: 100–250 cm'
-            : 'A sensible height: 39–98 in');
-        return false;
-      }
-      if (w == null || w < 20 || w > 500) {
-        setState(() => _error = _metric
-            ? 'A sensible weight: 20–500 kg'
-            : 'A sensible weight: 44–1102 lb');
-        return false;
-      }
-      if (a == null || a < 5 || a > 120) {
-        setState(() => _error = 'A sensible age: 5–120 years');
-        return false;
-      }
-      return true;
-    }
-    return true; // goal page: optional
-  }
+  // ---------- step 1 ----------
 
-  void _next() {
-    if (!_validPage()) return;
-    if (_page < 2) {
-      _pager.nextPage(
-        duration: const Duration(milliseconds: 280),
-        curve: Curves.easeOutCubic,
+  void _continueFromStep1() {
+    if (_name.text.trim().isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please enter your name')),
       );
-    } else {
-      // Honor a typed goal; empty field == no goal.
-      _finish(skipGoal: false);
-    }
-  }
-
-  Future<void> _finish({required bool skipGoal}) async {
-    if (_saving) return;
-    FocusScope.of(context).unfocus();
-    final state = AppState.of(context);
-    final messenger = ScaffoldMessenger.of(context);
-
-    double? goalKg;
-    if (!skipGoal && _goal.text.trim().isNotEmpty) {
-      final gd = _num(_goal.text);
-      final gKg = gd == null ? null : _wToMetric(gd);
-      if (gKg == null || gKg <= 20 || gKg >= 500) {
-        setState(() => _error = _metric
-            ? 'A sensible target: 20–500 kg'
-            : 'A sensible target: 44–1102 lb');
-        return;
-      }
-      goalKg = gKg;
-    }
-
-    final hd = _num(_height.text);
-    final wd = _num(_weight.text);
-    final age = int.tryParse(_age.text.trim());
-    if (hd == null || wd == null || age == null) {
-      // Can't happen: page 1 validates before you can get here. Defensive.
-      setState(() => _error = 'Double-check your measurements');
       return;
     }
+    FocusScope.of(context).unfocus();
+    setState(() => _step = 2);
+  }
 
+  // ---------- step 3 ----------
+
+  void _setDirection(String d) {
+    setState(() {
+      _direction = d;
+      _goalKg = switch (d) {
+        'Gain' => (_weightKg + 3).clamp(30.0, 150.0),
+        'Maintain' => _weightKg,
+        _ => (_weightKg - 3).clamp(30.0, 150.0),
+      };
+    });
+  }
+
+  double get _goalDiffKg => (_direction == 'Gain'
+          ? _goalKg - _weightKg
+          : _weightKg - _goalKg)
+      .abs();
+
+  String _goalHint() {
+    final w = '${_trimNum(_dispW(_weightKg))} $_wu';
+    if (_direction == 'Maintain') return 'Stay at $w';
+    final sign = _direction == 'Gain' ? '+' : '−';
+    return 'Now $w · $sign${formatNum(_goalDiffKg)} $_wu to go';
+  }
+
+  String _eta() {
+    if (_direction == 'Maintain') return '—';
+    final weeks = (_goalDiffKg / _pace).ceil();
+    final date = DateTime.now().add(Duration(days: weeks * 7));
+    return '±$weeks weeks · ${formatDate(date)}';
+  }
+
+  void _saveGoal() {
+    _pendingGoalKg = _direction == 'Maintain' ? _weightKg : _goalKg;
+    FocusScope.of(context).unfocus();
+    setState(() => _step = 4);
+  }
+
+  void _skipGoal() {
+    _pendingGoalKg = null;
+    FocusScope.of(context).unfocus();
+    setState(() => _step = 4);
+  }
+
+  // ---------- step 4 ----------
+
+  String _timeColon() =>
+      '${_hour.toString().padLeft(2, '0')}:${_minute.toString().padLeft(2, '0')}';
+
+  String _summary() {
+    final t =
+        '${_hour.toString().padLeft(2, '0')}.${_minute.toString().padLeft(2, '0')}';
+    final days = _days.toList()..sort();
+    if (days.length == 7) return 'Every day · $t';
+    final names = days.map((d) => _dayNames[d - 1]).toList();
+    if (names.length == 1) return '1× a week · ${names.first} · $t';
+    final joined = names.length == 2
+        ? names.join(' & ')
+        : '${names.sublist(0, names.length - 1).join(', ')} & ${names.last}';
+    return '${names.length}× a week · $joined · $t';
+  }
+
+  Future<void> _pickTime() async {
+    final picked = await showTimePicker(
+      context: context,
+      initialTime: TimeOfDay(hour: _hour, minute: _minute),
+    );
+    if (picked != null) {
+      setState(() {
+        _hour = picked.hour;
+        _minute = picked.minute;
+      });
+    }
+  }
+
+  Future<void> _finish({required bool arm}) async {
+    if (_saving) return;
+    FocusScope.of(context).unfocus();
     setState(() => _saving = true);
     try {
+      final state = AppState.of(context);
+      if (arm && _reminderOn) {
+        await _armReminder(state);
+      } else {
+        await state.setWeeklyReminder(false);
+        await ReminderService.cancelAll();
+      }
       await state.completeOnboarding(
         name: _name.text.trim(),
         isMale: _isMale,
-        age: age,
-        heightCm: _hToMetric(hd),
-        weightKg: _wToMetric(wd),
-        goalKg: goalKg,
+        age: _age,
+        heightCm: _heightCm,
+        weightKg: _weightKg,
+        goalKg: _pendingGoalKg,
       );
-      if (_remindWeekly) {
-        await _enableReminder(state, messenger);
-      }
       widget.onDone();
     } finally {
       if (mounted) setState(() => _saving = false);
     }
   }
 
-  // Same permission-first flow as the Profile screen: no permission, no
-  // toggle flip, and an honest message about what happened.
-  Future<void> _enableReminder(
-      AppState state, ScaffoldMessengerState messenger) async {
+  /// Permission-first arming, exactly the spec sequence: request
+  /// permission → setWeeklyReminder(true) → setReminderSchedule →
+  /// scheduleBestEffortDays. Denied permission leaves the reminder off
+  /// with an honest message instead of a dead toggle.
+  Future<void> _armReminder(AppState state) async {
+    final days = _days.toList();
     final ok = await ReminderService.requestPermission();
     if (!ok) {
-      messenger.showSnackBar(
-        const SnackBar(
-          content: Text('Turn on notifications in system settings first'),
-        ),
-      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Turn on notifications in system settings first'),
+          ),
+        );
+      }
+      await state.setWeeklyReminder(false);
+      await ReminderService.cancelAll();
       return;
     }
-    if (!await ReminderService.canScheduleExact()) {
-      await ReminderService.requestExactAlarmsPermission();
-    }
-    await ReminderService.scheduleBestEffort(
-      weekday: state.reminderWeekday,
-      hour: state.reminderHour,
-      minute: state.reminderMinute,
-    );
     await state.setWeeklyReminder(true);
+    await state.setReminderSchedule(
+        weekdays: days, hour: _hour, minute: _minute);
+    await ReminderService.scheduleBestEffortDays(
+        weekdays: days, hour: _hour, minute: _minute);
   }
+
+  // ---------- build ----------
 
   @override
   Widget build(BuildContext context) {
-    final rc = context.rc;
-    return Scaffold(
-      backgroundColor: Colors.transparent,
-      body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(24, 20, 24, 28),
-          child: Column(
-            children: [
-              Image.asset(
-                'assets/mark/raga-mark.png',
-                width: 52,
-                height: 52,
-              ),
-              const SizedBox(height: 14),
-              _dots(rc),
-              const SizedBox(height: 28),
-              Expanded(
-                child: LayoutBuilder(
-                  builder: (ctx, constraints) => PageView(
-                    controller: _pager,
-                    physics: const NeverScrollableScrollPhysics(),
-                    onPageChanged: (i) {
-                      setState(() {
-                        _page = i;
-                        _error = null;
-                      });
-                    },
-                    children: [
-                      _centeredPage(constraints, _namePage(rc)),
-                      _centeredPage(constraints, _measurePage(rc)),
-                      _centeredPage(constraints, _goalPage(rc)),
-                    ],
-                  ),
-                ),
-              ),
-              if (_error != null) ...[
-                Text(
-                  _error!,
-                  style: const TextStyle(
-                    color: Color(0xFFF2555A),
-                    fontWeight: FontWeight.w600,
-                    fontSize: 13.5,
-                  ),
-                ),
-                const SizedBox(height: 10),
-              ],
-              Row(
-                children: [
-                  if (_page > 0)
-                    TextButton(
-                      onPressed: () => _pager.previousPage(
-                        duration: const Duration(milliseconds: 280),
-                        curve: Curves.easeOutCubic,
-                      ),
-                      child: const Text('Back'),
-                    ),
-                  const Spacer(),
-                  SizedBox(
-                    width: 150,
-                    child: RagaButton(
-                      label: _saving
-                          ? 'Saving…'
-                          : _page == 2
-                              ? 'Start'
-                              : 'Next',
-                      onPressed: _saving ? () {} : _next,
-                    ),
-                  ),
-                ],
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _dots(RagaColors rc) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: List.generate(3, (i) {
-        final active = i == _page;
-        return AnimatedContainer(
-          duration: const Duration(milliseconds: 250),
-          margin: const EdgeInsets.symmetric(horizontal: 4),
-          width: active ? 26 : 8,
-          height: 8,
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(99),
-            color: active ? rc.primaryBtn : rc.panel,
-          ),
-        );
-      }),
-    );
-  }
-
-  // Centers short pages vertically so the screen never looks half-empty;
-  // taller content still scrolls instead of clipping.
-  Widget _centeredPage(BoxConstraints c, Widget content) {
-    return SingleChildScrollView(
-      child: ConstrainedBox(
-        constraints: BoxConstraints(minHeight: c.maxHeight),
+    return SafeArea(
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(20, 12, 20, 28),
         child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [content],
+          children: [
+            OnboardHeader(
+              step: _step,
+              total: 4,
+              onBack: _step > 1
+                  ? () => setState(() => _step--)
+                  : () {},
+            ),
+            const SizedBox(height: 24),
+            Expanded(
+              child: SingleChildScrollView(
+                child: switch (_step) {
+                  1 => _step1(),
+                  2 => _step2(),
+                  3 => _step3(),
+                  _ => _step4(),
+                },
+              ),
+            ),
+            const SizedBox(height: 20),
+            switch (_step) {
+              1 => RagaButton(
+                  label: 'Continue', onPressed: _continueFromStep1),
+              2 => RagaButton(
+                  label: 'Continue',
+                  onPressed: () => setState(() => _step = 3)),
+              3 => Column(
+                  children: [
+                    RagaButton(label: 'Save goal', onPressed: _saveGoal),
+                    RagaTextLink(label: 'Skip for now', onTap: _skipGoal),
+                  ],
+                ),
+              _ => Column(
+                  children: [
+                    RagaButton(
+                      label: 'Finish',
+                      onPressed:
+                          _saving ? null : () => _finish(arm: true),
+                    ),
+                    RagaTextLink(
+                      label: 'Skip for now',
+                      onTap: _saving ? null : () => _finish(arm: false),
+                    ),
+                  ],
+                ),
+            },
+          ],
         ),
       ),
     );
   }
 
-  Widget _title(String t, String sub, RagaColors rc) {
+  Widget _title(String t, String sub) {
+    final rc = context.rc;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
           t,
           style: TextStyle(
-            fontSize: 30,
+            fontSize: 32,
             fontWeight: FontWeight.w800,
             letterSpacing: -0.8,
-            color: rc.onImage,
+            color: rc.onBg,
           ),
         ),
         const SizedBox(height: 8),
         Text(
           sub,
-          style: TextStyle(fontSize: 15, height: 1.5, color: rc.onImageMuted),
+          style: TextStyle(
+            fontSize: 15.5,
+            height: 1.5,
+            color: rc.onBgMuted,
+          ),
         ),
-        const SizedBox(height: 26),
+        const SizedBox(height: 24),
       ],
     );
   }
 
-  Widget _field(RagaColors rc,
-      {required TextEditingController ctl,
-      required String label,
-      required String suffix,
-      TextInputType? keyboard}) {
-    // Higher fill than the default glass: input text has to survive on
-    // top of the artwork, whose brightness varies top to bottom.
-    return GlassContainer(
-      opacity: 0.75,
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 6),
-      child: Row(
-        children: [
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  label,
-                  style: TextStyle(
-                    fontSize: 12.5,
-                    fontWeight: FontWeight.w700,
-                    color: rc.onCardAccent,
-                  ),
-                ),
-                TextField(
-                  controller: ctl,
-                  keyboardType: keyboard ??
-                      const TextInputType.numberWithOptions(decimal: true),
-                  inputFormatters: [
-                    FilteringTextInputFormatter.allow(RegExp(r'[0-9,.]')),
-                  ],
-                  style: TextStyle(
-                    fontSize: 24,
-                    fontWeight: FontWeight.w800,
-                    color: rc.onCard,
-                  ),
-                  decoration: const InputDecoration(
-                    border: InputBorder.none,
-                    isDense: true,
-                    contentPadding: EdgeInsets.only(bottom: 8),
-                  ),
-                ),
-              ],
-            ),
-          ),
-          Text(
-            suffix,
-            style: TextStyle(
-              fontSize: 15,
-              fontWeight: FontWeight.w700,
-              color: rc.onCardMuted,
-            ),
-          ),
-        ],
+  Widget _optionalBadge() {
+    final rc = context.rc;
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: rc.badgeOk, width: 1.5),
+      ),
+      child: Text(
+        'OPTIONAL',
+        style: TextStyle(
+          fontSize: 12,
+          fontWeight: FontWeight.w800,
+          letterSpacing: 1.2,
+          color: rc.badgeOk,
+        ),
       ),
     );
   }
 
-  Widget _namePage(RagaColors rc) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        _title('Hello! What\'s\nyour name?', 'This is what Raga will call you.', rc),
-        GlassContainer(
-          opacity: 0.75,
-          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 18),
-          child: TextField(
-            controller: _name,
-            autofocus: true,
-            textCapitalization: TextCapitalization.words,
-            style: TextStyle(
-              fontSize: 24,
-              fontWeight: FontWeight.w800,
-              color: rc.onCard,
-            ),
-            decoration: InputDecoration(
-              hintText: 'Your name…',
-              hintStyle: TextStyle(color: rc.onCardMuted),
-              border: InputBorder.none,
-              isDense: true,
-            ),
-            onSubmitted: (_) => _next(),
-          ),
-        ),
-      ],
-    );
-  }
+  // ----- step 1 -----
 
-  Widget _measurePage(RagaColors rc) {
+  Widget _step1() {
+    final rc = context.rc;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _title('Your\nmeasurements?', 'To calculate your BMI and calorie needs.', rc),
-        GlassContainer(
-          opacity: 0.75,
-          borderRadius: 999,
-          padding: const EdgeInsets.all(6),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
+        _title(
+          "Let's get acquainted",
+          'So Raga can greet you and calculate accurately.',
+        ),
+        GlassCard(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              _unitSeg(rc, 'cm · kg', true),
-              const SizedBox(width: 6),
-              _unitSeg(rc, 'in · lb', false),
+              Text(
+                'Nickname',
+                style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                  color: rc.onCardMuted,
+                ),
+              ),
+              TextField(
+                controller: _name,
+                textCapitalization: TextCapitalization.words,
+                style: TextStyle(
+                  fontSize: 28,
+                  fontWeight: FontWeight.w800,
+                  color: rc.onCard,
+                ),
+                decoration: const InputDecoration(
+                  border: InputBorder.none,
+                  isDense: true,
+                  contentPadding: EdgeInsets.only(top: 4),
+                ),
+                onSubmitted: (_) => _continueFromStep1(),
+              ),
             ],
           ),
         ),
-        const SizedBox(height: 16),
-        _field(rc,
-            ctl: _height, label: 'Height', suffix: _metric ? 'cm' : 'in'),
-        const SizedBox(height: 12),
-        _field(rc,
-            ctl: _weight, label: 'Weight', suffix: _metric ? 'kg' : 'lb'),
-        const SizedBox(height: 12),
-        Row(
-          children: [
-            Expanded(
-              child: _field(
-                rc,
-                ctl: _age,
-                label: 'Age',
-                suffix: 'yrs',
-                keyboard: TextInputType.number,
-              ),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: GlassContainer(
-                opacity: 0.75,
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Gender',
-                      style: TextStyle(
-                        fontSize: 12.5,
-                        fontWeight: FontWeight.w700,
-                        color: rc.onCardAccent,
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    Row(
-                      children: [
-                        _genderChip(rc, 'M', true),
-                        const SizedBox(width: 8),
-                        _genderChip(rc, 'F', false),
-                      ],
-                    ),
-                  ],
+        const SizedBox(height: 14),
+        GlassCard(
+          child: Row(
+            children: [
+              Text(
+                'Age',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                  color: rc.onCardMuted,
                 ),
               ),
-            ),
+              Expanded(
+                child: StepperRow(
+                  value: Text(
+                    '$_age',
+                    style: TextStyle(
+                      fontSize: 40,
+                      fontWeight: FontWeight.w800,
+                      color: rc.onCard,
+                    ),
+                  ),
+                  onMinus: () =>
+                      setState(() => _age = (_age - 1).clamp(5, 120)),
+                  onPlus: () =>
+                      setState(() => _age = (_age + 1).clamp(5, 120)),
+                ),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 20),
+        Text(
+          'Gender',
+          style: TextStyle(
+            fontSize: 14,
+            fontWeight: FontWeight.w600,
+            color: rc.onCardMuted,
+          ),
+        ),
+        const SizedBox(height: 10),
+        Row(
+          children: [
+            _genderCard(male: true),
+            const SizedBox(width: 12),
+            _genderCard(male: false),
           ],
         ),
       ],
     );
   }
 
-  Widget _genderChip(RagaColors rc, String label, bool male) {
-    final active = _isMale == male;
+  Widget _genderCard({required bool male}) {
+    final rc = context.rc;
+    final selected = _isMale == male;
     return Expanded(
-      child: GestureDetector(
-        onTap: () => setState(() => _isMale = male),
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 200),
-          padding: const EdgeInsets.symmetric(vertical: 10),
-          decoration: BoxDecoration(
-            color: active ? rc.primaryBtn : rc.panel,
-            borderRadius: BorderRadius.circular(12),
-          ),
-          child: Center(
-            child: Text(
-              label,
-              style: TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.w800,
-                color: active ? rc.onPrimaryBtn : rc.onCardMuted,
-              ),
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _unitSeg(RagaColors rc, String label, bool metric) {
-    final active = _metric == metric;
-    return GestureDetector(
-      onTap: () => _setMetric(metric),
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 200),
-        padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 10),
+      child: Container(
         decoration: BoxDecoration(
-          color: active ? rc.primaryBtn : Colors.transparent,
-          borderRadius: BorderRadius.circular(999),
+          borderRadius: BorderRadius.circular(26),
+          border:
+              selected ? Border.all(color: rc.chipActive, width: 2) : null,
         ),
-        child: Text(
-          label,
-          style: TextStyle(
-            fontSize: 13.5,
-            fontWeight: FontWeight.w800,
-            color: active ? rc.onPrimaryBtn : rc.onCardMuted,
+        child: GlassCard(
+          onTap: () => setState(() => _isMale = male),
+          child: Column(
+            children: [
+              Container(
+                width: 64,
+                height: 64,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: rc.chipInactive,
+                  border:
+                      Border.all(color: rc.cardBorder, width: 1.2),
+                ),
+                child: Center(
+                  child: Text(
+                    male ? '♂' : '♀',
+                    style: TextStyle(fontSize: 28, color: rc.onCard),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 10),
+              Text(
+                male ? 'Male' : 'Female',
+                style: TextStyle(
+                  fontSize: 17,
+                  fontWeight: FontWeight.w700,
+                  color: rc.onCard,
+                ),
+              ),
+            ],
           ),
         ),
       ),
     );
   }
 
-  Widget _goalPage(RagaColors rc) {
+  // ----- step 2 -----
+
+  Widget _step2() {
+    final rc = context.rc;
+    final bmi = calcBmi(weightKg: _weightKg, heightCm: _heightCm);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _title('Have a weight\ntarget?', 'Optional — you can set it later too.', rc),
-        _field(rc,
-            ctl: _goal,
-            label: 'Target weight',
-            suffix: _metric ? 'kg' : 'lb'),
-        const SizedBox(height: 16),
-        GlassContainer(
-          opacity: 0.75,
-          padding:
-              const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+        _title(
+          'Your measurements',
+          'Used to calculate your starting BMI.',
+        ),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.end,
+          children: [
+            SizedBox(
+              width: 180,
+              child: Segmented<String>(
+                options: const ['cm · kg', 'in · lb'],
+                value: _metric ? 'cm · kg' : 'in · lb',
+                onChanged: _setUnits,
+                labelOf: (s) => s,
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 14),
+        GlassCard(
+          child: MeasureSlider(
+            label: 'Height',
+            value: _dispH(),
+            unit: _hu,
+            min: _metric ? 130 : 51,
+            max: _metric ? 220 : 87,
+            onChanged: (v) => setState(
+                () => _heightCm = _metric ? v : v * 2.54),
+          ),
+        ),
+        const SizedBox(height: 14),
+        GlassCard(
+          child: MeasureSlider(
+            label: 'Weight',
+            value: _dispW(_weightKg),
+            unit: _wu,
+            min: _metric ? 30 : 66,
+            max: _metric ? 150 : 330,
+            onChanged: (v) => setState(
+                () => _weightKg = _metric ? v : v / 2.20462),
+          ),
+        ),
+        const SizedBox(height: 14),
+        GlassCard(
           child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Container(
-                width: 38,
-                height: 38,
-                decoration: BoxDecoration(
-                  color: rc.primaryBtn.withValues(alpha: 0.14),
-                  borderRadius: BorderRadius.circular(14),
-                ),
-                child: Icon(
-                  Icons.notifications_outlined,
-                  size: 20,
-                  color: rc.primaryBtn,
+              Text(
+                'Your starting BMI',
+                style: TextStyle(
+                  fontSize: 15,
+                  fontWeight: FontWeight.w600,
+                  color: rc.onCardMuted,
                 ),
               ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+              Row(
+                children: [
+                  Text(
+                    formatNum(bmi),
+                    style: TextStyle(
+                      fontSize: 24,
+                      fontWeight: FontWeight.w800,
+                      color: rc.onCard,
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  CategoryBadge(cat: bmiCatOf(bmi)),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  // ----- step 3 -----
+
+  Widget _step3() {
+    final rc = context.rc;
+    final targetKg = _direction == 'Maintain' ? _weightKg : _goalKg;
+    final targetBmi = calcBmi(weightKg: targetKg, heightCm: _heightCm);
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _optionalBadge(),
+        const SizedBox(height: 14),
+        _title(
+          'Have a weight goal?',
+          'Set it now or later in Profile. You can skip this.',
+        ),
+        GlassCard(
+          child: Column(
+            children: [
+              Segmented<String>(
+                options: const ['Lose', 'Maintain', 'Gain'],
+                value: _direction,
+                onChanged: _setDirection,
+                labelOf: (s) => s,
+              ),
+              const SizedBox(height: 18),
+              StepperRow(
+                value: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.baseline,
+                  textBaseline: TextBaseline.alphabetic,
                   children: [
                     Text(
-                      'Weekly reminder',
+                      _trimNum(_dispW(_goalKg)),
                       style: TextStyle(
-                        fontSize: 15,
+                        fontSize: 56,
                         fontWeight: FontWeight.w800,
                         color: rc.onCard,
+                        height: 1.1,
                       ),
                     ),
-                    const SizedBox(height: 2),
+                    const SizedBox(width: 8),
                     Text(
-                      'A nudge to weigh in, Sundays at 9:00',
+                      _wu,
                       style: TextStyle(
-                        fontSize: 12.5,
+                        fontSize: 20,
+                        fontWeight: FontWeight.w700,
                         color: rc.onCardMuted,
                       ),
                     ),
                   ],
                 ),
+                onMinus: () => setState(
+                    () => _goalKg = (_goalKg - 0.5).clamp(30.0, 150.0)),
+                onPlus: () => setState(
+                    () => _goalKg = (_goalKg + 0.5).clamp(30.0, 150.0)),
               ),
-              Switch(
-                value: _remindWeekly,
-                onChanged: (v) => setState(() => _remindWeekly = v),
-                activeThumbColor: rc.primaryBtn,
+              const SizedBox(height: 12),
+              Center(
+                child: Text(
+                  _goalHint(),
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontSize: 14.5,
+                    fontWeight: FontWeight.w600,
+                    color: rc.onCardMuted,
+                  ),
+                ),
+              ),
+              const SizedBox(height: 12),
+              Center(
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                      horizontal: 18, vertical: 10),
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(20),
+                    color: rc.badgeOk,
+                  ),
+                  child: Text(
+                    'Target BMI ${formatNum(targetBmi)} · '
+                    '${bmiCatLabel(bmiCatOf(targetBmi))}',
+                    style: TextStyle(
+                      fontSize: 15,
+                      fontWeight: FontWeight.w800,
+                      color: rc.onBadgeOk,
+                    ),
+                  ),
+                ),
               ),
             ],
           ),
         ),
+        const SizedBox(height: 14),
+        GlassCard(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Weekly pace',
+                style: TextStyle(
+                  fontSize: 15,
+                  fontWeight: FontWeight.w600,
+                  color: rc.onCardMuted,
+                ),
+              ),
+              const SizedBox(height: 12),
+              Row(
+                children: [0.25, 0.5, 0.75].map((p) {
+                  return Expanded(
+                    child: Padding(
+                      padding: EdgeInsets.only(
+                          right: p == 0.75 ? 0 : 8),
+                      child: SelectChip(
+                        label: '$p kg',
+                        selected: _pace == p,
+                        onTap: () => setState(() => _pace = p),
+                      ),
+                    ),
+                  );
+                }).toList(),
+              ),
+              const SizedBox(height: 14),
+              InfoRow('Estimated arrival', _eta()),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  // ----- step 4 -----
+
+  Widget _step4() {
+    final rc = context.rc;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _optionalBadge(),
+        const SizedBox(height: 14),
+        _title(
+          'Weigh-in schedule',
+          'Pick days and a time — Raga will remind you. '
+          'You can skip this.',
+        ),
+        Row(
+          children: List.generate(7, (i) {
+            final day = i + 1;
+            return Expanded(
+              child: Padding(
+                padding: EdgeInsets.only(right: i == 6 ? 0 : 6),
+                child: DayPill(
+                  label: _dayNames[i],
+                  selected: _days.contains(day),
+                  onTap: () => setState(() {
+                    if (_days.contains(day)) {
+                      if (_days.length > 1) _days.remove(day);
+                    } else {
+                      _days.add(day);
+                    }
+                  }),
+                ),
+              ),
+            );
+          }),
+        ),
+        const SizedBox(height: 14),
+        GlassCard(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Reminder time',
+                style: TextStyle(
+                  fontSize: 15,
+                  fontWeight: FontWeight.w600,
+                  color: rc.onCardMuted,
+                ),
+              ),
+              const SizedBox(height: 4),
+              Row(
+                children: [
+                  GestureDetector(
+                    onTap: _pickTime,
+                    behavior: HitTestBehavior.opaque,
+                    child: Text(
+                      _timeColon(),
+                      style: TextStyle(
+                        fontSize: 48,
+                        fontWeight: FontWeight.w800,
+                        color: rc.onCard,
+                        height: 1.1,
+                      ),
+                    ),
+                  ),
+                  const Spacer(),
+                  Switch(
+                    value: _reminderOn,
+                    onChanged: (v) =>
+                        setState(() => _reminderOn = v),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 14),
+        GlassCard(child: InfoRow('Summary', _summary())),
         const SizedBox(height: 16),
         Center(
-          child: TextButton(
-            onPressed: _saving ? null : () => _finish(skipGoal: true),
-            child: const Text('Skip for now'),
+          child: Text(
+            'You can change this anytime in Profile.',
+            style: TextStyle(
+              fontSize: 13,
+              fontWeight: FontWeight.w500,
+              color: rc.onCardMuted,
+            ),
           ),
         ),
       ],

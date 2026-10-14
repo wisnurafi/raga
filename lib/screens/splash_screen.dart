@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
+import '../core/theme.dart';
+import '../widgets/glass.dart';
+import '../widgets/raga_bg.dart';
 
-// Animated splash: the figure mark pops in, the wordmark and tagline
-// follow, then the whole thing fades out into the app. The native
-// launch_background shows this exact first frame, so the handoff from
-// the OS splash to this animation is seamless.
+// Branded splash from the mockup (p.6): the gauge mark in a glass tile,
+// the "Raga" wordmark, tagline, then a short loading bar. Runs ~1.9s,
+// fades out, then hands off via [onDone].
 class SplashScreen extends StatefulWidget {
   final VoidCallback onDone;
   const SplashScreen({super.key, required this.onDone});
@@ -15,11 +17,9 @@ class SplashScreen extends StatefulWidget {
 class _SplashScreenState extends State<SplashScreen>
     with SingleTickerProviderStateMixin {
   late final AnimationController _c;
-  late final Animation<double> _markScale;
-  late final Animation<double> _markFade;
-  late final Animation<double> _wordFade;
-  late final Animation<double> _tagFade;
-  late final Animation<Offset> _tagRise;
+  late final Animation<double> _intro;
+  late final Animation<double> _introScale;
+  late final Animation<double> _progress;
   late final Animation<double> _outro;
 
   @override
@@ -27,39 +27,27 @@ class _SplashScreenState extends State<SplashScreen>
     super.initState();
     _c = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 1700),
+      duration: const Duration(milliseconds: 1900),
     );
-    _markFade = CurvedAnimation(
+    _intro = CurvedAnimation(
       parent: _c,
-      curve: const Interval(0.0, 0.35, curve: Curves.easeOut),
+      curve: const Interval(0.0, 0.32, curve: Curves.easeOut),
     );
-    _markScale = Tween<double>(begin: 0.82, end: 1.0).animate(
+    _introScale = Tween<double>(begin: 0.88, end: 1.0).animate(
       CurvedAnimation(
         parent: _c,
-        curve: const Interval(0.0, 0.42, curve: Curves.easeOutCubic),
+        curve: const Interval(0.0, 0.38, curve: Curves.easeOutCubic),
       ),
     );
-    _wordFade = CurvedAnimation(
+    // The loading bar fills over ~1.6s.
+    _progress = CurvedAnimation(
       parent: _c,
-      curve: const Interval(0.25, 0.5, curve: Curves.easeOut),
-    );
-    _tagFade = CurvedAnimation(
-      parent: _c,
-      curve: const Interval(0.42, 0.62, curve: Curves.easeOut),
-    );
-    _tagRise = Tween<Offset>(
-      begin: const Offset(0, 0.4),
-      end: Offset.zero,
-    ).animate(
-      CurvedAnimation(
-        parent: _c,
-        curve: const Interval(0.42, 0.62, curve: Curves.easeOutCubic),
-      ),
+      curve: const Interval(0.06, 0.9, curve: Curves.easeInOut),
     );
     _outro = Tween<double>(begin: 1.0, end: 0.0).animate(
       CurvedAnimation(
         parent: _c,
-        curve: const Interval(0.82, 1.0, curve: Curves.easeIn),
+        curve: const Interval(0.9, 1.0, curve: Curves.easeIn),
       ),
     );
     _c.addStatusListener((s) {
@@ -76,54 +64,96 @@ class _SplashScreenState extends State<SplashScreen>
 
   @override
   Widget build(BuildContext context) {
-    return FadeTransition(
-      opacity: _outro,
-      child: Container(
-        color: const Color(0xFF301663),
-        child: SafeArea(
+    final rc = context.rc;
+    return RagaBg(
+      child: SafeArea(
+        child: FadeTransition(
+          opacity: _outro,
           child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
             children: [
+              const Spacer(flex: 3),
               FadeTransition(
-                opacity: _markFade,
+                opacity: _intro,
                 child: ScaleTransition(
-                  scale: _markScale,
-                  child: Image.asset(
-                    'assets/mark/raga-mark.png',
-                    width: 148,
-                    height: 148,
+                  scale: _introScale,
+                  child: GlassCard(
+                    radius: 36,
+                    padding: const EdgeInsets.all(12),
+                    blur: 18,
+                    child: Image.asset(
+                      'assets/images/raga-mark.png',
+                      width: 132,
+                      height: 132,
+                    ),
                   ),
                 ),
               ),
               const SizedBox(height: 22),
               FadeTransition(
-                opacity: _wordFade,
-                child: const Text(
+                opacity: _intro,
+                child: Text(
                   'Raga',
                   style: TextStyle(
-                    fontSize: 38,
+                    fontSize: 64,
                     fontWeight: FontWeight.w800,
-                    letterSpacing: -1.2,
-                    color: Colors.white,
+                    letterSpacing: -2,
+                    color: rc.onBg,
+                    shadows: [
+                      Shadow(
+                        color: Colors.black.withValues(alpha: 0.35),
+                        blurRadius: 24,
+                        offset: const Offset(0, 6),
+                      ),
+                    ],
                   ),
                 ),
               ),
               const SizedBox(height: 8),
               FadeTransition(
-                opacity: _tagFade,
-                child: SlideTransition(
-                  position: _tagRise,
-                  child: Text(
-                    'Know your body.',
-                    style: TextStyle(
-                      fontSize: 15.5,
-                      fontWeight: FontWeight.w500,
-                      letterSpacing: 0.2,
-                      color: Colors.white.withValues(alpha: 0.72),
+                opacity: _intro,
+                child: Text(
+                  'Know your body, guard your health.',
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w500,
+                    color: rc.onBgMuted,
+                  ),
+                ),
+              ),
+              const Spacer(flex: 4),
+              AnimatedBuilder(
+                animation: _progress,
+                builder: (_, __) => Container(
+                  width: 200,
+                  height: 6,
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(3),
+                    color: rc.onBgMuted.withValues(alpha: 0.30),
+                  ),
+                  child: Align(
+                    alignment: Alignment.centerLeft,
+                    child: FractionallySizedBox(
+                      widthFactor: _progress.value.clamp(0.0, 1.0),
+                      child: Container(
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(3),
+                          color: rc.chipActive,
+                        ),
+                      ),
                     ),
                   ),
                 ),
               ),
+              const SizedBox(height: 12),
+              Text(
+                'Loading...',
+                style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w500,
+                  color: rc.onBgMuted,
+                ),
+              ),
+              const SizedBox(height: 76),
             ],
           ),
         ),
