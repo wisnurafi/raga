@@ -107,6 +107,21 @@ class CloudSync {
     return cleaned.length > 140 ? '${cleaned.substring(0, 140)}…' : cleaned;
   }
 
+  // Plain-English hint for the most common setup mistakes, so a cryptic
+  // network error points at the actual fix.
+  static String? hintFor(String error) {
+    if (error.contains('Failed host lookup')) {
+      return 'The server address looks wrong or has a typo. Check SUPABASE_URL '
+          'in GitHub Secrets, then rebuild the APK and reinstall — the address '
+          'is baked into the build.';
+    }
+    if (error.contains('No host specified in URI eyJ')) {
+      return 'SUPABASE_URL seems to hold the API key instead of the URL — '
+          'the two secrets may be swapped.';
+    }
+    return null;
+  }
+
   // One-line status for the UI.
   static String describe(List<BmiRecord> records) {
     switch (state) {
