@@ -78,6 +78,26 @@ class ProfileScreen extends StatelessWidget {
                 ),
               ),
               GestureDetector(
+                onTap: () => _switchProfileSheet(context, state),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                      horizontal: 16, vertical: 9),
+                  decoration: BoxDecoration(
+                    color: rc.primaryBtn.withValues(alpha: 0.14),
+                    borderRadius: BorderRadius.circular(999),
+                  ),
+                  child: Text(
+                    'Switch',
+                    style: TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w700,
+                      color: rc.primaryBtn,
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 8),
+              GestureDetector(
                 onTap: () => _renameDialog(context, state, p.name),
                 child: Container(
                   padding: const EdgeInsets.symmetric(
@@ -717,6 +737,134 @@ class ProfileScreen extends StatelessWidget {
             if (trailing != null) trailing,
           ],
         ),
+      ),
+    );
+  }
+
+  void _switchProfileSheet(BuildContext context, AppState state) {
+    final rc = context.rc;
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: rc.card,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (ctx) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const SizedBox(height: 8),
+            Container(
+              width: 40,
+              height: 4,
+              decoration: BoxDecoration(
+                color: rc.onCardMuted.withValues(alpha: 0.4),
+                borderRadius: BorderRadius.circular(999),
+              ),
+            ),
+            const SizedBox(height: 8),
+            for (final p in state.profiles)
+              ListTile(
+                leading: Container(
+                  width: 40,
+                  height: 40,
+                  decoration: const BoxDecoration(
+                    color: Color(0xFFE8C98F),
+                    shape: BoxShape.circle,
+                  ),
+                  child: Center(
+                    child: Text(
+                      p.initial,
+                      style: const TextStyle(
+                        fontWeight: FontWeight.w800,
+                        color: Color(0xFF1B1B2F),
+                      ),
+                    ),
+                  ),
+                ),
+                title: Text(
+                  p.name,
+                  style: TextStyle(
+                      fontWeight: FontWeight.w700, color: rc.onCard),
+                ),
+                subtitle: Text(
+                  '${p.isMale ? 'Male' : 'Female'} · ${p.age} yrs',
+                  style:
+                      TextStyle(fontSize: 12.5, color: rc.onCardMuted),
+                ),
+                trailing: p.id == state.activeProfileId
+                    ? Icon(Icons.check_circle, color: rc.mint)
+                    : null,
+                onTap: () async {
+                  Navigator.pop(ctx);
+                  if (p.id != state.activeProfileId) {
+                    await state.setActiveProfile(p.id);
+                  }
+                },
+              ),
+            ListTile(
+              leading: Container(
+                width: 40,
+                height: 40,
+                decoration: BoxDecoration(
+                  color: rc.primaryBtn.withValues(alpha: 0.14),
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(Icons.add, color: rc.primaryBtn),
+              ),
+              title: Text(
+                'Add profile',
+                style: TextStyle(
+                    fontWeight: FontWeight.w700, color: rc.primaryBtn),
+              ),
+              onTap: () {
+                Navigator.pop(ctx);
+                _addProfileDialog(context, state);
+              },
+            ),
+            const SizedBox(height: 12),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _addProfileDialog(BuildContext context, AppState state) {
+    final rc = context.rc;
+    final ctl = TextEditingController();
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: rc.card,
+        shape:
+            RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: const Text('New profile'),
+        content: TextField(
+          controller: ctl,
+          autofocus: true,
+          textCapitalization: TextCapitalization.words,
+          decoration: const InputDecoration(
+            hintText: 'Name',
+            border: OutlineInputBorder(),
+          ),
+          onSubmitted: (_) {
+            Navigator.pop(ctx);
+            state.addProfile(ctl.text);
+          },
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            onPressed: () {
+              Navigator.pop(ctx);
+              state.addProfile(ctl.text);
+            },
+            child: const Text('Add'),
+          ),
+        ],
       ),
     );
   }
