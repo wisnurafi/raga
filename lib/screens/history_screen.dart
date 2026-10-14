@@ -1,17 +1,19 @@
-import 'dart:io';
-import 'package:flutter/material.dart';
-import 'package:fl_chart/fl_chart.dart';
-import 'package:path_provider/path_provider.dart';
-import 'package:share_plus/share_plus.dart';
-import '../core/theme.dart';
-import '../core/bmi.dart';
-import '../state/app_state.dart';
-import '../models/bmi_record.dart';
-import '../widgets/glass.dart';
-import '../widgets/cards.dart';
-import '../widgets/shine_text.dart';
+import 'dart:ui';
 
-// The "History" screen: weight/BMI trend chart + recent entries.
+import 'package:fl_chart/fl_chart.dart';
+import 'package:flutter/material.dart';
+
+import '../core/bmi.dart';
+import '../core/theme.dart';
+import '../models/bmi_record.dart';
+import '../state/app_state.dart';
+import '../widgets/chips.dart';
+import '../widgets/glass.dart';
+import '../widgets/headers.dart';
+
+const _kgToLb = 2.20462;
+
+// History: 6-month strip, weight/BMI trend chart, recent entries.
 class HistoryScreen extends StatefulWidget {
   const HistoryScreen({super.key});
 
@@ -24,409 +26,488 @@ class _HistoryScreenState extends State<HistoryScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final state = AppState.of(context);
     final rc = context.rc;
-    final p = state.activeProfile;
-    final records = state.recordsOf(p.id);
+    final state = AppState.of(context);
+    final records = state.recordsOf(state.activeProfileId);
+    final metric = state.metricUnits;
 
     return ListView(
       padding: const EdgeInsets.fromLTRB(20, 8, 20, 110),
       children: [
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Text(
-              'History',
+        const RagaHeader(title: 'History'),
+        if (records.isEmpty) ...[
+          const SizedBox(height: 72),
+          Center(
+            child: Text(
+              'No entries yet — calculate your BMI to start your history.',
+              textAlign: TextAlign.center,
               style: TextStyle(
-                fontSize: 34,
-                fontWeight: FontWeight.w800,
-                color: rc.onImage,
-                letterSpacing: -0.8,
+                fontSize: 15,
+                height: 1.6,
+                color: rc.onBgMuted,
               ),
             ),
-            Row(
-              children: [
-                InkWell(
-                  onTap: state.records.isEmpty
-                      ? null
-                      : () => _exportCsv(context),
-                  borderRadius: BorderRadius.circular(23),
-                  child: Container(
-                    width: 44,
-                    height: 44,
-                    decoration: BoxDecoration(
-                      color: Colors.white.withValues(alpha: 0.22),
-                      shape: BoxShape.circle,
-                      border: Border.all(
-                        color: Colors.white.withValues(alpha: 0.65),
-                      ),
-                    ),
-                    child: Icon(
-                      Icons.ios_share,
-                      size: 20,
-                      color: rc.onImage,
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 10),
-                Container(
-                  width: 44,
-                  height: 44,
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFE8C98F),
-                    shape: BoxShape.circle,
-                    border: Border.all(
-                      color: Colors.white.withValues(alpha: 0.9),
-                      width: 2,
-                    ),
-                  ),
-                  child: Center(
-                    child: Text(
-                      p.initial,
-                      style: const TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.w800,
-                        color: Color(0xFF1B1B2F),
-                      ),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ],
-        ),
-        const SizedBox(height: 16),
-        const ProfileChips(),
-        const SizedBox(height: 18),
-        if (records.isEmpty)
-          _emptyCard(context, rc)
-        else ...[
-          _trendCard(context, rc, records),
+          ),
+        ] else ...[
+          const SizedBox(height: 18),
+          _monthStrip(records, metric),
+          const SizedBox(height: 18),
+          _chartCard(records, metric),
           const SizedBox(height: 22),
-          const SectionTitle('Recent entries'),
-          _listCard(context, rc, records),
+          Text(
+            'Recent entries',
+            style: TextStyle(
+              fontSize: 20,
+              fontWeight: FontWeight.w800,
+              color: rc.onBg,
+            ),
+          ),
+          const SizedBox(height: 14),
+          ..._entryRows(records, metric),
         ],
       ],
     );
   }
 
-  // Dumps the full history to a CSV file and opens the share sheet.
-  Future<void> _exportCsv(BuildContext context) async {
-    final state = AppState.of(context);
-    final rows = <List<String>>[
-      ['date', 'profile', 'height_cm', 'weight_kg', 'bmi', 'category'],
-      for (final r in state.records)
-        [
-          r.createdAt.toIso8601String(),
-          state.profiles
-              .where((p) => p.id == r.profileId)
-              .map((p) => p.name)
-              .join(),
-          r.heightCm.toStringAsFixed(1),
-          r.weightKg.toStringAsFixed(1),
-          r.bmi.toStringAsFixed(1),
-          categoryOf(r.bmi).name,
-        ],
-    ];
-    final csv = rows.map((r) => r.map(_csvCell).join(',')).join('\n');
-    final dir = await getTemporaryDirectory();
-    final file = File('${dir.path}/raga-history.csv');
-    await file.writeAsString(csv);
-    await Share.shareXFiles([XFile(file.path)], subject: 'Raga history');
+  // --- 6-month strip ------------------------------------------------------
+
+  List<DateTime> _lastSixMonths() {
+    final now = DateTime.now();
+    return List.generate(
+      6,
+      (i) => DateTime(now.year, now.month - (5 - i), 1),
+    );
   }
 
-  String _csvCell(String v) =>
-      v.contains(RegExp(r'[",\n]')) ? '"${v.replaceAll('"', '""')}"' : v;
+  // Newest record inside a calendar month, or null. records are newest-first.
+  BmiRecord? _latestInMonth(List<BmiRecord> records, DateTime month) {
+    for (final r in records) {
+      if (r.createdAt.year == month.year &&
+          r.createdAt.month == month.month) {
+        return r;
+      }
+    }
+    return null;
+  }
 
-  Widget _emptyCard(BuildContext context, RagaColors rc) {
-    return GlassContainer(
-      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 44),
-      child: Column(
+  String _stripWeight(double kg, bool metric) {
+    final v = metric ? kg : kg * _kgToLb;
+    return formatNum(v).replaceAll(RegExp(r'\.0$'), '');
+  }
+
+  Widget _monthStrip(List<BmiRecord> records, bool metric) {
+    final months = _lastSixMonths();
+    final recs = [for (final m in months) _latestInMonth(records, m)];
+    var highlight = -1;
+    for (var i = recs.length - 1; i >= 0; i--) {
+      if (recs[i] != null) {
+        highlight = i;
+        break;
+      }
+    }
+    return SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
+      child: Row(
         children: [
-          Container(
-            width: 76,
-            height: 76,
-            decoration: BoxDecoration(
-              color: rc.mintSoft,
-              shape: BoxShape.circle,
+          for (var i = 0; i < months.length; i++) ...[
+            if (i > 0) const SizedBox(width: 10),
+            _MonthCard(
+              month: shortMonths[months[i].month - 1],
+              value: recs[i] == null
+                  ? '–'
+                  : _stripWeight(recs[i]!.weightKg, metric),
+              highlighted: i == highlight,
             ),
-            child: Icon(Icons.show_chart, size: 36, color: rc.mint),
-          ),
-          const SizedBox(height: 14),
-          Text(
-            'No entries yet',
-            style: TextStyle(
-              fontSize: 17,
-              fontWeight: FontWeight.w800,
-              color: rc.onCard,
-            ),
-          ),
-          const SizedBox(height: 6),
-          Text(
-            'Calculate your BMI and save it —\nyour trend will show up here.',
-            textAlign: TextAlign.center,
-            style: TextStyle(fontSize: 13.5, color: rc.onCardMuted, height: 1.5),
-          ),
+          ],
         ],
       ),
     );
   }
 
-  Widget _trendCard(
-      BuildContext context, RagaColors rc, List<BmiRecord> records) {
-    final chrono = records.reversed.toList();
-    final latest = records.first;
-    final first = chrono.first;
-    final diff = latest.weightKg - first.weightKg;
-    final days = latest.createdAt.difference(first.createdAt).inDays;
-    final spanTxt = days < 32 ? '$days days' : '${(days / 30).round()} mo';
-    final deltaTxt = diff == 0
-        ? 'steady · $spanTxt'
-        : '${diff < 0 ? '↓' : '↑'} ${formatNum(diff.abs())} kg · $spanTxt';
+  // --- trend chart card ----------------------------------------------------
+
+  Widget _chartCard(List<BmiRecord> records, bool metric) {
+    final rc = context.rc;
+    final months = _lastSixMonths();
+    final recs = [for (final m in months) _latestInMonth(records, m)];
 
     final spots = <FlSpot>[];
-    for (var i = 0; i < chrono.length; i++) {
-      spots.add(FlSpot(i.toDouble(),
-          _showWeight ? chrono[i].weightKg : chrono[i].bmi));
+    final plotMonths = <DateTime>[];
+    for (var i = 0; i < months.length; i++) {
+      final r = recs[i];
+      if (r == null) continue;
+      final v = _showWeight
+          ? (metric ? r.weightKg : r.weightKg * _kgToLb)
+          : r.bmi;
+      spots.add(FlSpot(spots.length.toDouble(), v));
+      plotMonths.add(months[i]);
     }
 
-    return GlassContainer(
-      padding: const EdgeInsets.fromLTRB(20, 18, 20, 12),
+    final withData = [
+      for (var i = 0; i < recs.length; i++)
+        if (recs[i] != null) i,
+    ];
+    final latest = withData.isEmpty ? null : recs[withData.last];
+    final bigTxt = latest == null
+        ? '–'
+        : _showWeight
+            ? formatNum(metric ? latest.weightKg : latest.weightKg * _kgToLb)
+            : formatNum(latest.bmi);
+
+    String? pillTxt;
+    if (withData.length >= 2) {
+      final a = recs[withData.first]!;
+      final b = recs[withData.last]!;
+      if (_showWeight) {
+        final dKg = b.weightKg - a.weightKg;
+        final d = metric ? dKg : dKg * _kgToLb;
+        final unit = metric ? 'kg' : 'lb';
+        pillTxt = d == 0
+            ? 'steady · 6 months'
+            : '${d < 0 ? '↓' : '↑'} ${formatNum(d.abs())} $unit · 6 months';
+      } else {
+        final d = b.bmi - a.bmi;
+        pillTxt = d == 0
+            ? 'steady · 6 months'
+            : '${d < 0 ? '↓' : '↑'} ${formatNum(d.abs())} · 6 months';
+      }
+    }
+
+    final Widget chartBody;
+    if (spots.isEmpty) {
+      chartBody = SizedBox(
+        height: 150,
+        child: Center(
+          child: Text(
+            'No data in the last 6 months',
+            style: TextStyle(fontSize: 14, color: rc.onCardMuted),
+          ),
+        ),
+      );
+    } else {
+      chartBody = SizedBox(
+        height: 180,
+        child: LineChart(
+          LineChartData(
+            minX: 0,
+            maxX: spots.length <= 1 ? 1.0 : (spots.length - 1).toDouble(),
+            gridData: FlGridData(
+              show: true,
+              drawVerticalLine: false,
+              getDrawingHorizontalLine: (v) => FlLine(
+                color: rc.onCardMuted.withValues(alpha: 0.2),
+                strokeWidth: 1,
+              ),
+            ),
+            titlesData: FlTitlesData(
+              show: true,
+              leftTitles: const AxisTitles(
+                sideTitles: SideTitles(showTitles: false),
+              ),
+              topTitles: const AxisTitles(
+                sideTitles: SideTitles(showTitles: false),
+              ),
+              rightTitles: const AxisTitles(
+                sideTitles: SideTitles(showTitles: false),
+              ),
+              bottomTitles: AxisTitles(
+                sideTitles: SideTitles(
+                  showTitles: true,
+                  interval: 1,
+                  getTitlesWidget: (v, meta) {
+                    final i = v.round();
+                    if (i < 0 || i >= plotMonths.length) {
+                      return const SizedBox.shrink();
+                    }
+                    return Padding(
+                      padding: const EdgeInsets.only(top: 8),
+                      child: Text(
+                        shortMonths[plotMonths[i].month - 1],
+                        style: TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w600,
+                          color: rc.onCardMuted,
+                        ),
+                      ),
+                    );
+                  },
+                ),
+              ),
+            ),
+            borderData: FlBorderData(show: false),
+            lineBarsData: [
+              LineChartBarData(
+                spots: spots,
+                isCurved: true,
+                color: rc.onCardAccent,
+                barWidth: 3,
+                isStrokeCapRound: true,
+                dotData: FlDotData(
+                  show: true,
+                  getDotPainter: (spot, percent, barData, index) {
+                    final last = index == spots.length - 1;
+                    return FlDotCirclePainter(
+                      radius: last ? 6 : 5,
+                      color: Colors.white,
+                      strokeWidth: last ? 3 : 0,
+                      strokeColor: rc.badgeOk,
+                    );
+                  },
+                ),
+                belowBarData: BarAreaData(
+                  show: true,
+                  gradient: LinearGradient(
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
+                    colors: [
+                      rc.chipActive.withValues(alpha: 0.25),
+                      rc.chipActive.withValues(alpha: 0.0),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
+    return GlassCard(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text(
-                _showWeight ? 'Weight (kg)' : 'BMI',
-                style: TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w700,
-                  color: rc.onCardAccent,
+              Expanded(
+                child: Text(
+                  _showWeight
+                      ? (metric ? 'Body weight (kg)' : 'Body weight (lb)')
+                      : 'BMI',
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w700,
+                    color: rc.onCard,
+                  ),
                 ),
               ),
-              Container(
-                padding: const EdgeInsets.all(4),
-                decoration: BoxDecoration(
-                  color: rc.panel.withValues(alpha: 0.6),
-                  borderRadius: BorderRadius.circular(999),
-                ),
-                child: Row(
-                  children: [
-                    _miniSeg(context, 'Weight', _showWeight,
-                        () => setState(() => _showWeight = true)),
-                    _miniSeg(context, 'BMI', !_showWeight,
-                        () => setState(() => _showWeight = false)),
-                  ],
+              SizedBox(
+                width: 168,
+                child: Segmented<String>(
+                  options: const ['Weight', 'BMI'],
+                  value: _showWeight ? 'Weight' : 'BMI',
+                  onChanged: (v) => setState(() => _showWeight = v == 'Weight'),
+                  labelOf: (v) => v,
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: 12),
           Row(
-            crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              ShineText(
-                formatNum(_showWeight ? latest.weightKg : latest.bmi),
+              Text(
+                bigTxt,
                 style: TextStyle(
-                  fontSize: 46,
+                  fontSize: 56,
                   fontWeight: FontWeight.w800,
-                  letterSpacing: -1.5,
+                  height: 1.0,
                   color: rc.onCard,
                   fontFeatures: const [FontFeature.tabularFigures()],
                 ),
               ),
-              const SizedBox(width: 12),
-              Container(
-                padding: const EdgeInsets.symmetric(
-                    horizontal: 12, vertical: 7),
-                decoration: BoxDecoration(
-                  color: rc.mintSoft,
-                  borderRadius: BorderRadius.circular(999),
-                ),
-                child: Text(
-                  deltaTxt,
-                  style: TextStyle(
-                    fontSize: 12.5,
-                    fontWeight: FontWeight.w700,
-                    color: rc.mint,
+              if (pillTxt != null) ...[
+                const SizedBox(width: 12),
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 14,
+                    vertical: 8,
+                  ),
+                  decoration: BoxDecoration(
+                    color: rc.badgeOk,
+                    borderRadius: BorderRadius.circular(999),
+                  ),
+                  child: Text(
+                    pillTxt,
+                    style: TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w800,
+                      color: rc.onBadgeOk,
+                    ),
                   ),
                 ),
-              ),
+              ],
             ],
           ),
-          const SizedBox(height: 10),
-          SizedBox(
-            height: 170,
-            child: LineChart(
-              LineChartData(
-                minX: 0,
-                maxX: (spots.length - 1).toDouble(),
-                gridData: FlGridData(
-                  show: true,
-                  drawVerticalLine: false,
-                  getDrawingHorizontalLine: (v) => const FlLine(
-                    color: Color(0xFFEDE9FA),
-                    strokeWidth: 1,
-                  ),
-                ),
-                titlesData: FlTitlesData(
-                  show: true,
-                  leftTitles: const AxisTitles(
-                      sideTitles: SideTitles(showTitles: false)),
-                  topTitles: const AxisTitles(
-                      sideTitles: SideTitles(showTitles: false)),
-                  rightTitles: const AxisTitles(
-                      sideTitles: SideTitles(showTitles: false)),
-                  bottomTitles: AxisTitles(
-                    sideTitles: SideTitles(
-                      showTitles: true,
-                      interval: 1,
-                      getTitlesWidget: (v, meta) {
-                        final i = v.round();
-                        if (i < 0 || i >= chrono.length) {
-                          return const SizedBox.shrink();
-                        }
-                        return Padding(
-                          padding: const EdgeInsets.only(top: 8),
-                          child: Text(
-                            shortMonths[chrono[i].createdAt.month - 1],
-                            style: TextStyle(
-                              fontSize: 11,
-                              fontWeight: FontWeight.w600,
-                              color: rc.onCardMuted,
-                            ),
-                          ),
-                        );
-                      },
-                    ),
-                  ),
-                ),
-                borderData: FlBorderData(show: false),
-                lineBarsData: [
-                  LineChartBarData(
-                    spots: spots,
-                    isCurved: true,
-                    color: const Color(0xFF8B7CF0),
-                    barWidth: 3.5,
-                    isStrokeCapRound: true,
-                    dotData: const FlDotData(show: true),
-                    belowBarData: BarAreaData(
-                      show: true,
-                      gradient: LinearGradient(
-                        begin: Alignment.topCenter,
-                        end: Alignment.bottomCenter,
-                        colors: [
-                          const Color(0xFF8B7CF0).withValues(alpha: 0.22),
-                          const Color(0xFF8B7CF0).withValues(alpha: 0.02),
-                        ],
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
+          const SizedBox(height: 12),
+          chartBody,
         ],
       ),
     );
   }
 
-  Widget _miniSeg(
-      BuildContext context, String label, bool active, VoidCallback onTap) {
+  // --- recent entries -------------------------------------------------------
+
+  List<Widget> _entryRows(List<BmiRecord> records, bool metric) {
+    final shown = records.take(8).toList();
+    final rows = <Widget>[];
+    for (var i = 0; i < shown.length; i++) {
+      if (i > 0) rows.add(const SizedBox(height: 10));
+      final older = i + 1 < records.length ? records[i + 1] : null;
+      rows.add(_entryRow(shown[i], older, metric));
+    }
+    return rows;
+  }
+
+  BmiCat _bmiCatOf(BmiCategory c) => switch (c) {
+        BmiCategory.underweight => BmiCat.under,
+        BmiCategory.normal => BmiCat.normal,
+        BmiCategory.overweight => BmiCat.over,
+        BmiCategory.obese => BmiCat.obese,
+      };
+
+  Widget _entryRow(BmiRecord r, BmiRecord? older, bool metric) {
     final rc = context.rc;
-    return GestureDetector(
-      onTap: onTap,
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 200),
-        padding:
-            const EdgeInsets.symmetric(horizontal: 16, vertical: 7),
-        decoration: BoxDecoration(
-          gradient: active
-              ? LinearGradient(
-                  colors: [rc.primaryBtn, const Color(0xFF9A8CF5)],
-                )
-              : null,
-          borderRadius: BorderRadius.circular(999),
-        ),
-        child: Text(
-          label,
-          style: TextStyle(
-            fontSize: 12.5,
-            fontWeight: FontWeight.w700,
-            color: active ? rc.onPrimaryBtn : rc.onBgMuted,
+    final cat = _bmiCatOf(r.category);
+    final catColor = switch (cat) {
+      BmiCat.under => rc.catUnder,
+      BmiCat.normal => rc.catNormal,
+      BmiCat.over => rc.catOver,
+      BmiCat.obese => rc.catObese,
+    };
+
+    String deltaTxt = '';
+    var deltaColor = rc.onCardMuted;
+    if (older != null) {
+      final dKg = r.weightKg - older.weightKg;
+      final d = metric ? dKg : dKg * _kgToLb;
+      final unit = metric ? 'kg' : 'lb';
+      if (d < 0) {
+        deltaTxt = '−${formatNum(d.abs())} $unit';
+        deltaColor = rc.badgeOk;
+      } else if (d > 0) {
+        deltaTxt = '+${formatNum(d)} $unit';
+        deltaColor = rc.catObese;
+      } else {
+        deltaTxt = '±0.0 $unit';
+      }
+    }
+
+    final weightTxt = metric
+        ? '${formatNum(r.weightKg)} kg'
+        : '${formatNum(r.weightKg * _kgToLb)} lb';
+
+    return GlassCard(
+      padding: const EdgeInsets.all(16),
+      child: Row(
+        children: [
+          Container(
+            width: 54,
+            height: 54,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              border: Border.all(color: catColor, width: 2.5),
+            ),
+            child: Center(
+              child: Text(
+                formatNum(r.bmi),
+                style: TextStyle(
+                  fontSize: 15,
+                  fontWeight: FontWeight.w800,
+                  color: rc.onCard,
+                  fontFeatures: const [FontFeature.tabularFigures()],
+                ),
+              ),
+            ),
           ),
-        ),
+          const SizedBox(width: 14),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                formatDate(r.createdAt),
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w800,
+                  color: rc.onCard,
+                ),
+              ),
+              const SizedBox(height: 3),
+              Text(
+                '$weightTxt · ${bmiCatLabel(cat)}',
+                style: TextStyle(fontSize: 13.5, color: rc.onCardMuted),
+              ),
+            ],
+          ),
+          const Spacer(),
+          if (deltaTxt.isNotEmpty)
+            Text(
+              deltaTxt,
+              style: TextStyle(
+                fontSize: 15,
+                fontWeight: FontWeight.w700,
+                color: deltaColor,
+                fontFeatures: const [FontFeature.tabularFigures()],
+              ),
+            ),
+        ],
       ),
     );
   }
+}
 
-  Widget _listCard(
-      BuildContext context, RagaColors rc, List<BmiRecord> records) {
-    final shown = records.take(8).toList();
-    return GlassContainer(
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 6),
-      borderRadius: 26,
-      child: Column(
-        children: List.generate(shown.length, (i) {
-          final r = shown[i];
-          final meta = categoryMeta[r.category]!;
-          return Column(
+// Frosted month card with an optional highlight ring for the most
+// recent month that has data.
+class _MonthCard extends StatelessWidget {
+  final String month;
+  final String value;
+  final bool highlighted;
+
+  const _MonthCard({
+    required this.month,
+    required this.value,
+    required this.highlighted,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final rc = context.rc;
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(22),
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 24, sigmaY: 24),
+        child: Container(
+          width: 66,
+          padding: const EdgeInsets.symmetric(vertical: 14),
+          decoration: BoxDecoration(
+            color: rc.card,
+            borderRadius: BorderRadius.circular(22),
+            border: Border.all(
+              color: highlighted ? rc.chipActive : rc.cardBorder,
+              width: highlighted ? 2 : 1.2,
+            ),
+          ),
+          child: Column(
             children: [
-              Padding(
-                padding: const EdgeInsets.symmetric(vertical: 14),
-                child: Row(
-                  children: [
-                    Expanded(
-                      child: Text(
-                        formatDate(r.createdAt),
-                        style: TextStyle(
-                          fontSize: 15,
-                          fontWeight: FontWeight.w600,
-                          color: rc.onBg,
-                        ),
-                      ),
-                    ),
-                    Expanded(
-                      child: Text(
-                        '${formatNum(r.weightKg)} kg',
-                        style: TextStyle(
-                          fontSize: 15,
-                          fontWeight: FontWeight.w700,
-                          color: rc.onBg,
-                          fontFeatures: const [FontFeature.tabularFigures()],
-                        ),
-                      ),
-                    ),
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 10, vertical: 5),
-                      decoration: BoxDecoration(
-                        color: meta.color.withValues(alpha: 0.22),
-                        borderRadius: BorderRadius.circular(999),
-                      ),
-                      child: Text(
-                        'BMI ${formatNum(r.bmi)} · ${meta.label}',
-                        style: TextStyle(
-                          fontSize: 12.5,
-                          fontWeight: FontWeight.w800,
-                          // Darkened so it stays readable on the soft pill.
-                          color:
-                              Color.lerp(meta.color, Colors.black, 0.38)!,
-                        ),
-                      ),
-                    ),
-                  ],
+              Text(
+                month,
+                style: TextStyle(
+                  fontSize: 15,
+                  fontWeight: FontWeight.w700,
+                  color: rc.onCard,
                 ),
               ),
-              if (i != shown.length - 1)
-                Divider(
-                    height: 1,
-                    color: rc.onBgMuted.withValues(alpha: 0.18)),
+              const SizedBox(height: 4),
+              Text(
+                value,
+                style: TextStyle(
+                  fontSize: 17,
+                  fontWeight: FontWeight.w800,
+                  color: rc.onCard,
+                  fontFeatures: const [FontFeature.tabularFigures()],
+                ),
+              ),
             ],
-          );
-        }),
+          ),
+        ),
       ),
     );
   }
