@@ -4,6 +4,10 @@ import '../core/theme.dart';
 
 /// Primary action: full-width lavender pill, DARK navy label —
 /// exactly like the mockup ("Lanjut", "Hitung BMI", ...).
+///
+/// Depth treatment: a tight pill-hugging shadow (negative spread so it
+/// never balloons into a square halo) plus a top-down sheen clipped to
+/// the exact pill shape, so the "lighting" reads on the button itself.
 class RagaButton extends StatelessWidget {
   final String label;
   final VoidCallback? onPressed;
@@ -21,29 +25,60 @@ class RagaButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final rc = context.rc;
-    return Material(
-      color: Colors.transparent,
-      child: Ink(
-        height: height,
-        decoration: BoxDecoration(
-          gradient: rc.btnGradient,
-          borderRadius: BorderRadius.circular(height / 2),
-          boxShadow: [
-            BoxShadow(
-              color: rc.btnBottom.withValues(alpha: 0.35),
-              blurRadius: 18,
-              offset: const Offset(0, 8),
-            ),
-          ],
-        ),
-        child: InkWell(
-          borderRadius: BorderRadius.circular(height / 2),
-          onTap: onPressed,
-          child: Center(
-            child: Text(
-              label,
-              style: RagaType.button(rc.onBtn).copyWith(fontSize: fontSize),
-            ),
+    final radius = BorderRadius.circular(height / 2);
+    return Container(
+      height: height,
+      decoration: BoxDecoration(
+        borderRadius: radius,
+        boxShadow: [
+          BoxShadow(
+            color: rc.btnBottom.withValues(alpha: 0.55),
+            blurRadius: 16,
+            spreadRadius: -6,
+            offset: const Offset(0, 8),
+          ),
+        ],
+      ),
+      child: Material(
+        color: Colors.transparent,
+        child: Ink(
+          decoration: BoxDecoration(
+            gradient: rc.btnGradient,
+            borderRadius: radius,
+          ),
+          child: Stack(
+            children: [
+              // Sheen: light falling on the top half of the pill.
+              Positioned.fill(
+                child: DecoratedBox(
+                  decoration: BoxDecoration(
+                    borderRadius: radius,
+                    gradient: LinearGradient(
+                      begin: Alignment.topCenter,
+                      end: Alignment.bottomCenter,
+                      colors: [
+                        Colors.white.withValues(alpha: 0.35),
+                        Colors.white.withValues(alpha: 0.0),
+                      ],
+                      stops: const [0.0, 0.55],
+                    ),
+                  ),
+                ),
+              ),
+              Positioned.fill(
+                child: InkWell(
+                  borderRadius: radius,
+                  onTap: onPressed,
+                  child: Center(
+                    child: Text(
+                      label,
+                      style: RagaType.button(rc.onBtn)
+                          .copyWith(fontSize: fontSize),
+                    ),
+                  ),
+                ),
+              ),
+            ],
           ),
         ),
       ),
@@ -67,20 +102,57 @@ class RagaOutlineButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final rc = context.rc;
-    return Material(
-      color: Colors.transparent,
-      child: Ink(
-        height: height,
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(height / 2),
-          border: Border.all(color: rc.cardBorder, width: 1.5),
-          color: rc.card,
-        ),
-        child: InkWell(
-          borderRadius: BorderRadius.circular(height / 2),
-          onTap: onPressed,
-          child: Center(
-            child: Text(label, style: RagaType.button(rc.onCard)),
+    final radius = BorderRadius.circular(height / 2);
+    return Container(
+      height: height,
+      decoration: BoxDecoration(
+        borderRadius: radius,
+        boxShadow: [
+          BoxShadow(
+            color: rc.cardShadow.withValues(alpha: 0.6),
+            blurRadius: 14,
+            spreadRadius: -6,
+            offset: const Offset(0, 6),
+          ),
+        ],
+      ),
+      child: Material(
+        color: Colors.transparent,
+        child: Ink(
+          decoration: BoxDecoration(
+            borderRadius: radius,
+            border: Border.all(color: rc.cardBorder, width: 1.5),
+            color: rc.card,
+          ),
+          child: Stack(
+            children: [
+              Positioned.fill(
+                child: DecoratedBox(
+                  decoration: BoxDecoration(
+                    borderRadius: radius,
+                    gradient: LinearGradient(
+                      begin: Alignment.topCenter,
+                      end: Alignment.bottomCenter,
+                      colors: [
+                        Colors.white.withValues(alpha: 0.22),
+                        Colors.white.withValues(alpha: 0.0),
+                      ],
+                      stops: const [0.0, 0.5],
+                    ),
+                  ),
+                ),
+              ),
+              Positioned.fill(
+                child: InkWell(
+                  borderRadius: radius,
+                  onTap: onPressed,
+                  child: Center(
+                    child:
+                        Text(label, style: RagaType.button(rc.onCard)),
+                  ),
+                ),
+              ),
+            ],
           ),
         ),
       ),

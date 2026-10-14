@@ -115,37 +115,36 @@ class _HistoryScreenState extends State<HistoryScreen> {
 
   Widget _chartCard(List<BmiRecord> records, bool metric) {
     final rc = context.rc;
-    final months = _lastSixMonths();
-    final recs = [for (final m in months) _latestInMonth(records, m)];
-    final dataIdx = [
-      for (var i = 0; i < recs.length; i++)
-        if (recs[i] != null) i,
-    ];
+    // Plot individual records (oldest-first, capped at 30 points) so
+    // sparse histories still draw a line instead of "no data".
+    // records arrive newest-first.
+    final recs = records.reversed.take(30).toList();
     final values = [
-      for (final i in dataIdx) _plotValue(recs[i]!, metric),
+      for (final r in recs) _plotValue(r, metric),
     ];
 
-    final latest = dataIdx.isEmpty ? null : recs[dataIdx.last]!;
+    final latest = recs.isEmpty ? null : recs.last;
     final bigTxt =
         latest == null ? '–' : formatNum(_plotValue(latest, metric));
 
     Widget? deltaPill;
-    if (dataIdx.length >= 2) {
-      final a = recs[dataIdx.first]!;
-      final b = recs[dataIdx.last]!;
+    if (recs.length >= 2) {
+      final a = recs.first;
+      final b = recs.last;
       final d = _showWeight
-          ? (metric ? b.weightKg - a.weightKg
-                    : (b.weightKg - a.weightKg) * _kgToLb)
+          ? (metric
+              ? b.weightKg - a.weightKg
+              : (b.weightKg - a.weightKg) * _kgToLb)
           : b.bmi - a.bmi;
       final unit = _showWeight ? (metric ? ' kg' : ' lb') : '';
+      final span = _spanLabel(a.createdAt, b.createdAt);
       if (d.abs() < 0.0001) {
-        deltaPill = _pill(
-            'stabil · 6 bulan', rc.onCardMuted.withValues(alpha: 0.16),
-            rc.onCardMuted);
+        deltaPill = _pill('stabil · $span',
+            rc.onCardMuted.withValues(alpha: 0.16), rc.onCardMuted);
       } else {
         // Solid fill + dark label, like the mockup's pills.
         deltaPill = _pill(
-          '${d < 0 ? '↓' : '↑'} ${formatNum(d.abs())}$unit · 6 bulan',
+          '${d < 0 ? '↓' : '↑'} ${formatNum(d.abs())}$unit · $span',
           d < 0 ? rc.catNormal : rc.catObese,
           const Color(0xFF1D1B3A),
         );
@@ -196,6 +195,16 @@ class _HistoryScreenState extends State<HistoryScreen> {
         ],
       ),
     );
+  }
+
+  // Human span between two record dates: "hari ini", "3 hari",
+  // "2 minggu", "6 bulan".
+  String _spanLabel(DateTime a, DateTime b) {
+    final days = b.difference(a).inDays.abs();
+    if (days < 1) return 'hari ini';
+    if (days < 14) return '$days hari';
+    if (days < 60) return '${(days / 7).round()} minggu';
+    return '${(days / 30).round()} bulan';
   }
 
   Widget _pill(String text, Color bg, Color fg) {

@@ -14,7 +14,8 @@ class HistoryChart extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final rc = context.rc;
-    if (values.length < 2) {
+    final n = values.length;
+    if (n == 0) {
       return SizedBox(
         height: height,
         child: Center(
@@ -26,7 +27,7 @@ class HistoryChart extends StatelessWidget {
       );
     }
     final spots = [
-      for (var i = 0; i < values.length; i++) FlSpot(i.toDouble(), values[i]),
+      for (var i = 0; i < n; i++) FlSpot(i.toDouble(), values[i]),
     ];
     var minY = values.reduce((a, b) => a < b ? a : b);
     var maxY = values.reduce((a, b) => a > b ? a : b);
@@ -38,14 +39,18 @@ class HistoryChart extends StatelessWidget {
       minY -= pad;
       maxY += pad;
     }
+    // A single point still draws its dot: pad the x range so the
+    // chart has something to map it to.
+    final minX = n == 1 ? -0.5 : 0.0;
+    final maxX = n == 1 ? 0.5 : (n - 1).toDouble();
     final line = rc.isDark ? const Color(0xFFB9ACF2) : const Color(0xFF9180DE);
-    final last = spots.length - 1;
+    final last = n - 1;
     return SizedBox(
       height: height,
       child: LineChart(
         LineChartData(
-          minX: 0,
-          maxX: last.toDouble(),
+          minX: minX,
+          maxX: maxX,
           minY: minY,
           maxY: maxY,
           gridData: FlGridData(

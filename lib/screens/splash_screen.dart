@@ -72,23 +72,23 @@ class _SplashScreenState extends State<SplashScreen>
           opacity: _outro,
           child: Column(
             children: [
-              const Spacer(flex: 3),
+              const Spacer(flex: 5),
               FadeTransition(
                 opacity: _intro,
                 child: ScaleTransition(
                   scale: _introScale,
                   child: GlassCard(
-                    radius: 36,
+                    radius: 32,
                     padding: const EdgeInsets.all(12),
                     child: Image.asset(
                       'assets/images/raga-mark.png',
-                      width: 132,
-                      height: 132,
+                      width: 104,
+                      height: 104,
                     ),
                   ),
                 ),
               ),
-              const SizedBox(height: 22),
+              const SizedBox(height: 24),
               FadeTransition(
                 opacity: _intro,
                 child: Text(
@@ -109,21 +109,24 @@ class _SplashScreenState extends State<SplashScreen>
                   ),
                 ),
               ),
-              const SizedBox(height: 8),
+              const SizedBox(height: 10),
               FadeTransition(
                 opacity: _intro,
-                child: Text(
-                  'Kenali tubuhmu, jaga kesehatanmu.',
-                  textAlign: TextAlign.center,
-                  style: RagaType.body(rc.onBgMuted)
-                      .copyWith(fontSize: 16),
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 32),
+                  child: Text(
+                    'Kenali tubuhmu, jaga kesehatanmu.',
+                    textAlign: TextAlign.center,
+                    style: RagaType.body(rc.onBgMuted)
+                        .copyWith(fontSize: 16),
+                  ),
                 ),
               ),
-              const Spacer(flex: 4),
+              const Spacer(flex: 6),
               AnimatedBuilder(
                 animation: _progress,
                 builder: (_, __) => Container(
-                  width: 200,
+                  width: 140,
                   height: 6,
                   decoration: BoxDecoration(
                     borderRadius: BorderRadius.circular(3),
@@ -149,7 +152,7 @@ class _SplashScreenState extends State<SplashScreen>
                 'Memuat...',
                 style: RagaType.body(rc.onBgMuted),
               ),
-              const SizedBox(height: 76),
+              const SizedBox(height: 64),
             ],
           ),
         ),
