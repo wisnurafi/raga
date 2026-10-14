@@ -143,10 +143,10 @@ class AppTheme {
         brightness: Brightness.light,
       ),
       extensions: const [RagaColors.light],
-      sliderTheme: const SliderThemeData(
+      sliderTheme: SliderThemeData(
         trackHeight: 6,
         overlayShape: SliderComponentShape.noOverlay,
-        thumbShape: RoundSliderThumbShape(enabledThumbRadius: 13),
+        thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 13),
       ),
       useMaterial3: true,
     );
