@@ -42,11 +42,14 @@ jobs:
           --dart-define=SUPABASE_URL=${{ secrets.SUPABASE_URL }}
           --dart-define=SUPABASE_ANON_KEY=${{ secrets.SUPABASE_ANON_KEY }}
 
+      - name: Rename APK to Raga.apk
+        run: mv build/app/outputs/flutter-apk/app-release.apk build/app/outputs/flutter-apk/Raga.apk
+
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4
         with:
           name: raga-apk
-          path: build/app/outputs/flutter-apk/app-release.apk
+          path: build/app/outputs/flutter-apk/Raga.apk
 
       - name: Attach APK to "latest" release
         uses: softprops/action-gh-release@v2
@@ -55,6 +58,6 @@ jobs:
           name: Raga (build terbaru)
           body: |
             Build otomatis dari branch `main`.
-            Download `app-release.apk`, install di Android, dan coba langsung.
-          files: build/app/outputs/flutter-apk/app-release.apk
+            Download `Raga.apk`, install di Android, dan coba langsung.
+          files: build/app/outputs/flutter-apk/Raga.apk
           generate_release_notes: true
