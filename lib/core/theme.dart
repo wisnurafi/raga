@@ -13,6 +13,7 @@ class RagaColors extends ThemeExtension<RagaColors> {
   final Color panel;
   final Color onCard;
   final Color onCardMuted;
+  final Color onCardAccent;
   final Color onBg;
   final Color onBgMuted;
   final Color onImage;
@@ -31,6 +32,7 @@ class RagaColors extends ThemeExtension<RagaColors> {
     required this.panel,
     required this.onCard,
     required this.onCardMuted,
+    required this.onCardAccent,
     required this.onBg,
     required this.onBgMuted,
     required this.onImage,
@@ -49,7 +51,8 @@ class RagaColors extends ThemeExtension<RagaColors> {
     card: Color(0xFFFFFFFF),
     panel: Color(0xFFEDE9FB),
     onCard: Color(0xFF1B1B2F),
-    onCardMuted: Color(0xFF6E6E93),
+    onCardMuted: Color(0xFF55517E),
+    onCardAccent: Color(0xFF6A5AC8),
     onBg: Color(0xFF1B1B2F),
     onBgMuted: Color(0xFF5A5680),
     onImage: Color(0xFFFFFFFF),
@@ -70,6 +73,7 @@ class RagaColors extends ThemeExtension<RagaColors> {
     Color? panel,
     Color? onCard,
     Color? onCardMuted,
+    Color? onCardAccent,
     Color? onBg,
     Color? onBgMuted,
     Color? onImage,
@@ -88,6 +92,7 @@ class RagaColors extends ThemeExtension<RagaColors> {
       panel: panel ?? this.panel,
       onCard: onCard ?? this.onCard,
       onCardMuted: onCardMuted ?? this.onCardMuted,
+      onCardAccent: onCardAccent ?? this.onCardAccent,
       onBg: onBg ?? this.onBg,
       onBgMuted: onBgMuted ?? this.onBgMuted,
       onImage: onImage ?? this.onImage,
@@ -112,6 +117,7 @@ class RagaColors extends ThemeExtension<RagaColors> {
       panel: lerpC(panel, other.panel),
       onCard: lerpC(onCard, other.onCard),
       onCardMuted: lerpC(onCardMuted, other.onCardMuted),
+      onCardAccent: lerpC(onCardAccent, other.onCardAccent),
       onBg: lerpC(onBg, other.onBg),
       onBgMuted: lerpC(onBgMuted, other.onBgMuted),
       onImage: lerpC(onImage, other.onImage),
