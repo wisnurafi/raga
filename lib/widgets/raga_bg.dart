@@ -3,10 +3,10 @@ import 'package:flutter/material.dart';
 import '../core/theme.dart';
 
 // App background: Wisnu's art, drawn full-bleed behind everything.
-// Dark mode: his gradient PNG + painted illustration (concentric rings
-// top-left, ECG pulse line, leaf branches top-right & bottom-left).
-// Light mode: same illustration over a light lavender gradient —
-// the PNG is dark-only, so the light canvas is painted in code.
+// Dark mode: his finished background file (gradient + leaf branches +
+// ECG line + concentric rings, all baked in) — no painted overlay.
+// Light mode: the same illustration language repainted over a light
+// lavender gradient, since his file is dark-only.
 // The glass cards blur this, so it doubles as the frost source.
 class RagaBg extends StatelessWidget {
   final Widget child;
@@ -26,7 +26,7 @@ class RagaBg extends StatelessWidget {
                 fit: BoxFit.cover,
               ),
             )
-          else
+          else ...[
             const Positioned.fill(
               child: DecoratedBox(
                 decoration: BoxDecoration(
@@ -43,9 +43,10 @@ class RagaBg extends StatelessWidget {
                 ),
               ),
             ),
-          Positioned.fill(
-            child: CustomPaint(painter: _DecoPainter(rc)),
-          ),
+            Positioned.fill(
+              child: CustomPaint(painter: _DecoPainter(rc)),
+            ),
+          ],
           child,
         ],
       ),
