@@ -3,8 +3,9 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 
 // Frosted-glass card: blurs what's behind it, translucent white surface,
-// gradient edge highlight (bright at the top, fading down), and a soft
-// light falling from the top inside the glass.
+// hairline edge highlight, and a whisper of light at the top inside the
+// glass. Kept calm on purpose: a loud border or top glow reads as a flat
+// pastel card, not glass.
 //
 // Needs something behind it (like [HealthBg]) for the blur to show.
 class GlassContainer extends StatelessWidget {
@@ -22,7 +23,7 @@ class GlassContainer extends StatelessWidget {
     this.padding = EdgeInsets.zero,
     this.margin = EdgeInsets.zero,
     this.blur = 24,
-    this.opacity = 0.34,
+    this.opacity = 0.22,
   });
 
   @override
@@ -34,8 +35,8 @@ class GlassContainer extends StatelessWidget {
     return Padding(
       padding: margin,
       child: Container(
-        // Border shell: the gradient is the edge highlight — bright at
-        // the top edge, fading toward the bottom.
+        // Border shell: a hairline edge highlight, barely brighter at
+        // the top. Anything louder turns the card into a flat pastel.
         padding: const EdgeInsets.all(edge),
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(borderRadius),
@@ -43,8 +44,8 @@ class GlassContainer extends StatelessWidget {
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
             colors: [
-              Colors.white.withValues(alpha: 0.85),
-              Colors.white.withValues(alpha: 0.18),
+              Colors.white.withValues(alpha: 0.50),
+              Colors.white.withValues(alpha: 0.28),
             ],
           ),
           boxShadow: [
@@ -67,13 +68,13 @@ class GlassContainer extends StatelessWidget {
               ),
               child: Stack(
                 children: [
-                  // Soft light falling from the top inside the glass.
+                  // A whisper of light at the top inside the glass.
                   // Positioned, so it never affects the card's size.
                   const Positioned(
                     top: 0,
                     left: 0,
                     right: 0,
-                    height: 90,
+                    height: 48,
                     child: IgnorePointer(
                       child: DecoratedBox(
                         decoration: BoxDecoration(
@@ -81,7 +82,7 @@ class GlassContainer extends StatelessWidget {
                             begin: Alignment.topCenter,
                             end: Alignment.bottomCenter,
                             colors: [
-                              Color(0x33FFFFFF),
+                              Color(0x1AFFFFFF),
                               Color(0x00FFFFFF),
                             ],
                           ),
