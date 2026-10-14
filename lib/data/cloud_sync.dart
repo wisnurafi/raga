@@ -162,6 +162,10 @@ class CloudSync {
           .upsert(record.toCloudJson(uid, backupCode));
       _syncedIds.add(record.id);
       await _prefs?.setStringList(_kSyncedIds, _syncedIds.toList());
+      // A success clears any earlier transient failure: without this the
+      // state stays `error` forever and the UI keeps saying "Couldn't
+      // connect" even though uploads are working again.
+      state = SyncState.ready;
       lastError = '';
       return true;
     } catch (e) {
