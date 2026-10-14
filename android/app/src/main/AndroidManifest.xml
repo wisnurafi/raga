@@ -1,4 +1,6 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- Network access for cloud backup (Supabase) -->
+    <uses-permission android:name="android.permission.INTERNET"/>
     <!-- Weekly weigh-in reminder -->
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED"/>
