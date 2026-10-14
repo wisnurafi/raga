@@ -81,7 +81,11 @@ class _SplashScreenState extends State<SplashScreen>
                     radius: 32,
                     padding: const EdgeInsets.all(12),
                     child: Image.asset(
-                      'assets/images/raga-mark.png',
+                      // Light mode gets the dark-needle variant so the
+                      // needle stays readable on the light glass tile.
+                      rc.isDark
+                          ? 'assets/images/raga-mark.png'
+                          : 'assets/images/raga-mark-light.png',
                       width: 104,
                       height: 104,
                     ),
