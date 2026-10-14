@@ -178,54 +178,99 @@ class _ResultScreenState extends State<ResultScreen> {
                     Row(
                       children: [
                         Container(
-                          width: 34,
-                          height: 34,
+                          width: 40,
+                          height: 40,
                           decoration: BoxDecoration(
                             color: rc.mintSoft,
-                            borderRadius: BorderRadius.circular(12),
+                            borderRadius: BorderRadius.circular(14),
                           ),
                           child: Icon(
                             Icons.tips_and_updates_outlined,
-                            size: 19,
+                            size: 22,
                             color: rc.mint,
                           ),
                         ),
-                        const SizedBox(width: 10),
-                        Text(
-                          'Tips untukmu',
-                          style: TextStyle(
-                            fontSize: 20,
-                            fontWeight: FontWeight.w800,
-                            color: rc.onCard,
-                            letterSpacing: -0.3,
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'Tips untukmu',
+                                style: TextStyle(
+                                  fontSize: 20,
+                                  fontWeight: FontWeight.w800,
+                                  color: rc.onCard,
+                                  letterSpacing: -0.3,
+                                ),
+                              ),
+                              const SizedBox(height: 2),
+                              Text(
+                                'Langkah kecil untuk kategori ${meta.label}',
+                                style: TextStyle(
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.w600,
+                                  color: rc.onCardMuted,
+                                ),
+                              ),
+                            ],
                           ),
                         ),
                       ],
                     ),
-                    const SizedBox(height: 12),
-                    ...healthTips[cat]!.take(3).map(
-                          (t) => Padding(
-                            padding: const EdgeInsets.only(bottom: 10),
+                    const SizedBox(height: 16),
+                    ...healthTips[cat]!.asMap().entries.map(
+                          (e) => Padding(
+                            padding: const EdgeInsets.only(bottom: 13),
                             child: Row(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Container(
-                                  width: 9,
-                                  height: 9,
-                                  margin:
-                                      const EdgeInsets.only(top: 6, right: 12),
+                                  width: 27,
+                                  height: 27,
                                   decoration: BoxDecoration(
-                                    color: rc.mint,
+                                    gradient: LinearGradient(
+                                      begin: Alignment.topLeft,
+                                      end: Alignment.bottomRight,
+                                      colors: [
+                                        rc.mint,
+                                        const Color(0xFF3ED598),
+                                      ],
+                                    ),
                                     shape: BoxShape.circle,
+                                    boxShadow: [
+                                      BoxShadow(
+                                        color: rc.mint
+                                            .withValues(alpha: 0.35),
+                                        blurRadius: 8,
+                                        offset: const Offset(0, 3),
+                                      ),
+                                    ],
+                                  ),
+                                  child: Center(
+                                    child: Text(
+                                      '${e.key + 1}',
+                                      style: const TextStyle(
+                                        fontSize: 13.5,
+                                        fontWeight: FontWeight.w800,
+                                        color: Colors.white,
+                                      ),
+                                    ),
                                   ),
                                 ),
+                                const SizedBox(width: 13),
                                 Expanded(
-                                  child: Text(
-                                    t,
-                                    style: TextStyle(
-                                      fontSize: 14.5,
-                                      height: 1.5,
-                                      color: rc.onCardMuted,
+                                  child: Padding(
+                                    padding:
+                                        const EdgeInsets.only(top: 3),
+                                    child: Text(
+                                      e.value,
+                                      style: TextStyle(
+                                        fontSize: 14.5,
+                                        height: 1.55,
+                                        color: rc.onCard,
+                                        fontWeight: FontWeight.w500,
+                                      ),
                                     ),
                                   ),
                                 ),
@@ -233,6 +278,17 @@ class _ResultScreenState extends State<ResultScreen> {
                             ),
                           ),
                         ),
+                    Padding(
+                      padding: const EdgeInsets.only(top: 2),
+                      child: Text(
+                        'Tips umum — konsultasi ke ahli gizi untuk saran yang personal.',
+                        style: TextStyle(
+                          fontSize: 11.5,
+                          fontStyle: FontStyle.italic,
+                          color: rc.onCardMuted,
+                        ),
+                      ),
+                    ),
                   ],
                 ),
               ),

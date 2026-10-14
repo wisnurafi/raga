@@ -44,7 +44,7 @@ class RagaColors extends ThemeExtension<RagaColors> {
   });
 
   static const light = RagaColors(
-    bgGradient: [Color(0xFFFDFEFF), Color(0xFFF1F6FA)],
+    bgGradient: [Color(0xFFEDF1F8), Color(0xFFD9E2F1)],
     card: Color(0xFFFFFFFF),
     panel: Color(0xFFEDE9FB),
     onCard: Color(0xFF1B1B2F),
@@ -196,61 +196,65 @@ class _HealthBgPainter extends CustomPainter {
     );
   }
 
-  /// Satu pola detak jantung, digambar berulang di sepanjang lebar layar.
-  void _ecg(Canvas canvas, Size size) {
-    const period = 150.0;
-    const baseY = 150.0;
-    const amp = 34.0;
+  /// Garis detak jantung (ECG) — motif utama latar "vital sign".
+  /// Mengembalikan titik puncak tiap spike untuk digambar sebagai
+  /// penanda data, supaya semua elemen terasa satu sistem.
+  List<Offset> _ecg(Canvas canvas, Size size, double baseY, double alpha) {
+    const period = 170.0;
+    const amp = 36.0;
+    final peaks = <Offset>[];
     final path = Path()..moveTo(-20, baseY);
     for (double x = -20; x < size.width + 20; x += period) {
-      // Segmen datar, lalu spike QRS kecil, lalu kembali datar.
-      path.lineTo(x + period * 0.32, baseY);
-      path.lineTo(x + period * 0.40, baseY + amp * 0.25);
-      path.lineTo(x + period * 0.46, baseY - amp);
-      path.lineTo(x + period * 0.52, baseY + amp * 0.55);
-      path.lineTo(x + period * 0.60, baseY);
+      path.lineTo(x + period * 0.30, baseY);
+      path.lineTo(x + period * 0.38, baseY + amp * 0.25);
+      final peak = Offset(x + period * 0.45, baseY - amp);
+      peaks.add(peak);
+      path.lineTo(peak.dx, peak.dy);
+      path.lineTo(x + period * 0.51, baseY + amp * 0.55);
+      path.lineTo(x + period * 0.59, baseY);
       path.lineTo(x + period, baseY);
     }
     canvas.drawPath(
       path,
       Paint()
-        ..color = const Color(0xFF7E6EE8).withValues(alpha: 0.10)
+        ..color = const Color(0xFF7E6EE8).withValues(alpha: alpha)
         ..style = PaintingStyle.stroke
-        ..strokeWidth = 3
+        ..strokeWidth = 3.5
         ..strokeJoin = StrokeJoin.round
         ..strokeCap = StrokeCap.round,
     );
+    return peaks;
   }
 
-  /// Deretan tanda plus samar ala simbol medis.
-  void _pluses(Canvas canvas, Size size) {
-    final paint = Paint()
-      ..color = const Color(0xFF22B573).withValues(alpha: 0.07)
-      ..strokeWidth = 5
-      ..strokeCap = StrokeCap.round;
-    const s = 9.0;
-    final spots = [
-      Offset(size.width * 0.12, size.height * 0.30),
-      Offset(size.width * 0.85, size.height * 0.52),
-      Offset(size.width * 0.30, size.height * 0.78),
-      Offset(size.width * 0.72, size.height * 0.86),
-    ];
-    for (final o in spots) {
-      canvas.drawLine(Offset(o.dx - s, o.dy), Offset(o.dx + s, o.dy), paint);
-      canvas.drawLine(Offset(o.dx, o.dy - s), Offset(o.dx, o.dy + s), paint);
+  /// Titik data di tiap puncak detak — aksen yang menyatu dengan garis ECG.
+  void _peakDots(Canvas canvas, List<Offset> peaks) {
+    for (final p in peaks) {
+      canvas.drawCircle(
+        p,
+        11,
+        Paint()
+          ..color = const Color(0xFF22B573).withValues(alpha: 0.13),
+      );
+      canvas.drawCircle(
+        p,
+        4.5,
+        Paint()
+          ..color = const Color(0xFF22B573).withValues(alpha: 0.32),
+      );
     }
   }
 
   @override
   void paint(Canvas canvas, Size size) {
     _blob(canvas, Offset(size.width * 0.88, size.height * 0.06),
-        size.width * 0.42, const Color(0xFFBDEFD4).withValues(alpha: 0.55));
-    _blob(canvas, Offset(size.width * 0.05, size.height * 0.42),
-        size.width * 0.38, const Color(0xFFD9CFFF).withValues(alpha: 0.50));
-    _blob(canvas, Offset(size.width * 0.80, size.height * 0.88),
-        size.width * 0.44, const Color(0xFFFFE3C2).withValues(alpha: 0.45));
-    _ecg(canvas, size);
-    _pluses(canvas, size);
+        size.width * 0.44, const Color(0xFFBDEFD4).withValues(alpha: 0.65));
+    _blob(canvas, Offset(size.width * 0.05, size.height * 0.44),
+        size.width * 0.40, const Color(0xFFD9CFFF).withValues(alpha: 0.60));
+    _blob(canvas, Offset(size.width * 0.82, size.height * 0.90),
+        size.width * 0.46, const Color(0xFFFFE3C2).withValues(alpha: 0.55));
+    final peaks = _ecg(canvas, size, size.height * 0.13, 0.14);
+    _peakDots(canvas, peaks);
+    _ecg(canvas, size, size.height * 0.74, 0.07);
   }
 
   @override
