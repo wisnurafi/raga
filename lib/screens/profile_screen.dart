@@ -146,6 +146,19 @@ class ProfileScreen extends StatelessWidget {
           ),
           onTap: () => _reminderDialog(context, state),
         ),
+        const SizedBox(height: 10),
+        _tile(
+          context,
+          icon: Icons.code_outlined,
+          title: 'Developer mode',
+          subtitle: state.devMode
+              ? 'Logs, test notification, server info'
+              : 'Extra tools for debugging',
+          trailing: Switch(
+            value: state.devMode,
+            onChanged: state.setDevMode,
+          ),
+        ),
         const SizedBox(height: 22),
         _sectionLabel(context, 'Data'),
         _tile(
@@ -165,6 +178,27 @@ class ProfileScreen extends StatelessWidget {
           danger: true,
           onTap: () => _confirmClear(context, state),
         ),
+        if (state.devMode) ...[
+          const SizedBox(height: 22),
+          _sectionLabel(context, 'Developer'),
+          _tile(
+            context,
+            icon: Icons.notifications_active_outlined,
+            title: 'Send test notification',
+            subtitle: 'Fires one right now',
+            trailing: null,
+            onTap: () => _sendTestNotification(context),
+          ),
+          const SizedBox(height: 10),
+          _tile(
+            context,
+            icon: Icons.terminal_outlined,
+            title: 'View sync logs',
+            subtitle: 'This session only',
+            trailing: null,
+            onTap: () => _logsDialog(context),
+          ),
+        ],
         const SizedBox(height: 22),
         _sectionLabel(context, 'About'),
         _tile(
@@ -439,11 +473,13 @@ class ProfileScreen extends StatelessWidget {
               'Backed up to your private cloud. No account needed — it just works.',
               style: TextStyle(fontSize: 12.5, color: rc.onCardMuted),
             ),
-            const SizedBox(height: 4),
-            Text(
-              'Server: ${CloudSync.configuredHost}',
-              style: TextStyle(fontSize: 12.5, color: rc.onCardMuted),
-            ),
+            if (state.devMode) ...[
+              const SizedBox(height: 4),
+              Text(
+                'Server: ${CloudSync.configuredHost}',
+                style: TextStyle(fontSize: 12.5, color: rc.onCardMuted),
+              ),
+            ],
           ],
         ),
         actions: [
@@ -656,6 +692,50 @@ class ProfileScreen extends StatelessWidget {
               }
             },
             child: const Text('Restore'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _sendTestNotification(BuildContext context) async {
+    await ReminderService.showTest();
+    if (context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Test notification sent')),
+      );
+    }
+  }
+
+  void _logsDialog(BuildContext context) {
+    final rc = context.rc;
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: rc.card,
+        shape:
+            RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: const Text('Sync logs'),
+        content: SizedBox(
+          width: double.maxFinite,
+          child: SingleChildScrollView(
+            child: SelectableText(
+              CloudSync.logText,
+              style: const TextStyle(fontFamily: 'monospace', fontSize: 11),
+            ),
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () {
+              CloudSync.clearLog();
+              Navigator.pop(ctx);
+            },
+            child: const Text('Clear'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Close'),
           ),
         ],
       ),
