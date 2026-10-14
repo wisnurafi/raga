@@ -9,6 +9,7 @@ import '../widgets/glass.dart';
 import '../widgets/buttons.dart';
 import '../widgets/chips.dart';
 import '../widgets/controls.dart';
+import '../widgets/headers.dart';
 
 // Profile tab: identity, profiles, goal, reminder, units, appearance,
 // cloud backup, developer tools, and the danger zone.
@@ -17,17 +18,17 @@ class ProfileScreen extends StatelessWidget {
   const ProfileScreen({super.key});
 
   static const _days = [
-    'Mon',
-    'Tue',
-    'Wed',
-    'Thu',
-    'Fri',
-    'Sat',
-    'Sun'
+    'Sen',
+    'Sel',
+    'Rab',
+    'Kam',
+    'Jum',
+    'Sab',
+    'Min'
   ];
   static String _dayName(int d) => _days[d - 1];
-  static String _hhmm(int h, int m) =>
-      '${h.toString().padLeft(2, '0')}:${m.toString().padLeft(2, '0')}';
+  static String _hdot(int h, int m) =>
+      '${h.toString().padLeft(2, '0')}.${m.toString().padLeft(2, '0')}';
 
   @override
   Widget build(BuildContext context) {
@@ -37,144 +38,111 @@ class ProfileScreen extends StatelessWidget {
     final goal = state.goalFor(p.id);
 
     return ListView(
-      padding: const EdgeInsets.fromLTRB(20, 8, 20, 110),
+      padding: const EdgeInsets.fromLTRB(22, 8, 22, 110),
       children: [
-        // Centered identity header.
-        Column(
-          children: [
-            Container(
-              width: 84,
-              height: 84,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: rc.avatarBg,
-              ),
-              child: Center(
-                child: Text(
-                  p.initial,
-                  style: TextStyle(
-                    fontSize: 32,
-                    fontWeight: FontWeight.w800,
-                    color: rc.avatarFg,
-                  ),
-                ),
-              ),
-            ),
-            const SizedBox(height: 12),
-            GestureDetector(
-              onTap: () => _renameDialog(context, state, p.name),
-              behavior: HitTestBehavior.opaque,
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(
-                    p.name,
-                    style: TextStyle(
-                      fontSize: 24,
-                      fontWeight: FontWeight.w800,
-                      color: rc.onBg,
-                    ),
-                  ),
-                  const SizedBox(width: 6),
-                  Icon(
-                    Icons.edit_outlined,
-                    size: 18,
-                    color: rc.onBgMuted,
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 4),
-            Text(
-              _profileLine(state, p),
-              style: TextStyle(fontSize: 13.5, color: rc.onBgMuted),
-            ),
-          ],
-        ),
-        const SizedBox(height: 20),
-        _label(context, 'Profiles'),
+        const RagaHeader(title: 'Profil'),
+        const SizedBox(height: 18),
+        // Active profile identity card.
         GlassCard(
-          padding:
-              const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+          padding: const EdgeInsets.fromLTRB(22, 26, 22, 26),
           child: Column(
             children: [
-              for (final prof in state.profiles)
-                _profileRow(
-                  context,
-                  state,
-                  prof,
-                  prof.id == state.activeProfileId,
+              Container(
+                width: 84,
+                height: 84,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: rc.avatarBg,
                 ),
-              _addProfileRow(context, state),
-            ],
-          ),
-        ),
-        const SizedBox(height: 18),
-        _label(context, 'Goal'),
-        GlassCard(
-          child: Row(
-            children: [
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+                child: Center(
+                  child: Text(
+                    p.initial,
+                    style: RagaType.hero(32, rc.avatarFg),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 12),
+              GestureDetector(
+                onTap: () => _renameDialog(context, state, p.name),
+                behavior: HitTestBehavior.opaque,
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
                   children: [
                     Text(
-                      'Weight goal',
-                      style: TextStyle(
-                        fontSize: 15,
-                        fontWeight: FontWeight.w600,
-                        color: rc.onCardMuted,
-                      ),
+                      p.name,
+                      style: RagaType.title(rc.onCard),
                     ),
-                    const SizedBox(height: 4),
-                    Text(
-                      goal == null
-                          ? 'No goal set'
-                          : _goalText(state.metricUnits, p.weightKg, goal),
-                      style: TextStyle(
-                        fontSize: 17,
-                        fontWeight: FontWeight.w800,
-                        color: rc.onCard,
-                      ),
+                    const SizedBox(width: 6),
+                    Icon(
+                      Icons.edit_outlined,
+                      size: 18,
+                      color: rc.onCardMuted,
                     ),
-                    if (goal != null)
-                      GestureDetector(
-                        onTap: () =>
-                            state.setGoalWeight(p.id, null),
-                        behavior: HitTestBehavior.opaque,
-                        child: Padding(
-                          padding:
-                              const EdgeInsets.only(top: 8, bottom: 2),
-                          child: Text(
-                            'Clear',
-                            style: TextStyle(
-                              fontSize: 14,
-                              fontWeight: FontWeight.w700,
-                              color: rc.danger,
-                            ),
-                          ),
-                        ),
-                      ),
                   ],
                 ),
               ),
-              SizedBox(
-                width: 118,
-                child: RagaGhostButton(
-                  label: goal == null ? 'Set goal' : 'Change',
-                  onPressed: () => _goalDialog(context, state),
-                  height: 48,
-                ),
+              const SizedBox(height: 4),
+              Text(
+                _profileLine(state, p),
+                style: RagaType.body(rc.onCardMuted),
               ),
             ],
           ),
         ),
         const SizedBox(height: 18),
-        _label(context, 'Weigh-in reminder'),
+        _label(context, 'Profil'),
+        SingleChildScrollView(
+          scrollDirection: Axis.horizontal,
+          child: Row(
+            children: [
+              for (final prof in state.profiles) ...[
+                GestureDetector(
+                  onLongPress: () =>
+                      _confirmDeleteProfile(context, state, prof),
+                  child: ProfileChip(
+                    label: prof.name,
+                    selected: prof.id == state.activeProfileId,
+                    showCheck: true,
+                    onTap: () async {
+                      if (prof.id != state.activeProfileId) {
+                        await state.setActiveProfile(prof.id);
+                      }
+                    },
+                  ),
+                ),
+                const SizedBox(width: 10),
+              ],
+              ProfileChip(
+                label: 'Tambah',
+                isAdd: true,
+                selected: false,
+                onTap: () => _addProfileSheet(context, state),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 18),
+        _label(context, 'Pengaturan'),
         GlassCard(
           child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              Text('Unit', style: RagaType.label(rc.onCardMuted)),
+              const SizedBox(height: 10),
+              RagaSegmented(
+                options: const ['cm · kg', 'in · lb'],
+                selected: state.metricUnits ? 0 : 1,
+                onChanged: (i) => state.setMetricUnits(i == 0),
+              ),
+              _divider(context),
+              Text('Tema', style: RagaType.label(rc.onCardMuted)),
+              const SizedBox(height: 10),
+              RagaSegmented(
+                options: const ['Gelap', 'Terang'],
+                selected: state.darkMode ? 0 : 1,
+                onChanged: (i) => state.setDarkMode(i == 0),
+              ),
+              _divider(context),
               Row(
                 children: [
                   Expanded(
@@ -182,27 +150,15 @@ class ProfileScreen extends StatelessWidget {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          'Weekly reminder',
-                          style: TextStyle(
-                            fontSize: 15,
-                            fontWeight: FontWeight.w600,
-                            color: rc.onCardMuted,
-                          ),
+                          'Pengingat',
+                          style: RagaType.cardTitle(rc.onCard),
                         ),
-                        const SizedBox(height: 4),
+                        const SizedBox(height: 2),
                         Text(
                           state.weeklyReminder
-                              ? _summary(
-                                  state.reminderWeekdays,
-                                  state.reminderHour,
-                                  state.reminderMinute,
-                                )
-                              : 'Off',
-                          style: TextStyle(
-                            fontSize: 17,
-                            fontWeight: FontWeight.w800,
-                            color: rc.onCard,
-                          ),
+                              ? 'Pengingat timbang mingguan aktif'
+                              : 'Pengingat timbang mingguan mati',
+                          style: RagaType.caption(rc.onCardMuted),
                         ),
                       ],
                     ),
@@ -214,40 +170,79 @@ class ProfileScreen extends StatelessWidget {
                 ],
               ),
               const SizedBox(height: 10),
-              RagaGhostButton(
-                label: 'Edit schedule',
-                onPressed: () => _reminderDialog(context, state),
-                height: 50,
+              GestureDetector(
+                onTap: () => _reminderDialog(context, state),
+                behavior: HitTestBehavior.opaque,
+                child: Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.symmetric(
+                      horizontal: 16, vertical: 14),
+                  decoration: BoxDecoration(
+                    color: rc.chipInactive,
+                    borderRadius: BorderRadius.circular(18),
+                    border:
+                        Border.all(color: rc.cardBorder, width: 1.2),
+                  ),
+                  child: Row(
+                    children: [
+                      Icon(Icons.schedule,
+                          size: 20, color: rc.onCardMuted),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Text(
+                          state.weeklyReminder
+                              ? _summary(
+                                  state.reminderWeekdays,
+                                  state.reminderHour,
+                                  state.reminderMinute,
+                                )
+                              : 'Mati',
+                          style: RagaType.chip(rc.onCard),
+                        ),
+                      ),
+                      Icon(Icons.chevron_right,
+                          color: rc.onCardMuted),
+                    ],
+                  ),
+                ),
+              ),
+              _divider(context),
+              GestureDetector(
+                onTap: () => _goalDialog(context, state),
+                behavior: HitTestBehavior.opaque,
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Target berat',
+                            style: RagaType.cardTitle(rc.onCard),
+                          ),
+                          const SizedBox(height: 2),
+                          Text(
+                            goal == null
+                                ? 'Belum ada target — ketuk untuk atur'
+                                : _goalText(
+                                    state.metricUnits, p.weightKg, goal),
+                            style: RagaType.caption(rc.onCardMuted),
+                          ),
+                        ],
+                      ),
+                    ),
+                    Icon(Icons.chevron_right, color: rc.onCardMuted),
+                  ],
+                ),
               ),
             ],
           ),
         ),
         const SizedBox(height: 18),
-        _label(context, 'Units'),
-        GlassCard(
-          child: Segmented<String>(
-            options: const ['cm · kg', 'in · lb'],
-            value: state.metricUnits ? 'cm · kg' : 'in · lb',
-            onChanged: (v) =>
-                state.setMetricUnits(v == 'cm · kg'),
-            labelOf: (s) => s,
-          ),
-        ),
-        const SizedBox(height: 18),
-        _label(context, 'Appearance'),
-        GlassCard(
-          child: Segmented<String>(
-            options: const ['Dark', 'Light'],
-            value: state.darkMode ? 'Dark' : 'Light',
-            onChanged: (v) => state.setDarkMode(v == 'Dark'),
-            labelOf: (s) => s,
-          ),
-        ),
-        const SizedBox(height: 18),
-        _label(context, 'Cloud backup'),
+        _label(context, 'Backup'),
         _backupCard(context, state),
         const SizedBox(height: 18),
-        _label(context, 'Developer'),
+        _label(context, 'Lainnya'),
         GlassCard(
           child: Column(
             children: [
@@ -258,22 +253,15 @@ class ProfileScreen extends StatelessWidget {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          'Developer mode',
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w700,
-                            color: rc.onCard,
-                          ),
+                          'Mode pengembang',
+                          style: RagaType.cardTitle(rc.onCard),
                         ),
                         const SizedBox(height: 2),
                         Text(
                           state.devMode
-                              ? 'Logs, test notification, server info'
-                              : 'Extra tools for debugging',
-                          style: TextStyle(
-                            fontSize: 12.5,
-                            color: rc.onCardMuted,
-                          ),
+                              ? 'Log, notifikasi tes, info server'
+                              : 'Perkakas tambahan untuk debugging',
+                          style: RagaType.caption(rc.onCardMuted),
                         ),
                       ],
                     ),
@@ -289,66 +277,76 @@ class ProfileScreen extends StatelessWidget {
                 _devRow(
                   context,
                   icon: Icons.notifications_active_outlined,
-                  title: 'Send test notification',
-                  subtitle: 'Fires one right now',
+                  title: 'Kirim notifikasi tes',
+                  subtitle: 'Kirim satu sekarang',
                   onTap: () => _sendTestNotification(context),
                 ),
                 _devRow(
                   context,
                   icon: Icons.alarm_outlined,
-                  title: 'Pending alarms',
-                  subtitle: 'What the OS actually registered',
+                  title: 'Alarm terdaftar',
+                  subtitle: 'Yang benar-benar didaftarkan OS',
                   onTap: () => _pendingAlarmsDialog(context),
                 ),
                 _devRow(
                   context,
                   icon: Icons.terminal_outlined,
-                  title: 'Session sync log',
-                  subtitle: 'This session only',
+                  title: 'Log sinkron sesi',
+                  subtitle: 'Sesi ini saja',
                   onTap: () => _logsDialog(context),
                 ),
               ],
-            ],
-          ),
-        ),
-        const SizedBox(height: 18),
-        _label(context, 'Danger zone'),
-        GestureDetector(
-          onTap: () => _confirmClear(context, state),
-          behavior: HitTestBehavior.opaque,
-          child: Container(
-            height: 62,
-            width: double.infinity,
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(31),
-              border: Border.all(color: rc.danger, width: 1.5),
-              color: rc.danger.withValues(alpha: 0.10),
-            ),
-            child: Center(
-              child: Text(
-                'Erase all data',
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w700,
-                  color: rc.danger,
+              _divider(context),
+              GestureDetector(
+                onTap: () => _confirmClear(context, state),
+                behavior: HitTestBehavior.opaque,
+                child: Container(
+                  height: 58,
+                  width: double.infinity,
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(29),
+                    border: Border.all(color: rc.danger, width: 1.5),
+                    color: rc.danger.withValues(alpha: 0.10),
+                  ),
+                  child: Center(
+                    child: Text(
+                      'Hapus semua data',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w700,
+                        color: rc.danger,
+                      ),
+                    ),
+                  ),
                 ),
               ),
-            ),
+              const SizedBox(height: 14),
+              Row(
+                children: [
+                  Text(
+                    'Versi aplikasi',
+                    style: RagaType.caption(rc.onCardMuted),
+                  ),
+                  const Spacer(),
+                  Text(
+                    'Raga 1.0.0',
+                    style: RagaType.label(rc.onCard),
+                  ),
+                ],
+              ),
+            ],
           ),
         ),
       ],
     );
   }
 
-  // "Male · 21 yrs · 170 cm · 65 kg", converted for imperial.
+  // "Pria · 21 th · 170 cm", converted for imperial.
   String _profileLine(AppState state, Profile p) {
-    final w = state.metricUnits
-        ? '${p.weightKg.toStringAsFixed(0)} kg'
-        : '${(p.weightKg * 2.20462).round()} lb';
     final h = state.metricUnits
         ? '${p.heightCm.toStringAsFixed(0)} cm'
         : '${(p.heightCm / 2.54).round()} in';
-    return '${p.isMale ? 'Male' : 'Female'} · ${p.age} yrs · $h · $w';
+    return '${p.isMale ? 'Pria' : 'Wanita'} · ${p.age} th · $h';
   }
 
   String _fmtW(double kg, bool metric) => metric
@@ -358,8 +356,8 @@ class ProfileScreen extends StatelessWidget {
   String _goalText(bool metric, double curKg, double goalKg) {
     final d = goalKg - curKg;
     final g = _fmtW(goalKg, metric);
-    if (d.abs() < 0.5) return 'Maintain $g';
-    return d < 0 ? 'Lose to $g' : 'Gain to $g';
+    if (d.abs() < 0.5) return 'Jaga di $g';
+    return d < 0 ? 'Turun ke $g' : 'Naik ke $g';
   }
 
   Widget _label(BuildContext context, String text) {
@@ -367,151 +365,50 @@ class ProfileScreen extends StatelessWidget {
       padding: const EdgeInsets.only(bottom: 10, left: 4),
       child: Text(
         text,
-        style: TextStyle(
-          fontSize: 15,
-          fontWeight: FontWeight.w700,
-          color: context.rc.onBgMuted,
-        ),
+        style: RagaType.label(context.rc.onBgMuted),
       ),
     );
   }
 
-  Widget _profileRow(
-    BuildContext context,
-    AppState state,
-    Profile prof,
-    bool active,
-  ) {
-    final rc = context.rc;
-    return GestureDetector(
-      onTap: () async {
-        if (!active) await state.setActiveProfile(prof.id);
-      },
-      onLongPress: () => _confirmDeleteProfile(context, state, prof),
-      behavior: HitTestBehavior.opaque,
-      child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: 10),
-        child: Row(
-          children: [
-            Container(
-              width: 44,
-              height: 44,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: rc.avatarBg,
-              ),
-              child: Center(
-                child: Text(
-                  prof.initial,
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.w800,
-                    color: rc.avatarFg,
-                  ),
-                ),
-              ),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    prof.name,
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w700,
-                      color: rc.onCard,
-                    ),
-                  ),
-                  const SizedBox(height: 2),
-                  Text(
-                    '${prof.isMale ? 'Male' : 'Female'} · ${prof.age} yrs',
-                    style: TextStyle(
-                      fontSize: 12.5,
-                      color: rc.onCardMuted,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            if (active)
-              Icon(Icons.check_circle, color: rc.badgeOk, size: 22),
-          ],
-        ),
-      ),
+  Widget _divider(BuildContext context) {
+    return Divider(
+      height: 32,
+      thickness: 1,
+      color: context.rc.cardBorder,
     );
   }
 
-  Widget _addProfileRow(BuildContext context, AppState state) {
-    final rc = context.rc;
-    return GestureDetector(
-      onTap: () => _addProfileDialog(context, state),
-      behavior: HitTestBehavior.opaque,
-      child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: 10),
-        child: Row(
-          children: [
-            Container(
-              width: 44,
-              height: 44,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: rc.chipActive.withValues(alpha: 0.18),
-                border: Border.all(
-                  color: rc.chipActive.withValues(alpha: 0.5),
-                  width: 1.2,
-                ),
-              ),
-              child: Icon(Icons.add, color: rc.chipActive, size: 22),
-            ),
-            const SizedBox(width: 12),
-            Text(
-              'Add profile',
-              style: TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.w700,
-                color: rc.onCardAccent,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  // "2× a week · Mon & Thu · 07:00" / "1× a week · Mon · 07:00" /
-  // "Every day · 07:00".
+  // "2× seminggu · Sen & Kam · 07.00" / "1× seminggu · Sen · 07.00" /
+  // "Setiap hari · 07.00".
   String _summary(List<int> days, int h, int m) {
-    if (days.isEmpty) return 'Off';
-    final t = _hhmm(h, m);
-    if (days.length == 7) return 'Every day · $t';
+    if (days.isEmpty) return 'Mati';
+    final t = _hdot(h, m);
+    if (days.length == 7) return 'Setiap hari · $t';
     final names = days.map(_dayName).toList();
     final joined = names.length == 1
         ? names.first
         : names.length == 2
             ? '${names[0]} & ${names[1]}'
             : '${names.sublist(0, names.length - 1).join(', ')} & ${names.last}';
-    return '${names.length}× a week · $joined · $t';
+    return '${names.length}× seminggu · $joined · $t';
   }
 
-  // "Today · 07:00", "Tomorrow · 07:00", or "Mon · 07:00" — the
+  // "Hari ini · 07.00", "Besok · 07.00", or "Sen · 07.00" — the
   // earliest upcoming armed day.
   String _nextLabel(Set<int> days, int h, int m) {
-    if (days.isEmpty) return 'Pick at least one day';
+    if (days.isEmpty) return 'Pilih minimal satu hari';
     var best = ReminderService.nextOccurrence(days.first, h, m);
     for (final d in days.skip(1)) {
       final c = ReminderService.nextOccurrence(d, h, m);
       if (c.isBefore(best)) best = c;
     }
     final now = DateTime.now();
-    final diff =
-        DateTime(best.year, best.month, best.day)
-            .difference(DateTime(now.year, now.month, now.day))
-            .inDays;
+    final diff = DateTime(best.year, best.month, best.day)
+        .difference(DateTime(now.year, now.month, now.day))
+        .inDays;
     final when =
-        diff == 0 ? 'Today' : diff == 1 ? 'Tomorrow' : _dayName(best.weekday);
-    return '$when · ${_hhmm(h, m)}';
+        diff == 0 ? 'Hari ini' : diff == 1 ? 'Besok' : _dayName(best.weekday);
+    return '$when · ${_hdot(h, m)}';
   }
 
   // One arming flow for the toggle and the schedule dialog: permission
@@ -528,7 +425,7 @@ class ProfileScreen extends StatelessWidget {
     if (!ok) {
       messenger.showSnackBar(
         const SnackBar(
-          content: Text('Turn on notifications in system settings first'),
+          content: Text('Nyalakan notifikasi di pengaturan sistem dulu'),
         ),
       );
       return false;
@@ -544,10 +441,10 @@ class ProfileScreen extends StatelessWidget {
     messenger.showSnackBar(
       SnackBar(
         content: Text(exact
-            ? 'Weekly reminder set'
-            : 'Reminder set, but exact alarms are off — it may arrive '
-                'late. Allow "Alarms & reminders" in system settings '
-                'for on-time nudges.'),
+            ? 'Pengingat mingguan aktif'
+            : 'Pengingat aktif, tapi alarm tepat waktu mati — bisa '
+                'terlambat. Izinkan "Alarm & pengingat" di pengaturan '
+                'sistem biar tepat waktu.'),
       ),
     );
     return true;
@@ -586,7 +483,7 @@ class ProfileScreen extends StatelessWidget {
       context: context,
       builder: (ctx) => StatefulBuilder(
         builder: (ctx2, setLocal) => AlertDialog(
-          title: const Text('Reminder schedule'),
+          title: const Text('Jadwal pengingat'),
           content: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -597,7 +494,7 @@ class ProfileScreen extends StatelessWidget {
                   children: [
                     for (var d = 1; d <= 7; d++) ...[
                       if (d > 1) const SizedBox(width: 8),
-                      DayPill(
+                      DayChip(
                         label: _dayName(d),
                         selected: days.contains(d),
                         onTap: () => setLocal(() {
@@ -637,12 +534,8 @@ class ProfileScreen extends StatelessWidget {
                           size: 22, color: rc.onCardMuted),
                       const SizedBox(width: 12),
                       Text(
-                        _hhmm(time.hour, time.minute),
-                        style: TextStyle(
-                          fontSize: 40,
-                          fontWeight: FontWeight.w800,
-                          color: rc.onCard,
-                        ),
+                        _hdot(time.hour, time.minute),
+                        style: RagaType.hero(40, rc.onCard),
                       ),
                     ],
                   ),
@@ -650,7 +543,7 @@ class ProfileScreen extends StatelessWidget {
               ),
               const SizedBox(height: 12),
               Text(
-                'Next: ${_nextLabel(days, time.hour, time.minute)}',
+                'Berikutnya: ${_nextLabel(days, time.hour, time.minute)}',
                 style: TextStyle(
                   fontSize: 13,
                   fontWeight: FontWeight.w600,
@@ -659,9 +552,9 @@ class ProfileScreen extends StatelessWidget {
               ),
               const SizedBox(height: 18),
               RagaButton(
-                label: 'Save',
+                label: 'Simpan',
                 height: 56,
-                onPressed: days.isEmpty
+                onTap: days.isEmpty
                     ? null
                     : () async {
                         final messenger =
@@ -683,8 +576,8 @@ class ProfileScreen extends StatelessWidget {
                         if (ctx2.mounted) Navigator.pop(ctx2);
                       },
               ),
-              RagaTextLink(
-                label: 'Cancel',
+              RagaTextButton(
+                label: 'Batal',
                 onTap: () => Navigator.pop(ctx2),
               ),
             ],
@@ -695,7 +588,7 @@ class ProfileScreen extends StatelessWidget {
   }
 
   // Goal dialog in the onboarding language: direction segmented +
-  // weight stepper + a live "−3.0 kg to go" line.
+  // weight stepper + a live "−3.0 kg lagi" line.
   void _goalDialog(BuildContext context, AppState state) {
     final rc = context.rc;
     final p = state.activeProfile;
@@ -709,12 +602,13 @@ class ProfileScreen extends StatelessWidget {
     double toKg(double v) => metric ? v : v / 2.20462;
     String dirOf(double v) {
       final d = toKg(v) - cur;
-      if (d.abs() < 0.5) return 'Maintain';
-      return d < 0 ? 'Lose' : 'Gain';
+      if (d.abs() < 0.5) return 'Jaga';
+      return d < 0 ? 'Turun' : 'Naik';
     }
 
     var value = toDisplay(state.goalFor(p.id) ?? cur).clamp(min, max);
     var dir = dirOf(value);
+    const dirs = ['Turun', 'Jaga', 'Naik'];
     final hasGoal = state.goalFor(p.id) != null;
 
     showDialog(
@@ -723,56 +617,35 @@ class ProfileScreen extends StatelessWidget {
         builder: (ctx2, setLocal) {
           final d = toKg(value) - cur;
           final diffText = d.abs() < 0.5
-              ? 'Stay at ${_fmtW(cur, metric)}'
+              ? 'Tetap di ${_fmtW(cur, metric)}'
               : d < 0
-                  ? '−${_fmtW(d.abs(), metric)} to go'
-                  : '+${_fmtW(d, metric)} to go';
+                  ? '−${_fmtW(d.abs(), metric)} lagi'
+                  : '+${_fmtW(d, metric)} lagi';
           return AlertDialog(
-            title: const Text('Weight goal'),
+            title: const Text('Target berat'),
             content: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Segmented<String>(
-                  options: const ['Lose', 'Maintain', 'Gain'],
-                  value: dir,
-                  onChanged: (v) => setLocal(() {
-                    dir = v;
+                RagaSegmented(
+                  options: dirs,
+                  selected: dirs.indexOf(dir),
+                  onChanged: (i) => setLocal(() {
+                    dir = dirs[i];
                     final kgNow = toKg(value);
-                    if (v == 'Maintain') {
+                    if (dir == 'Jaga') {
                       value = toDisplay(cur);
-                    } else if (v == 'Lose' && kgNow >= cur) {
+                    } else if (dir == 'Turun' && kgNow >= cur) {
                       value = toDisplay(cur - 3).clamp(min, max);
-                    } else if (v == 'Gain' && kgNow <= cur) {
+                    } else if (dir == 'Naik' && kgNow <= cur) {
                       value = toDisplay(cur + 3).clamp(min, max);
                     }
                   }),
-                  labelOf: (s) => s,
                 ),
                 const SizedBox(height: 18),
                 StepperRow(
-                  value: Row(
-                    crossAxisAlignment: CrossAxisAlignment.baseline,
-                    textBaseline: TextBaseline.alphabetic,
-                    children: [
-                      Text(
-                        value.toStringAsFixed(metric ? 1 : 0),
-                        style: TextStyle(
-                          fontSize: 48,
-                          fontWeight: FontWeight.w800,
-                          color: rc.onCard,
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      Text(
-                        unit,
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.w700,
-                          color: rc.onCardMuted,
-                        ),
-                      ),
-                    ],
-                  ),
+                  value: value.toStringAsFixed(metric ? 1 : 0),
+                  unit: unit,
+                  valueSize: 48,
                   onMinus: () => setLocal(() {
                     value = (value - step).clamp(min, max);
                     dir = dirOf(value);
@@ -793,25 +666,24 @@ class ProfileScreen extends StatelessWidget {
                 ),
                 const SizedBox(height: 18),
                 RagaButton(
-                  label: 'Save goal',
+                  label: 'Simpan target',
                   height: 56,
-                  onPressed: () async {
-                    await state.setGoalWeight(
-                        p.id, toKg(value));
+                  onTap: () async {
+                    await state.setGoalWeight(p.id, toKg(value));
                     if (ctx2.mounted) Navigator.pop(ctx2);
                   },
                 ),
                 if (hasGoal)
-                  RagaTextLink(
-                    label: 'Clear goal',
+                  RagaTextButton(
+                    label: 'Hapus target',
                     onTap: () async {
                       await state.setGoalWeight(p.id, null);
                       if (ctx2.mounted) Navigator.pop(ctx2);
                     },
                   )
                 else
-                  RagaTextLink(
-                    label: 'Cancel',
+                  RagaTextButton(
+                    label: 'Batal',
                     onTap: () => Navigator.pop(ctx2),
                   ),
               ],
@@ -824,7 +696,7 @@ class ProfileScreen extends StatelessWidget {
 
   Widget _backupCard(BuildContext context, AppState state) {
     final rc = context.rc;
-    final code = CloudSync.backupCode ?? '(not ready yet)';
+    final code = CloudSync.backupCode ?? '(belum siap)';
     final pending = CloudSync.pendingCount(state.records);
     final isError = CloudSync.state == SyncState.error;
     return GlassCard(
@@ -839,20 +711,12 @@ class ProfileScreen extends StatelessWidget {
                   children: [
                     Text(
                       'Status',
-                      style: TextStyle(
-                        fontSize: 15,
-                        fontWeight: FontWeight.w600,
-                        color: rc.onCardMuted,
-                      ),
+                      style: RagaType.label(rc.onCardMuted),
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      CloudSync.describe(state.records),
-                      style: TextStyle(
-                        fontSize: 17,
-                        fontWeight: FontWeight.w800,
-                        color: rc.onCard,
-                      ),
+                      _describeIndonesian(state),
+                      style: RagaType.cardTitle(rc.onCard),
                     ),
                   ],
                 ),
@@ -863,7 +727,7 @@ class ProfileScreen extends StatelessWidget {
           if (pending > 0) ...[
             const SizedBox(height: 6),
             Text(
-              '$pending ${pending == 1 ? 'entry' : 'entries'} waiting to upload.',
+              '$pending catatan menunggu diunggah.',
               style: TextStyle(
                 fontSize: 13,
                 color: rc.onCardMuted,
@@ -890,61 +754,49 @@ class ProfileScreen extends StatelessWidget {
           ],
           const SizedBox(height: 14),
           Text(
-            'Backup code',
-            style: TextStyle(
-              fontSize: 13,
-              fontWeight: FontWeight.w600,
-              color: rc.onCardMuted,
+            'Kode backup',
+            style: RagaType.label(rc.onCardMuted),
+          ),
+          const SizedBox(height: 8),
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.symmetric(
+                horizontal: 16, vertical: 14),
+            decoration: BoxDecoration(
+              color: rc.chipInactive,
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: rc.cardBorder, width: 1.2),
+            ),
+            child: SelectableText(
+              code,
+              style: TextStyle(
+                fontFamily: 'monospace',
+                fontSize: 16,
+                fontWeight: FontWeight.w700,
+                letterSpacing: 1.0,
+                color: rc.onCard,
+              ),
             ),
           ),
-          const SizedBox(height: 6),
-          Row(
-            children: [
-              Expanded(
-                child: Container(
-                  padding: const EdgeInsets.symmetric(
-                      horizontal: 14, vertical: 13),
-                  decoration: BoxDecoration(
-                    color: rc.chipInactive,
-                    borderRadius: BorderRadius.circular(14),
-                    border: Border.all(
-                        color: rc.cardBorder, width: 1.2),
-                  ),
-                  child: SelectableText(
-                    code,
-                    style: TextStyle(
-                      fontFamily: 'monospace',
-                      fontSize: 15,
-                      fontWeight: FontWeight.w700,
-                      letterSpacing: 1.0,
-                      color: rc.onCard,
-                    ),
-                  ),
-                ),
-              ),
-              const SizedBox(width: 10),
-              _circleBtn(
-                context,
-                icon: Icons.copy_outlined,
-                onTap: () async {
-                  await Clipboard.setData(
-                      ClipboardData(text: code));
-                  if (context.mounted) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                          content:
-                              Text('Backup code copied')),
-                    );
-                  }
-                },
-              ),
-            ],
-          ),
           const SizedBox(height: 14),
-          RagaButton(
-            label: 'Sync now',
+          RagaOutlineButton(
+            label: 'Salin kode',
             height: 56,
-            onPressed: () async {
+            onTap: () async {
+              await Clipboard.setData(ClipboardData(text: code));
+              if (context.mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                      content: Text('Kode backup disalin')),
+                );
+              }
+            },
+          ),
+          const SizedBox(height: 10),
+          RagaButton(
+            label: 'Sinkron sekarang',
+            height: 56,
+            onTap: () async {
               await state.refreshSync();
               if (context.mounted) {
                 ScaffoldMessenger.of(context).showSnackBar(
@@ -955,11 +807,11 @@ class ProfileScreen extends StatelessWidget {
               }
             },
           ),
-          const SizedBox(height: 4),
-          RagaGhostButton(
-            label: 'Restore from code',
+          const SizedBox(height: 10),
+          RagaOutlineButton(
+            label: 'Restore dari kode',
             height: 56,
-            onPressed: () => _restoreCodeDialog(context, state),
+            onTap: () => _restoreCodeDialog(context, state),
           ),
           if (state.devMode) ...[
             const SizedBox(height: 10),
@@ -973,7 +825,7 @@ class ProfileScreen extends StatelessWidget {
           ],
           const SizedBox(height: 10),
           Text(
-            'Backed up to your private cloud. No account needed — it just works.',
+            'Tersimpan aman di cloud pribadimu. Tanpa akun — tinggal pakai.',
             style: TextStyle(
               fontSize: 12.5,
               color: rc.onCardMuted,
@@ -982,6 +834,23 @@ class ProfileScreen extends StatelessWidget {
         ],
       ),
     );
+  }
+
+  // CloudSync.describe is English; the screen copy is Indonesian.
+  String _describeIndonesian(AppState state) {
+    switch (CloudSync.state) {
+      case SyncState.notConfigured:
+        return 'Belum disiapkan';
+      case SyncState.error:
+        return CloudSync.lastError.isEmpty
+            ? 'Tidak bisa terhubung'
+            : CloudSync.lastError;
+      case SyncState.ready:
+        final n = CloudSync.pendingCount(state.records);
+        return n == 0
+            ? 'Terhubung — semua sudah tersinkron'
+            : '$n catatan menunggu diunggah';
+    }
   }
 
   Widget _syncDot(BuildContext context) {
@@ -995,28 +864,6 @@ class ProfileScreen extends StatelessWidget {
       width: 12,
       height: 12,
       decoration: BoxDecoration(color: color, shape: BoxShape.circle),
-    );
-  }
-
-  Widget _circleBtn(
-    BuildContext context, {
-    required IconData icon,
-    required VoidCallback onTap,
-  }) {
-    final rc = context.rc;
-    return GestureDetector(
-      onTap: onTap,
-      behavior: HitTestBehavior.opaque,
-      child: Container(
-        width: 50,
-        height: 50,
-        decoration: BoxDecoration(
-          shape: BoxShape.circle,
-          color: rc.chipInactive,
-          border: Border.all(color: rc.cardBorder, width: 1.2),
-        ),
-        child: Icon(icon, color: rc.onCard, size: 20),
-      ),
     );
   }
 
@@ -1075,22 +922,33 @@ class ProfileScreen extends StatelessWidget {
     );
   }
 
-  void _addProfileDialog(BuildContext context, AppState state) {
+  void _addProfileSheet(BuildContext context, AppState state) {
+    final rc = context.rc;
     final ctl = TextEditingController();
-    showDialog(
+    showModalBottomSheet(
       context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('New profile'),
-        content: Column(
+      builder: (ctx) => Padding(
+        padding: EdgeInsets.fromLTRB(
+          22,
+          22,
+          22,
+          22 + MediaQuery.of(ctx).viewInsets.bottom,
+        ),
+        child: Column(
           mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            Text('Profil baru', style: RagaType.cardTitle(rc.onCard)),
+            const SizedBox(height: 16),
             TextField(
               controller: ctl,
               autofocus: true,
               textCapitalization: TextCapitalization.words,
-              decoration: const InputDecoration(
-                hintText: 'Name',
-                border: OutlineInputBorder(),
+              style: RagaType.body(rc.onCard),
+              decoration: InputDecoration(
+                hintText: 'Nama',
+                hintStyle: RagaType.body(rc.onCardMuted),
+                border: const OutlineInputBorder(),
               ),
               onSubmitted: (_) {
                 Navigator.pop(ctx);
@@ -1099,15 +957,15 @@ class ProfileScreen extends StatelessWidget {
             ),
             const SizedBox(height: 18),
             RagaButton(
-              label: 'Add',
+              label: 'Tambah',
               height: 56,
-              onPressed: () {
+              onTap: () {
                 Navigator.pop(ctx);
                 state.addProfile(ctl.text);
               },
             ),
-            RagaTextLink(
-              label: 'Cancel',
+            RagaTextButton(
+              label: 'Batal',
               onTap: () => Navigator.pop(ctx),
             ),
           ],
@@ -1122,7 +980,7 @@ class ProfileScreen extends StatelessWidget {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Edit name'),
+        title: const Text('Ubah nama'),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -1140,15 +998,15 @@ class ProfileScreen extends StatelessWidget {
             ),
             const SizedBox(height: 18),
             RagaButton(
-              label: 'Save',
+              label: 'Simpan',
               height: 56,
-              onPressed: () {
+              onTap: () {
                 Navigator.pop(ctx);
                 _applyRename(state, ctrl.text);
               },
             ),
-            RagaTextLink(
-              label: 'Cancel',
+            RagaTextButton(
+              label: 'Batal',
               onTap: () => Navigator.pop(ctx),
             ),
           ],
@@ -1170,20 +1028,21 @@ class ProfileScreen extends StatelessWidget {
     if (state.profiles.length <= 1) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-            content: Text("You can't delete your last profile")),
+            content:
+                Text('Tidak bisa menghapus profil terakhir')),
       );
       return;
     }
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Delete profile?'),
+        title: const Text('Hapus profil?'),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              '${prof.name} and their history will be gone for good.',
+              '${prof.name} beserta riwayatnya akan hilang selamanya.',
               style: TextStyle(color: rc.onCardMuted),
             ),
             const SizedBox(height: 20),
@@ -1207,7 +1066,7 @@ class ProfileScreen extends StatelessWidget {
                     ),
                     child: Center(
                       child: Text(
-                        'Delete',
+                        'Hapus',
                         style: TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.w700,
@@ -1219,8 +1078,8 @@ class ProfileScreen extends StatelessWidget {
                 ),
               ),
             ),
-            RagaTextLink(
-              label: 'Cancel',
+            RagaTextButton(
+              label: 'Batal',
               onTap: () => Navigator.pop(ctx),
             ),
           ],
@@ -1234,7 +1093,7 @@ class ProfileScreen extends StatelessWidget {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Restore from backup code'),
+        title: const Text('Restore dari kode'),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -1249,16 +1108,16 @@ class ProfileScreen extends StatelessWidget {
             ),
             const SizedBox(height: 18),
             RagaButton(
-              label: 'Next',
+              label: 'Lanjut',
               height: 56,
-              onPressed: () {
+              onTap: () {
                 if (ctl.text.trim().isEmpty) return;
                 Navigator.pop(ctx);
                 _confirmRestore(context, state, ctl.text);
               },
             ),
-            RagaTextLink(
-              label: 'Cancel',
+            RagaTextButton(
+              label: 'Batal',
               onTap: () => Navigator.pop(ctx),
             ),
           ],
@@ -1273,13 +1132,13 @@ class ProfileScreen extends StatelessWidget {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Replace everything?'),
+        title: const Text('Ganti semuanya?'),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'This will replace all profiles and history on this phone with the backup. This cannot be undone.',
+              'Semua profil dan riwayat di HP ini akan diganti dengan data backup. Tidak bisa dibatalkan.',
               style: TextStyle(color: rc.onCardMuted),
             ),
             const SizedBox(height: 20),
@@ -1298,8 +1157,8 @@ class ProfileScreen extends StatelessWidget {
                       ScaffoldMessenger.of(context).showSnackBar(
                         SnackBar(
                           content: Text(ok
-                              ? 'Backup restored — welcome back.'
-                              : 'Code not found or cloud unreachable. Check the code and try again.'),
+                              ? 'Backup dipulihkan — selamat datang kembali.'
+                              : 'Kode tidak ditemukan atau cloud tidak terjangkau. Cek kodenya lalu coba lagi.'),
                         ),
                       );
                     }
@@ -1325,8 +1184,8 @@ class ProfileScreen extends StatelessWidget {
                 ),
               ),
             ),
-            RagaTextLink(
-              label: 'Cancel',
+            RagaTextButton(
+              label: 'Batal',
               onTap: () => Navigator.pop(ctx),
             ),
           ],
@@ -1341,8 +1200,8 @@ class ProfileScreen extends StatelessWidget {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
             content: Text(ok
-                ? 'Test notification sent'
-                : "Couldn't show a notification — check the permission")),
+                ? 'Notifikasi tes terkirim'
+                : 'Tidak bisa menampilkan notifikasi — cek izinnya')),
       );
     }
   }
@@ -1351,7 +1210,7 @@ class ProfileScreen extends StatelessWidget {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Sync logs'),
+        title: const Text('Log sinkron'),
         content: SizedBox(
           width: double.maxFinite,
           child: SingleChildScrollView(
@@ -1368,11 +1227,11 @@ class ProfileScreen extends StatelessWidget {
               CloudSync.clearLog();
               Navigator.pop(ctx);
             },
-            child: const Text('Clear'),
+            child: const Text('Hapus'),
           ),
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: const Text('Close'),
+            child: const Text('Tutup'),
           ),
         ],
       ),
@@ -1386,15 +1245,15 @@ class ProfileScreen extends StatelessWidget {
     final alarms = await ReminderService.pendingAlarms();
     if (!context.mounted) return;
     final body = alarms.isEmpty
-        ? 'No alarms registered with the OS.'
+        ? 'Tidak ada alarm yang terdaftar di OS.'
         : alarms
             .map((a) =>
-                '#${a.id} — ${a.title ?? "(no title)"}\n  ${a.body ?? ""}')
+                '#${a.id} — ${a.title ?? "(tanpa judul)"}\n  ${a.body ?? ""}')
             .join('\n');
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Pending alarms'),
+        title: const Text('Alarm terdaftar'),
         content: SingleChildScrollView(
           child: SelectableText(
             body,
@@ -1405,7 +1264,7 @@ class ProfileScreen extends StatelessWidget {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: const Text('Close'),
+            child: const Text('Tutup'),
           ),
         ],
       ),
@@ -1417,13 +1276,13 @@ class ProfileScreen extends StatelessWidget {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Delete all data?'),
+        title: const Text('Hapus semua data?'),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'Your history and profiles on this device will be gone for good.',
+              'Riwayat dan profil di perangkat ini akan hilang selamanya.',
               style: TextStyle(color: rc.onCardMuted),
             ),
             const SizedBox(height: 20),
@@ -1439,7 +1298,7 @@ class ProfileScreen extends StatelessWidget {
                     state.clearAllData();
                     ScaffoldMessenger.of(context).showSnackBar(
                       const SnackBar(
-                          content: Text('All data deleted')),
+                          content: Text('Semua data dihapus')),
                     );
                   },
                   child: Container(
@@ -1451,7 +1310,7 @@ class ProfileScreen extends StatelessWidget {
                     ),
                     child: Center(
                       child: Text(
-                        'Delete',
+                        'Hapus',
                         style: TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.w700,
@@ -1463,8 +1322,8 @@ class ProfileScreen extends StatelessWidget {
                 ),
               ),
             ),
-            RagaTextLink(
-              label: 'Cancel',
+            RagaTextButton(
+              label: 'Batal',
               onTap: () => Navigator.pop(ctx),
             ),
           ],
@@ -1472,5 +1331,4 @@ class ProfileScreen extends StatelessWidget {
       ),
     );
   }
-
 }
