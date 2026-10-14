@@ -214,6 +214,21 @@ class ProfileScreen extends StatelessWidget {
   String _dayName(int weekday) =>
       const ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'][weekday - 1];
 
+  // "Today", "Tomorrow", or the weekday — so the user sees exactly when
+  // the next reminder fires instead of guessing.
+  String _nextLabel(int weekday, TimeOfDay time, BuildContext context) {
+    final next =
+        ReminderService.nextOccurrence(weekday, time.hour, time.minute);
+    final now = DateTime.now();
+    final diff =
+        DateTime(next.year, next.month, next.day)
+            .difference(DateTime(now.year, now.month, now.day))
+            .inDays;
+    final when =
+        diff == 0 ? 'Today' : diff == 1 ? 'Tomorrow' : _dayName(next.weekday);
+    return '$when, ${time.format(context)}';
+  }
+
   // Day + time picker for the weekly reminder.
   void _reminderDialog(BuildContext context, AppState state) {
     final rc = context.rc;
@@ -282,6 +297,15 @@ class ProfileScreen extends StatelessWidget {
                   ),
                 ),
               ),
+              const SizedBox(height: 12),
+              Text(
+                'Next: ${_nextLabel(day, time, ctx)}',
+                style: TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
+                  color: rc.onCardMuted,
+                ),
+              ),
             ],
           ),
           actions: [
@@ -346,6 +370,14 @@ class ProfileScreen extends StatelessWidget {
               const SizedBox(height: 8),
               Text('Error: ${CloudSync.lastError}',
                   style: TextStyle(color: rc.onCardMuted)),
+              if (CloudSync.hintFor(CloudSync.lastError) != null) ...[
+                const SizedBox(height: 4),
+                Text(CloudSync.hintFor(CloudSync.lastError)!,
+                    style: TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600,
+                        color: rc.onCard)),
+              ],
             ],
             const SizedBox(height: 8),
             Text(

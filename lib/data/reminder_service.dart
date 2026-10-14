@@ -1,4 +1,5 @@
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+import 'package:flutter_timezone/flutter_timezone.dart';
 import 'package:timezone/data/latest_all.dart' as tzdata;
 import 'package:timezone/timezone.dart' as tz;
 
@@ -11,6 +12,14 @@ class ReminderService {
 
   static Future<void> init() async {
     tzdata.initializeTimeZones();
+    // tz.local defaults to UTC — point it at the device timezone so the
+    // reminder fires at the wall-clock time the user picked.
+    try {
+      final info = await FlutterTimezone.getLocalTimezone();
+      tz.setLocalLocation(tz.getLocation(info.identifier));
+    } catch (_) {
+      // Keep UTC; the reminder still fires, just offset from local time.
+    }
     await _plugin.initialize(
       const InitializationSettings(
         android: AndroidInitializationSettings('@mipmap/ic_launcher'),
@@ -27,16 +36,23 @@ class ReminderService {
     return await android?.requestNotificationsPermission() ?? true;
   }
 
+  /// The next wall-clock occurrence of a weekly (weekday, time) schedule.
+  static tz.TZDateTime nextOccurrence(int weekday, int hour, int minute) {
+    final now = tz.TZDateTime.now(tz.local);
+    var next =
+        tz.TZDateTime(tz.local, now.year, now.month, now.day, hour, minute);
+    while (next.weekday != weekday || !next.isAfter(now)) {
+      next = next.add(const Duration(days: 1));
+    }
+    return next;
+  }
+
   static Future<void> scheduleWeekly({
     required int weekday,
     required int hour,
     required int minute,
   }) async {
-    final now = tz.TZDateTime.now(tz.local);
-    var next = tz.TZDateTime(tz.local, now.year, now.month, now.day, hour, minute);
-    while (next.weekday != weekday || !next.isAfter(now)) {
-      next = next.add(const Duration(days: 1));
-    }
+    final next = nextOccurrence(weekday, hour, minute);
     await _plugin.zonedSchedule(
       _weeklyId,
       'Weigh-in time',
