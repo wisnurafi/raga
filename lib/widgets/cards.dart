@@ -111,7 +111,6 @@ class UnitToggle extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final state = AppState.of(context);
-    final rc = context.rc;
     return Container(
       padding: const EdgeInsets.all(4),
       decoration: BoxDecoration(

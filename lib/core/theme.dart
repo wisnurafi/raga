@@ -1,5 +1,3 @@
-import 'dart:ui';
-
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
@@ -194,7 +192,7 @@ class _HealthBgPainter extends CustomPainter {
       r,
       Paint()
         ..color = color
-        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 70),
+        ..maskFilter = MaskFilter.blur(BlurStyle.normal, 70),
     );
   }
 
