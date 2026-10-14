@@ -127,8 +127,12 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                 child: PageView(
                   controller: _pager,
                   physics: const NeverScrollableScrollPhysics(),
-                  onPageChanged: (i) =>
-                      setState(() => {_page = i, _error = null}),
+                  onPageChanged: (i) {
+                    setState(() {
+                      _page = i;
+                      _error = null;
+                    });
+                  },
                   children: [
                     _namePage(rc),
                     _measurePage(rc),

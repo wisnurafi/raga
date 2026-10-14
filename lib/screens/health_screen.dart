@@ -453,10 +453,11 @@ class HealthScreen extends StatelessWidget {
         break;
       }
     }
-    if (hit != null) {
+    final celebrate = hit;
+    if (celebrate != null) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
-        state.markMilestoneSeen(hit);
-        _milestoneDialog(context, hit);
+        state.markMilestoneSeen(celebrate);
+        _milestoneDialog(context, celebrate);
       });
     }
 
