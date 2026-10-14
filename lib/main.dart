@@ -7,6 +7,7 @@ import 'widgets/floating_nav.dart';
 import 'screens/home_screen.dart';
 import 'screens/history_screen.dart';
 import 'screens/health_screen.dart';
+import 'screens/streak_screen.dart';
 import 'screens/profile_screen.dart';
 import 'screens/splash_screen.dart';
 import 'screens/onboarding_screen.dart';
@@ -126,6 +127,7 @@ class _MainShellState extends State<MainShell> {
               HomeScreen(),
               HistoryScreen(),
               HealthScreen(),
+              StreakScreen(),
               ProfileScreen(),
             ],
           ),

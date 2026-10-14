@@ -12,10 +12,11 @@ class FloatingNav extends StatelessWidget {
   const FloatingNav({super.key, required this.index, required this.onTap});
 
   static const _items = [
-    (Icons.calculate_outlined, Icons.calculate, 'Calculate'),
-    (Icons.show_chart_outlined, Icons.show_chart, 'History'),
-    (Icons.favorite_outline, Icons.favorite, 'Health'),
-    (Icons.person_outline, Icons.person, 'Profile'),
+    (Icons.calculate_outlined, Icons.calculate),
+    (Icons.show_chart_outlined, Icons.show_chart),
+    (Icons.favorite_outline, Icons.favorite),
+    (Icons.local_fire_department_outlined, Icons.local_fire_department),
+    (Icons.person_outline, Icons.person),
   ];
 
   @override
@@ -47,7 +48,7 @@ class FloatingNav extends StatelessWidget {
             child: Row(
               children: List.generate(_items.length, (i) {
                 final active = i == index;
-                final (iconOut, iconFill, label) = _items[i];
+                final (iconOut, iconFill) = _items[i];
                 return Expanded(
                   child: GestureDetector(
                     onTap: () => onTap(i),
@@ -55,8 +56,7 @@ class FloatingNav extends StatelessWidget {
                     child: AnimatedContainer(
                       duration: const Duration(milliseconds: 280),
                       curve: Curves.easeOutCubic,
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 14, vertical: 11),
+                      padding: const EdgeInsets.symmetric(vertical: 11),
                       decoration: BoxDecoration(
                         gradient: active
                             ? LinearGradient(
@@ -80,40 +80,16 @@ class FloatingNav extends StatelessWidget {
                               ]
                             : null,
                       ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          AnimatedScale(
-                            scale: active ? 1.0 : 0.94,
-                            duration: const Duration(milliseconds: 280),
-                            child: Icon(
-                              active ? iconFill : iconOut,
-                              size: 22,
-                              color: active
-                                  ? rc.onPrimaryBtn
-                                  : rc.onBgMuted,
-                            ),
+                      child: Center(
+                        child: AnimatedScale(
+                          scale: active ? 1.0 : 0.94,
+                          duration: const Duration(milliseconds: 280),
+                          child: Icon(
+                            active ? iconFill : iconOut,
+                            size: 23,
+                            color: active ? rc.onPrimaryBtn : rc.onBgMuted,
                           ),
-                          AnimatedSize(
-                            duration: const Duration(milliseconds: 280),
-                            curve: Curves.easeOutCubic,
-                            child: active
-                                ? Padding(
-                                    padding:
-                                        const EdgeInsets.only(left: 8),
-                                    child: Text(
-                                      label,
-                                      style: TextStyle(
-                                        fontSize: 13.5,
-                                        fontWeight: FontWeight.w700,
-                                        color: rc.onPrimaryBtn,
-                                      ),
-                                    ),
-                                  )
-                                : const SizedBox.shrink(),
-                          ),
-                        ],
+                        ),
                       ),
                     ),
                   ),
