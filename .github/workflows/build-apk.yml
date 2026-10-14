@@ -11,6 +11,8 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write # butuh buat bikin/update Release "latest"
     steps:
       - name: Checkout
         uses: actions/checkout@v4
