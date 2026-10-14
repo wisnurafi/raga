@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:flutter_timezone/flutter_timezone.dart';
 import 'package:timezone/data/latest_all.dart' as tzdata;
@@ -16,6 +17,10 @@ class ReminderService {
   static final _plugin = FlutterLocalNotificationsPlugin();
   static const _weeklyId = 1001;
   static const _testId = 1002;
+
+  // Log hook: main.dart wires this to the developer sync log so every
+  // scheduling decision is inspectable on-device, without logcat.
+  static void Function(String msg) onLog = debugPrint;
 
   static const _androidDetails = AndroidNotificationDetails(
     'raga_weekly',
@@ -126,6 +131,8 @@ class ReminderService {
     required AndroidScheduleMode mode,
   }) async {
     final next = nextOccurrence(weekday, hour, minute);
+    onLog('reminder: schedule d$weekday $hour:${minute.toString().padLeft(2, '0')}'
+        ' -> $next (tz=${tz.local.name}, mode=$mode)');
     await _withIconFallback(
       (d) => _plugin.zonedSchedule(
         _weeklyId,
@@ -137,6 +144,16 @@ class ReminderService {
         matchDateTimeComponents: DateTimeComponents.dayOfWeekAndTime,
       ),
     );
+    // Verify the OS actually registered it — a silently dropped alarm is
+    // the worst kind of bug: everything "succeeds" and nothing fires.
+    try {
+      final pending = await _plugin.pendingNotificationRequests();
+      final found = pending.any((p) => p.id == _weeklyId);
+      onLog('reminder: OS pending check -> '
+          '${found ? "registered" : "MISSING!"} (${pending.length} total)');
+    } catch (e) {
+      onLog('reminder: pending check failed: $e');
+    }
   }
 
   static Future<void> scheduleWeekly({
@@ -193,6 +210,17 @@ class ReminderService {
     try {
       await _plugin.cancel(_weeklyId);
     } catch (_) {}
+  }
+
+  // What's actually registered with the OS right now. Surfaced in
+  // developer mode so a "scheduled but never fires" report can be
+  // diagnosed on-device instead of guessed at.
+  static Future<List<PendingNotificationRequest>> pendingAlarms() async {
+    try {
+      return await _plugin.pendingNotificationRequests();
+    } catch (_) {
+      return [];
+    }
   }
 
   // Immediate test notification (developer mode). Proves the channel,

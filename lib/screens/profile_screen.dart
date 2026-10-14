@@ -192,6 +192,15 @@ class ProfileScreen extends StatelessWidget {
           const SizedBox(height: 10),
           _tile(
             context,
+            icon: Icons.alarm_outlined,
+            title: 'Pending alarms',
+            subtitle: 'What the OS actually registered',
+            trailing: null,
+            onTap: () => _pendingAlarmsDialog(context),
+          ),
+          const SizedBox(height: 10),
+          _tile(
+            context,
             icon: Icons.terminal_outlined,
             title: 'View sync logs',
             subtitle: 'This session only',
@@ -241,38 +250,59 @@ class ProfileScreen extends StatelessWidget {
     );
   }
 
-  void _toggleReminder(BuildContext context, bool v) async {
-    final state = AppState.of(context);
-    if (v) {
-      final ok = await ReminderService.requestPermission();
-      if (!ok) {
-        if (context.mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Turn on notifications in system settings first'),
-            ),
-          );
-        }
-        return;
-      }
-      // Exact alarms so the nudge fires on time, not "eventually".
-      // If the user doesn't grant it, fall back to inexact and say so.
-      if (!await ReminderService.canScheduleExact()) {
-        await ReminderService.requestExactAlarmsPermission();
-      }
-      final exact = await ReminderService.scheduleBestEffort(
-        weekday: state.reminderWeekday,
-        hour: state.reminderHour,
-        minute: state.reminderMinute,
-      );
-      if (!exact && context.mounted) {
+  // One scheduling flow for every entry point (toggle and schedule
+  // dialog). Returns false only when the user denies notification
+  // permission — the one case where we must not flip the toggle on.
+  // Everything else schedules (exact when allowed, inexact otherwise)
+  // and says honestly which one it was.
+  Future<bool> _scheduleReminderFlow(BuildContext context, AppState state,
+      int weekday, int hour, int minute) async {
+    final ok = await ReminderService.requestPermission();
+    if (!ok) {
+      if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text('Exact alarms not allowed — reminders may arrive '
-                'late. You can enable them in system settings.'),
+            content: Text('Turn on notifications in system settings first'),
           ),
         );
       }
+      return false;
+    }
+    // Exact alarms so the nudge fires on time, not "eventually".
+    // If the user doesn't grant it, fall back to inexact and say so.
+    if (!await ReminderService.canScheduleExact()) {
+      await ReminderService.requestExactAlarmsPermission();
+    }
+    final exact = await ReminderService.scheduleBestEffort(
+      weekday: weekday,
+      hour: hour,
+      minute: minute,
+    );
+    if (context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(exact
+              ? 'Weekly reminder set'
+              : 'Reminder set, but exact alarms are off — it may arrive '
+                  'late. Allow "Alarms & reminders" in system settings '
+                  'for on-time nudges.'),
+        ),
+      );
+    }
+    return true;
+  }
+
+  void _toggleReminder(BuildContext context, bool v) async {
+    final state = AppState.of(context);
+    if (v) {
+      final scheduled = await _scheduleReminderFlow(
+        context,
+        state,
+        state.reminderWeekday,
+        state.reminderHour,
+        state.reminderMinute,
+      );
+      if (!scheduled) return;
     } else {
       await ReminderService.cancel();
     }
@@ -389,11 +419,11 @@ class ProfileScreen extends StatelessWidget {
                   minute: time.minute,
                 );
                 if (state.weeklyReminder) {
-                  await ReminderService.scheduleBestEffort(
-                    weekday: day,
-                    hour: time.hour,
-                    minute: time.minute,
-                  );
+                  // Same permission + feedback flow as the toggle: the old
+                  // code called scheduleBestEffort bare, so an inexact
+                  // fallback (or failure) was completely silent.
+                  await _scheduleReminderFlow(
+                      ctx, state, day, time.hour, time.minute);
                 }
                 if (ctx.mounted) Navigator.pop(ctx);
               },
@@ -736,6 +766,40 @@ class ProfileScreen extends StatelessWidget {
             },
             child: const Text('Clear'),
           ),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Close'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // Developer inspector: lists the alarms the OS actually has registered.
+  // If a reminder "never fires", this shows whether it was even scheduled.
+  Future<void> _pendingAlarmsDialog(BuildContext context) async {
+    final rc = context.rc;
+    final alarms = await ReminderService.pendingAlarms();
+    if (!context.mounted) return;
+    final body = alarms.isEmpty
+        ? 'No alarms registered with the OS.'
+        : alarms
+            .map((a) =>
+                '#${a.id} — ${a.title ?? "(no title)"}\n  ${a.body ?? ""}')
+            .join('\n');
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: rc.card,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: const Text('Pending alarms'),
+        content: SingleChildScrollView(
+          child: SelectableText(
+            body,
+            style: const TextStyle(fontFamily: 'monospace', fontSize: 12),
+          ),
+        ),
+        actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
             child: const Text('Close'),
