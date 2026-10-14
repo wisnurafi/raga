@@ -12,6 +12,9 @@ class LocalStore {
   static const _kMetric = 'raga.metric_units';
   static const _kActivity = 'raga.activity';
   static const _kReminder = 'raga.weekly_reminder';
+  static const _kReminderDay = 'raga.reminder_weekday';
+  static const _kReminderHour = 'raga.reminder_hour';
+  static const _kReminderMin = 'raga.reminder_minute';
   static const _kGoals = 'raga.goal_weights';
 
   final SharedPreferences _prefs;
@@ -64,6 +67,17 @@ class LocalStore {
 
   bool get weeklyReminder => _prefs.getBool(_kReminder) ?? false;
   Future<void> saveWeeklyReminder(bool v) => _prefs.setBool(_kReminder, v);
+
+  // Reminder schedule: weekday 1 (Mon) .. 7 (Sun), 24h time.
+  int get reminderWeekday => _prefs.getInt(_kReminderDay) ?? 7;
+  int get reminderHour => _prefs.getInt(_kReminderHour) ?? 9;
+  int get reminderMinute => _prefs.getInt(_kReminderMin) ?? 0;
+  Future<void> saveReminderSchedule(
+      {required int weekday, required int hour, required int minute}) async {
+    await _prefs.setInt(_kReminderDay, weekday);
+    await _prefs.setInt(_kReminderHour, hour);
+    await _prefs.setInt(_kReminderMin, minute);
+  }
 
   // Target weight per profile, in kg. Missing key = no goal set.
   Map<String, double> get goalWeights {

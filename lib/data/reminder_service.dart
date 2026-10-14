@@ -27,10 +27,14 @@ class ReminderService {
     return await android?.requestNotificationsPermission() ?? true;
   }
 
-  static Future<void> scheduleWeekly() async {
+  static Future<void> scheduleWeekly({
+    required int weekday,
+    required int hour,
+    required int minute,
+  }) async {
     final now = tz.TZDateTime.now(tz.local);
-    var next = tz.TZDateTime(tz.local, now.year, now.month, now.day, 9);
-    while (next.weekday != DateTime.sunday || !next.isAfter(now)) {
+    var next = tz.TZDateTime(tz.local, now.year, now.month, now.day, hour, minute);
+    while (next.weekday != weekday || !next.isAfter(now)) {
       next = next.add(const Duration(days: 1));
     }
     await _plugin.zonedSchedule(

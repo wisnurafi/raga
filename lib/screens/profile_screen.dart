@@ -116,11 +116,14 @@ class ProfileScreen extends StatelessWidget {
           context,
           icon: Icons.notifications_outlined,
           title: 'Weekly reminder',
-          subtitle: 'A gentle nudge every Sunday morning',
+          subtitle: state.weeklyReminder
+              ? 'Every ${_dayName(state.reminderWeekday)}, ${TimeOfDay(hour: state.reminderHour, minute: state.reminderMinute).format(context)}'
+              : 'A gentle nudge every week',
           trailing: Switch(
             value: state.weeklyReminder,
             onChanged: (v) => _toggleReminder(context, v),
           ),
+          onTap: () => _reminderDialog(context, state),
         ),
         const SizedBox(height: 22),
         _sectionLabel(context, 'Data'),
@@ -184,6 +187,7 @@ class ProfileScreen extends StatelessWidget {
   }
 
   void _toggleReminder(BuildContext context, bool v) async {
+    final state = AppState.of(context);
     if (v) {
       final ok = await ReminderService.requestPermission();
       if (!ok) {
@@ -196,11 +200,117 @@ class ProfileScreen extends StatelessWidget {
         }
         return;
       }
-      await ReminderService.scheduleWeekly();
+      await ReminderService.scheduleWeekly(
+        weekday: state.reminderWeekday,
+        hour: state.reminderHour,
+        minute: state.reminderMinute,
+      );
     } else {
       await ReminderService.cancel();
     }
-    if (context.mounted) await AppState.of(context).setWeeklyReminder(v);
+    if (context.mounted) await state.setWeeklyReminder(v);
+  }
+
+  String _dayName(int weekday) =>
+      const ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'][weekday - 1];
+
+  // Day + time picker for the weekly reminder.
+  void _reminderDialog(BuildContext context, AppState state) {
+    final rc = context.rc;
+    var day = state.reminderWeekday;
+    var time =
+        TimeOfDay(hour: state.reminderHour, minute: state.reminderMinute);
+    showDialog(
+      context: context,
+      builder: (_) => StatefulBuilder(
+        builder: (ctx, setLocal) => AlertDialog(
+          backgroundColor: rc.card,
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+          title: const Text('Reminder schedule'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: [
+                  for (var d = 1; d <= 7; d++)
+                    ChoiceChip(
+                      label: Text(_dayName(d)),
+                      selected: day == d,
+                      onSelected: (_) => setLocal(() => day = d),
+                      selectedColor: rc.primaryBtn,
+                      labelStyle: TextStyle(
+                        color: day == d ? rc.onPrimaryBtn : rc.onCard,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                ],
+              ),
+              const SizedBox(height: 16),
+              InkWell(
+                onTap: () async {
+                  final picked = await showTimePicker(
+                    context: ctx,
+                    initialTime: time,
+                  );
+                  if (picked != null) setLocal(() => time = picked);
+                },
+                borderRadius: BorderRadius.circular(14),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                      horizontal: 16, vertical: 14),
+                  decoration: BoxDecoration(
+                    color: rc.panel,
+                    borderRadius: BorderRadius.circular(14),
+                  ),
+                  child: Row(
+                    children: [
+                      Icon(Icons.schedule, size: 20, color: rc.onCardMuted),
+                      const SizedBox(width: 10),
+                      Text(
+                        time.format(ctx),
+                        style: TextStyle(
+                          fontSize: 17,
+                          fontWeight: FontWeight.w800,
+                          color: rc.onCard,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx),
+              child: const Text('Cancel'),
+            ),
+            FilledButton(
+              onPressed: () async {
+                await state.setReminderSchedule(
+                  weekday: day,
+                  hour: time.hour,
+                  minute: time.minute,
+                );
+                if (state.weeklyReminder) {
+                  await ReminderService.scheduleWeekly(
+                    weekday: day,
+                    hour: time.hour,
+                    minute: time.minute,
+                  );
+                }
+                if (ctx.mounted) Navigator.pop(ctx);
+              },
+              child: const Text('Save'),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 
   void _syncDialog(BuildContext context, AppState state) {

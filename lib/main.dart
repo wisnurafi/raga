@@ -14,7 +14,13 @@ Future<void> main() async {
   final state = await AppState.load();
   await ReminderService.init();
   // Re-arm the weekly nudge in case the system cleared it.
-  if (state.weeklyReminder) await ReminderService.scheduleWeekly();
+  if (state.weeklyReminder) {
+    await ReminderService.scheduleWeekly(
+      weekday: state.reminderWeekday,
+      hour: state.reminderHour,
+      minute: state.reminderMinute,
+    );
+  }
   await CloudSync.init();
   // Retry records that didn't make it up yet (e.g. saved while offline).
   await CloudSync.syncPending(state.records);

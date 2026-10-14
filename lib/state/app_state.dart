@@ -18,6 +18,9 @@ class AppState extends ChangeNotifier {
   bool metricUnits = true;
   String activity = 'Light';
   bool weeklyReminder = false;
+  int reminderWeekday = 7;
+  int reminderHour = 9;
+  int reminderMinute = 0;
   Map<String, double> goalWeights = {};
 
   AppState(this._store);
@@ -30,6 +33,9 @@ class AppState extends ChangeNotifier {
     state.metricUnits = store.metricUnits;
     state.activity = store.activity;
     state.weeklyReminder = store.weeklyReminder;
+    state.reminderWeekday = store.reminderWeekday;
+    state.reminderHour = store.reminderHour;
+    state.reminderMinute = store.reminderMinute;
     state.goalWeights = store.goalWeights;
     if (state.profiles.isEmpty) {
       final p = Profile(name: 'Wisnu');
@@ -138,6 +144,19 @@ class AppState extends ChangeNotifier {
   Future<void> setWeeklyReminder(bool v) async {
     weeklyReminder = v;
     await _store.saveWeeklyReminder(v);
+    notifyListeners();
+  }
+
+  Future<void> setReminderSchedule({
+    required int weekday,
+    required int hour,
+    required int minute,
+  }) async {
+    reminderWeekday = weekday;
+    reminderHour = hour;
+    reminderMinute = minute;
+    await _store.saveReminderSchedule(
+        weekday: weekday, hour: hour, minute: minute);
     notifyListeners();
   }
 
