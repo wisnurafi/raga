@@ -384,6 +384,11 @@ class ProfileScreen extends StatelessWidget {
               'Sent anonymously to your private Supabase database.',
               style: TextStyle(fontSize: 12.5, color: rc.onCardMuted),
             ),
+            const SizedBox(height: 4),
+            Text(
+              'Server: ${CloudSync.configuredHost}',
+              style: TextStyle(fontSize: 12.5, color: rc.onCardMuted),
+            ),
           ],
         ),
         actions: [

@@ -107,6 +107,18 @@ class CloudSync {
     return cleaned.length > 140 ? '${cleaned.substring(0, 140)}…' : cleaned;
   }
 
+  // The hostname baked into this build (from SUPABASE_URL at build time).
+  // Shown in the UI so a wrong/old value is visible immediately.
+  static String get configuredHost {
+    if (_url.isEmpty) return '(not set)';
+    try {
+      final h = Uri.parse(_url).host;
+      return h.isEmpty ? '(invalid)' : h;
+    } catch (_) {
+      return '(invalid)';
+    }
+  }
+
   // Plain-English hint for the most common setup mistakes, so a cryptic
   // network error points at the actual fix.
   static String? hintFor(String error) {
