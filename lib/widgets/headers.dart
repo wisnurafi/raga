@@ -1,96 +1,155 @@
 import 'package:flutter/material.dart';
+
 import '../core/theme.dart';
 import '../state/app_state.dart';
 
-// Main screen header from the mockup: avatar circle left, centered
-// title, dark/light toggle right. The moon/sun button flips [AppState.darkMode].
+/// Main screen header: avatar circle left, centered title, moon toggle
+/// right — the mockup's header on home/history/health.
 class RagaHeader extends StatelessWidget {
   final String title;
   final String? subtitle;
-  final bool showAvatar;
+  final Widget? leading;
+  final Widget? trailing;
+  final bool showThemeToggle;
 
   const RagaHeader({
     super.key,
     required this.title,
     this.subtitle,
-    this.showAvatar = true,
+    this.leading,
+    this.trailing,
+    this.showThemeToggle = true,
   });
 
   @override
   Widget build(BuildContext context) {
     final rc = context.rc;
     final state = AppState.of(context);
-    final name = state.activeProfile.name.trim();
-    final initial = name.isEmpty ? '?' : name.characters.first.toUpperCase();
     return Row(
       children: [
-        if (showAvatar)
-          Container(
-            width: 52,
-            height: 52,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              color: rc.avatarBg,
-            ),
-            child: Center(
-              child: Text(
-                initial,
-                style: TextStyle(
-                  fontSize: 21,
-                  fontWeight: FontWeight.w800,
-                  color: rc.avatarFg,
-                ),
-              ),
-            ),
-          )
-        else
-          const SizedBox(width: 52),
+        leading ??
+            _Avatar(letter: _initial(state.activeProfile.name)),
         Expanded(
           child: Column(
+            mainAxisSize: MainAxisSize.min,
             children: [
               Text(
                 title,
+                style: RagaType.title(rc.onBg),
                 textAlign: TextAlign.center,
-                style: TextStyle(
-                  fontSize: 23,
-                  fontWeight: FontWeight.w800,
-                  color: rc.onBg,
-                ),
               ),
               if (subtitle != null) ...[
                 const SizedBox(height: 2),
                 Text(
                   subtitle!,
+                  style: RagaType.label(rc.onBgMuted),
                   textAlign: TextAlign.center,
-                  style: TextStyle(
-                    fontSize: 13.5,
-                    fontWeight: FontWeight.w500,
-                    color: rc.onBgMuted,
-                  ),
                 ),
               ],
             ],
           ),
         ),
-        _CircleBtn(
-          icon: rc.isDark ? Icons.dark_mode_outlined : Icons.light_mode_outlined,
-          onTap: () => state.setDarkMode(!state.darkMode),
-        ),
+        trailing ??
+            (showThemeToggle ? const _MoonButton() : const SizedBox(width: 44)),
       ],
+    );
+  }
+
+  String _initial(String name) =>
+      name.trim().isEmpty ? 'R' : name.trim()[0].toUpperCase();
+}
+
+class _Avatar extends StatelessWidget {
+  final String letter;
+
+  const _Avatar({required this.letter});
+
+  @override
+  Widget build(BuildContext context) {
+    final rc = context.rc;
+    return Container(
+      width: 44,
+      height: 44,
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        color: rc.avatarBg,
+      ),
+      child: Center(
+        child: Text(
+          letter,
+          style: RagaType.hero(20, rc.avatarFg),
+        ),
+      ),
     );
   }
 }
 
-// Onboarding header: back chevron, segmented progress, "n/4" label.
-class OnboardHeader extends StatelessWidget {
-  final int step; // 1-based
+class _MoonButton extends StatelessWidget {
+  const _MoonButton();
+
+  @override
+  Widget build(BuildContext context) {
+    final rc = context.rc;
+    final state = AppState.of(context);
+    return _CircleBtn(
+      icon: state.darkMode
+          ? Icons.dark_mode_outlined
+          : Icons.light_mode_outlined,
+      onTap: () => state.setDarkMode(!state.darkMode),
+    );
+  }
+}
+
+/// Round header button (back chevron, share, moon).
+class CircleBtn extends StatelessWidget {
+  final IconData icon;
+  final VoidCallback onTap;
+
+  const CircleBtn({super.key, required this.icon, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) => _CircleBtn(icon: icon, onTap: onTap);
+}
+
+class _CircleBtn extends StatelessWidget {
+  final IconData icon;
+  final VoidCallback onTap;
+
+  const _CircleBtn({required this.icon, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    final rc = context.rc;
+    return Material(
+      color: Colors.transparent,
+      child: Ink(
+        width: 44,
+        height: 44,
+        decoration: BoxDecoration(
+          shape: BoxShape.circle,
+          color: rc.iconBtnBg,
+          border: Border.all(color: rc.cardBorder, width: 1),
+        ),
+        child: InkWell(
+          customBorder: const CircleBorder(),
+          onTap: onTap,
+          child: Icon(icon, color: rc.iconBtnFg, size: 20),
+        ),
+      ),
+    );
+  }
+}
+
+/// Onboarding top bar: back chevron, 4-segment progress, "n/4".
+class OnboardingTopBar extends StatelessWidget {
+  final int step;
   final int total;
   final VoidCallback onBack;
 
-  const OnboardHeader({
+  const OnboardingTopBar({
     super.key,
     required this.step,
-    required this.total,
+    this.total = 4,
     required this.onBack,
   });
 
@@ -99,69 +158,35 @@ class OnboardHeader extends StatelessWidget {
     final rc = context.rc;
     return Row(
       children: [
-        _CircleBtn(icon: Icons.chevron_left, onTap: onBack, size: 46),
-        const SizedBox(width: 16),
+        CircleBtn(icon: Icons.chevron_left, onTap: onBack),
+        const SizedBox(width: 14),
         Expanded(
           child: Row(
-            children: List.generate(total, (i) {
-              final filled = i < step;
-              return Expanded(
-                child: Container(
-                  height: 5,
-                  margin: EdgeInsets.only(
-                      right: i == total - 1 ? 0 : 8),
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(3),
-                    color: filled
-                        ? rc.chipActive
-                        : rc.onBgMuted.withValues(alpha: 0.30),
+            children: [
+              for (var i = 0; i < total; i++)
+                Expanded(
+                  child: Container(
+                    height: 6,
+                    margin: EdgeInsets.only(
+                      right: i == total - 1 ? 0 : 7,
+                    ),
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(3),
+                      color: i < step
+                          ? rc.chipActive
+                          : rc.onBg.withOpacity(0.18),
+                    ),
                   ),
                 ),
-              );
-            }),
+            ],
           ),
         ),
-        const SizedBox(width: 16),
+        const SizedBox(width: 14),
         Text(
           '$step/$total',
-          style: TextStyle(
-            fontSize: 14,
-            fontWeight: FontWeight.w700,
-            color: rc.onBgMuted,
-          ),
+          style: RagaType.label(rc.onBg),
         ),
       ],
-    );
-  }
-}
-
-class _CircleBtn extends StatelessWidget {
-  final IconData icon;
-  final VoidCallback onTap;
-  final double size;
-
-  const _CircleBtn({
-    required this.icon,
-    required this.onTap,
-    this.size = 52,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final rc = context.rc;
-    return GestureDetector(
-      onTap: onTap,
-      behavior: HitTestBehavior.opaque,
-      child: Container(
-        width: size,
-        height: size,
-        decoration: BoxDecoration(
-          shape: BoxShape.circle,
-          color: rc.chipInactive,
-          border: Border.all(color: rc.cardBorder, width: 1.2),
-        ),
-        child: Icon(icon, color: rc.onBg, size: 24),
-      ),
     );
   }
 }

@@ -1,13 +1,12 @@
 import 'dart:ui';
 
 import 'package:flutter/material.dart';
+
 import '../core/theme.dart';
 
-// Floating bottom nav from the mockup: a frosted pill with five icons,
-// no labels. The active tab is a solid lavender circle; the rest are
-// quiet icons. The pill's inner height is pinned: Scaffold lays out
-// bottomNavigationBar with unbounded height, and without an explicit
-// height this tree once measured itself at full screen. Never again.
+/// Floating bottom nav pill: 5 tabs, no labels. The active tab sits on a
+/// lavender circle with a white icon — exactly like the mockup.
+/// (The mockup draws 4 tabs; Streak stays as the 4th, Profile 5th.)
 class FloatingNav extends StatelessWidget {
   final int index;
   final ValueChanged<int> onTap;
@@ -22,71 +21,72 @@ class FloatingNav extends StatelessWidget {
     Icons.person_outline,
   ];
 
-  static const _iconsActive = [
-    Icons.calculate,
-    Icons.show_chart,
-    Icons.favorite,
-    Icons.local_fire_department,
-    Icons.person,
-  ];
+  @override
+  Widget build(BuildContext context) {
+    final rc = context.rc;
+    // Explicit height: this pill once rendered full-screen when its
+    // height was left to the content. Never remove the SizedBox.
+    return SafeArea(
+      top: false,
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(22, 0, 22, 14),
+        child: SizedBox(
+          height: 68,
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(34),
+            child: BackdropFilter(
+              filter: ImageFilter.blur(sigmaX: 24, sigmaY: 24),
+              child: Container(
+                decoration: BoxDecoration(
+                  color: rc.navBg,
+                  borderRadius: BorderRadius.circular(34),
+                  border: Border.all(color: rc.navBorder, width: 1),
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                  children: [
+                    for (var i = 0; i < _icons.length; i++)
+                      _Tab(
+                        icon: _icons[i],
+                        active: i == index,
+                        onTap: () => onTap(i),
+                      ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _Tab extends StatelessWidget {
+  final IconData icon;
+  final bool active;
+  final VoidCallback onTap;
+
+  const _Tab({required this.icon, required this.active, required this.onTap});
 
   @override
   Widget build(BuildContext context) {
     final rc = context.rc;
-    return SafeArea(
-      top: false,
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(22, 0, 22, 22),
-        child: ClipRRect(
-          borderRadius: BorderRadius.circular(34),
-          child: BackdropFilter(
-            filter: ImageFilter.blur(sigmaX: 28, sigmaY: 28),
-            child: Container(
-              height: 68,
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(34),
-                color: rc.navBg,
-                border: Border.all(color: rc.cardBorder, width: 1.2),
-              ),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                children: List.generate(_icons.length, (i) {
-                  final active = i == index;
-                  return GestureDetector(
-                    onTap: () => onTap(i),
-                    behavior: HitTestBehavior.opaque,
-                    child: AnimatedContainer(
-                      duration: const Duration(milliseconds: 250),
-                      curve: Curves.easeOutCubic,
-                      width: 54,
-                      height: 54,
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        color:
-                            active ? rc.navActive : Colors.transparent,
-                        boxShadow: active
-                            ? [
-                                BoxShadow(
-                                  color: rc.navActive
-                                      .withValues(alpha: 0.45),
-                                  blurRadius: 12,
-                                  offset: const Offset(0, 4),
-                                ),
-                              ]
-                            : null,
-                      ),
-                      child: Icon(
-                        active ? _iconsActive[i] : _icons[i],
-                        size: 25,
-                        color:
-                            active ? rc.navActiveIcon : rc.navIcon,
-                      ),
-                    ),
-                  );
-                }),
-              ),
-            ),
-          ),
+    return GestureDetector(
+      onTap: onTap,
+      behavior: HitTestBehavior.opaque,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 180),
+        width: 48,
+        height: 48,
+        decoration: BoxDecoration(
+          shape: BoxShape.circle,
+          color: active ? rc.navActive : Colors.transparent,
+        ),
+        child: Icon(
+          icon,
+          size: 24,
+          color: active ? rc.navActiveIcon : rc.navIcon,
         ),
       ),
     );

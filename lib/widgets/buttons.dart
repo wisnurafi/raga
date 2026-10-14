@@ -1,56 +1,48 @@
 import 'package:flutter/material.dart';
+
 import '../core/theme.dart';
 
-// The big lavender pill button from the mockup ("Calculate BMI",
-// "Continue", "Save goal"...). Diagonal gradient, dark-navy label.
+/// Primary action: full-width lavender pill, DARK navy label —
+/// exactly like the mockup ("Lanjut", "Hitung BMI", ...).
 class RagaButton extends StatelessWidget {
   final String label;
-  final VoidCallback? onPressed;
+  final VoidCallback? onTap;
   final double height;
+  final double fontSize;
 
   const RagaButton({
     super.key,
     required this.label,
-    required this.onPressed,
-    this.height = 62,
+    required this.onTap,
+    this.height = 64,
+    this.fontSize = 18,
   });
 
   @override
   Widget build(BuildContext context) {
     final rc = context.rc;
-    return SizedBox(
-      height: height,
-      width: double.infinity,
-      child: DecoratedBox(
+    return Material(
+      color: Colors.transparent,
+      child: Ink(
+        height: height,
         decoration: BoxDecoration(
+          gradient: rc.btnGradient,
           borderRadius: BorderRadius.circular(height / 2),
-          gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [rc.btnTop, rc.btnBottom],
-          ),
           boxShadow: [
             BoxShadow(
-              color: rc.btnBottom.withValues(alpha: 0.35),
+              color: rc.btnBottom.withOpacity(0.35),
               blurRadius: 18,
               offset: const Offset(0, 8),
             ),
           ],
         ),
-        child: Material(
-          color: Colors.transparent,
-          child: InkWell(
-            borderRadius: BorderRadius.circular(height / 2),
-            onTap: onPressed,
-            child: Center(
-              child: Text(
-                label,
-                style: TextStyle(
-                  fontSize: 17,
-                  fontWeight: FontWeight.w700,
-                  color: rc.onBtn,
-                ),
-              ),
+        child: InkWell(
+          borderRadius: BorderRadius.circular(height / 2),
+          onTap: onTap,
+          child: Center(
+            child: Text(
+              label,
+              style: RagaType.button(rc.onBtn).copyWith(fontSize: fontSize),
             ),
           ),
         ),
@@ -59,46 +51,36 @@ class RagaButton extends StatelessWidget {
   }
 }
 
-// Secondary action: glass pill with hairline border ("Share", "Skip").
-class RagaGhostButton extends StatelessWidget {
+/// Secondary action: outline pill with theme text ("Bagikan").
+class RagaOutlineButton extends StatelessWidget {
   final String label;
-  final VoidCallback? onPressed;
+  final VoidCallback? onTap;
   final double height;
 
-  const RagaGhostButton({
+  const RagaOutlineButton({
     super.key,
     required this.label,
-    required this.onPressed,
-    this.height = 62,
+    required this.onTap,
+    this.height = 56,
   });
 
   @override
   Widget build(BuildContext context) {
     final rc = context.rc;
-    return SizedBox(
-      height: height,
-      width: double.infinity,
-      child: Material(
-        color: Colors.transparent,
+    return Material(
+      color: Colors.transparent,
+      child: Ink(
+        height: height,
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(height / 2),
+          border: Border.all(color: rc.cardBorder, width: 1.5),
+          color: rc.card,
+        ),
         child: InkWell(
           borderRadius: BorderRadius.circular(height / 2),
-          onTap: onPressed,
-          child: Container(
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(height / 2),
-              color: rc.chipInactive,
-              border: Border.all(color: rc.cardBorder, width: 1.2),
-            ),
-            child: Center(
-              child: Text(
-                label,
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w700,
-                  color: rc.onCard,
-                ),
-              ),
-            ),
+          onTap: onTap,
+          child: Center(
+            child: Text(label, style: RagaType.button(rc.onCard)),
           ),
         ),
       ),
@@ -106,30 +88,22 @@ class RagaGhostButton extends StatelessWidget {
   }
 }
 
-// Plain text link used for "Skip for now" under the primary button.
-class RagaTextLink extends StatelessWidget {
+/// Quiet centered text action ("Lewati dulu").
+class RagaTextButton extends StatelessWidget {
   final String label;
   final VoidCallback? onTap;
 
-  const RagaTextLink({super.key, required this.label, required this.onTap});
+  const RagaTextButton({super.key, required this.label, required this.onTap});
 
   @override
   Widget build(BuildContext context) {
     final rc = context.rc;
-    return GestureDetector(
-      onTap: onTap,
-      behavior: HitTestBehavior.opaque,
-      child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: 14),
-        child: Text(
-          label,
-          style: TextStyle(
-            fontSize: 16,
-            fontWeight: FontWeight.w600,
-            color: rc.onBg,
-          ),
-        ),
+    return TextButton(
+      onPressed: onTap,
+      style: TextButton.styleFrom(
+        padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 24),
       ),
+      child: Text(label, style: RagaType.chip(rc.onBgMuted)),
     );
   }
 }

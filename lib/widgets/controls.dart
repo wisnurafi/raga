@@ -1,26 +1,27 @@
 import 'package:flutter/material.dart';
+
 import '../core/theme.dart';
 
-// Big number + unit + slider, exactly like the mockup's
-// "Height 170 cm" / "Weight 65 kg" blocks.
+/// "Tinggi badan / 170 cm" block: small label, huge number + unit,
+/// lavender slider underneath — the mockup's measure block.
 class MeasureSlider extends StatelessWidget {
   final String label;
-  final double value;
+  final String value;
   final String unit;
+  final double sliderValue;
   final double min;
   final double max;
   final ValueChanged<double> onChanged;
-  final int decimals;
 
   const MeasureSlider({
     super.key,
     required this.label,
     required this.value,
     required this.unit,
+    required this.sliderValue,
     required this.min,
     required this.max,
     required this.onChanged,
-    this.decimals = 0,
   });
 
   @override
@@ -29,37 +30,15 @@ class MeasureSlider extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          label,
-          style: TextStyle(
-            fontSize: 15,
-            fontWeight: FontWeight.w600,
-            color: rc.onCardMuted,
-          ),
-        ),
-        const SizedBox(height: 2),
+        Text(label, style: RagaType.label(rc.onCardMuted)),
+        const SizedBox(height: 6),
         Row(
           crossAxisAlignment: CrossAxisAlignment.baseline,
           textBaseline: TextBaseline.alphabetic,
           children: [
-            Text(
-              value.toStringAsFixed(decimals),
-              style: TextStyle(
-                fontSize: 56,
-                fontWeight: FontWeight.w800,
-                color: rc.onCard,
-                height: 1.1,
-              ),
-            ),
-            const SizedBox(width: 10),
-            Text(
-              unit,
-              style: TextStyle(
-                fontSize: 19,
-                fontWeight: FontWeight.w700,
-                color: rc.onCardMuted,
-              ),
-            ),
+            Text(value, style: RagaType.hero(48, rc.onCard)),
+            const SizedBox(width: 8),
+            Text(unit, style: RagaType.label(rc.onCardMuted)),
           ],
         ),
         SliderTheme(
@@ -68,14 +47,15 @@ class MeasureSlider extends StatelessWidget {
             activeTrackColor: rc.sliderFill,
             inactiveTrackColor: rc.sliderTrack,
             thumbColor: rc.sliderThumb,
-            thumbShape: const RoundSliderThumbShape(
-              enabledThumbRadius: 13,
-              elevation: 2,
-            ),
             overlayShape: SliderComponentShape.noOverlay,
+            thumbShape: _RingThumb(
+              radius: 11,
+              fill: rc.sliderThumb,
+              ring: rc.sliderRing,
+            ),
           ),
           child: Slider(
-            value: value.clamp(min, max),
+            value: sliderValue.clamp(min, max),
             min: min,
             max: max,
             onChanged: onChanged,
@@ -86,27 +66,81 @@ class MeasureSlider extends StatelessWidget {
   }
 }
 
-// Round − / + stepper flanking a big value, like the mockup's
-// age stepper ("Umur − 21 +") and target-weight stepper.
+class _RingThumb extends SliderComponentShape {
+  final double radius;
+  final Color fill;
+  final Color ring;
+
+  const _RingThumb({
+    required this.radius,
+    required this.fill,
+    required this.ring,
+  });
+
+  @override
+  Size getPreferredSize(bool isEnabled, bool isDiscrete) =>
+      Size.fromRadius(radius + 3);
+
+  @override
+  void paint(
+    PaintingContext context,
+    Offset center, {
+    required Animation<double> activationAnimation,
+    required Animation<double> enableAnimation,
+    required bool isDiscrete,
+    required TextPainter labelPainter,
+    required RenderBox parentBox,
+    required SliderThemeData sliderTheme,
+    required TextDirection textDirection,
+    required double value,
+    required double textScaleFactor,
+    required Size sizeWithOverflow,
+  }) {
+    final canvas = context.canvas;
+    canvas.drawCircle(center, radius + 3, Paint()..color = ring);
+    canvas.drawCircle(center, radius, Paint()..color = fill);
+  }
+}
+
+/// Round − / + stepper buttons with a big value between them
+/// (age stepper, target-weight stepper).
 class StepperRow extends StatelessWidget {
-  final Widget value;
+  final String value;
+  final String? unit;
   final VoidCallback onMinus;
   final VoidCallback onPlus;
+  final double valueSize;
 
   const StepperRow({
     super.key,
     required this.value,
     required this.onMinus,
     required this.onPlus,
+    this.unit,
+    this.valueSize = 40,
   });
 
   @override
   Widget build(BuildContext context) {
+    final rc = context.rc;
     return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      mainAxisAlignment: MainAxisAlignment.center,
       children: [
         _StepBtn(icon: Icons.remove, onTap: onMinus),
-        value,
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 20),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.baseline,
+            textBaseline: TextBaseline.alphabetic,
+            children: [
+              Text(value, style: RagaType.hero(valueSize, rc.onCard)),
+              if (unit != null) ...[
+                const SizedBox(width: 6),
+                Text(unit!, style: RagaType.label(rc.onCardMuted)),
+              ],
+            ],
+          ),
+        ),
         _StepBtn(icon: Icons.add, onTap: onPlus),
       ],
     );
@@ -116,97 +150,26 @@ class StepperRow extends StatelessWidget {
 class _StepBtn extends StatelessWidget {
   final IconData icon;
   final VoidCallback onTap;
+
   const _StepBtn({required this.icon, required this.onTap});
 
   @override
   Widget build(BuildContext context) {
     final rc = context.rc;
-    return GestureDetector(
-      onTap: onTap,
-      behavior: HitTestBehavior.opaque,
-      child: Container(
-        width: 54,
-        height: 54,
+    return Material(
+      color: Colors.transparent,
+      child: Ink(
+        width: 48,
+        height: 48,
         decoration: BoxDecoration(
           shape: BoxShape.circle,
-          color: rc.chipInactive,
-          border: Border.all(color: rc.cardBorder, width: 1.2),
+          border: Border.all(color: rc.cardBorder, width: 1.5),
+          color: rc.card,
         ),
-        child: Icon(icon, color: rc.onCard, size: 22),
-      ),
-    );
-  }
-}
-
-// Small labeled row inside a GlassCard: label left, value right.
-class InfoRow extends StatelessWidget {
-  final String label;
-  final String value;
-  final Widget? trailing;
-
-  const InfoRow({
-    super.key,
-    required this.label,
-    required this.value,
-    this.trailing,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final rc = context.rc;
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: [
-        Text(
-          label,
-          style: TextStyle(
-            fontSize: 15,
-            fontWeight: FontWeight.w600,
-            color: rc.onCardMuted,
-          ),
-        ),
-        trailing ??
-            Text(
-              value,
-              style: TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.w700,
-                color: rc.onCard,
-              ),
-            ),
-      ],
-    );
-  }
-}
-
-// Category badge pill ("Normal") — tinted per category like the mockup.
-class CategoryBadge extends StatelessWidget {
-  final BmiCat cat;
-  final double fontSize;
-  final EdgeInsetsGeometry padding;
-
-  const CategoryBadge({
-    super.key,
-    required this.cat,
-    this.fontSize = 16,
-    this.padding = const EdgeInsets.symmetric(horizontal: 22, vertical: 11),
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final rc = context.rc;
-    return Container(
-      padding: padding,
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(24),
-        color: rc.badgeFor(cat),
-      ),
-      child: Text(
-        bmiCatLabel(cat),
-        style: TextStyle(
-          fontSize: fontSize,
-          fontWeight: FontWeight.w800,
-          color: rc.onBadgeFor(cat),
+        child: InkWell(
+          customBorder: const CircleBorder(),
+          onTap: onTap,
+          child: Icon(icon, color: rc.onCard, size: 22),
         ),
       ),
     );

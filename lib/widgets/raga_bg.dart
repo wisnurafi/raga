@@ -1,13 +1,12 @@
 import 'package:flutter/material.dart';
+
 import '../core/theme.dart';
 
-// App background: Wisnu's art, drawn full-bleed behind everything.
-// Dark mode uses his finished file; light mode uses a light treatment
-// generated directly from the same file, so the composition (leaf
-// branches, ECG line, concentric rings) is identical in both modes.
-// The glass cards blur this, so it doubles as the frost source.
+/// Full-screen illustrated background: Wisnu's own art, dark or light
+/// variant depending on the theme.
 class RagaBg extends StatelessWidget {
   final Widget child;
+
   const RagaBg({super.key, required this.child});
 
   @override
@@ -18,12 +17,10 @@ class RagaBg extends StatelessWidget {
       child: Stack(
         children: [
           Positioned.fill(
-            child: Image(
-              image: AssetImage(
-                rc.isDark
-                    ? 'assets/images/raga-bg.png'
-                    : 'assets/images/raga-bg-light.png',
-              ),
+            child: Image.asset(
+              rc.isDark
+                  ? 'assets/images/raga-bg.png'
+                  : 'assets/images/raga-bg-light.png',
               fit: BoxFit.cover,
             ),
           ),
@@ -33,4 +30,3 @@ class RagaBg extends StatelessWidget {
     );
   }
 }
-
