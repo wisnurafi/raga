@@ -699,10 +699,13 @@ class ProfileScreen extends StatelessWidget {
   }
 
   void _sendTestNotification(BuildContext context) async {
-    await ReminderService.showTest();
+    final ok = await ReminderService.showTest();
     if (context.mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Test notification sent')),
+        SnackBar(
+            content: Text(ok
+                ? 'Test notification sent'
+                : "Couldn't show a notification — check the permission")),
       );
     }
   }

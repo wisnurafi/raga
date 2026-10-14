@@ -12,18 +12,28 @@ import 'screens/profile_screen.dart';
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   final state = await AppState.load();
-  await ReminderService.init();
+  // Every service init is guarded: a failing subsystem (notifications,
+  // cloud) must never stop the app itself from starting.
+  try {
+    await ReminderService.init();
+  } catch (_) {}
   // Re-arm the weekly nudge in case the system cleared it.
   if (state.weeklyReminder) {
-    await ReminderService.scheduleBestEffort(
-      weekday: state.reminderWeekday,
-      hour: state.reminderHour,
-      minute: state.reminderMinute,
-    );
+    try {
+      await ReminderService.scheduleBestEffort(
+        weekday: state.reminderWeekday,
+        hour: state.reminderHour,
+        minute: state.reminderMinute,
+      );
+    } catch (_) {}
   }
-  await CloudSync.init();
+  try {
+    await CloudSync.init();
+  } catch (_) {}
   // Retry records that didn't make it up yet (e.g. saved while offline).
-  await CloudSync.syncPending(state.records);
+  try {
+    await CloudSync.syncPending(state.records);
+  } catch (_) {}
   runApp(AppStateScope(state: state, child: const RagaApp()));
 }
 

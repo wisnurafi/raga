@@ -7,6 +7,11 @@ import 'package:timezone/timezone.dart' as tz;
 // the user picks. Scheduled with an exact alarm so it actually fires on
 // time — inexact alarms get deferred for hours (or never fire) on most
 // phones once the app is swiped away.
+//
+// Hardening notes (learned the hard way): the plugin validates the icon
+// natively and throws PlatformException when it's missing from the APK.
+// A notification failure must NEVER kill the app, so init is wrapped and
+// every schedule/show retries with the default icon as fallback.
 class ReminderService {
   static final _plugin = FlutterLocalNotificationsPlugin();
   static const _weeklyId = 1001;
@@ -20,6 +25,15 @@ class ReminderService {
     icon: 'ic_stat_notify',
   );
 
+  // Same channel, default icon. Used when the custom icon didn't survive
+  // the build (resource shrinking) — a plain notification beats none.
+  static const _androidDetailsFallback = AndroidNotificationDetails(
+    'raga_weekly',
+    'Weekly reminder',
+    channelDescription: 'Weekly weigh-in reminder',
+    importance: Importance.high,
+  );
+
   static Future<void> init() async {
     tzdata.initializeTimeZones();
     // tz.local defaults to UTC — point it at the device timezone so the
@@ -30,13 +44,19 @@ class ReminderService {
     } catch (_) {
       // Keep UTC; the reminder still fires, just offset from local time.
     }
-    await _plugin.initialize(
-      const InitializationSettings(
-        android: AndroidInitializationSettings('ic_stat_notify'),
-        iOS: DarwinInitializationSettings(),
-        macOS: DarwinInitializationSettings(),
-      ),
-    );
+    try {
+      // '@mipmap/ic_launcher' is guaranteed in the APK (the manifest
+      // references it), so init can never die on a missing icon.
+      await _plugin.initialize(
+        const InitializationSettings(
+          android: AndroidInitializationSettings('@mipmap/ic_launcher'),
+          iOS: DarwinInitializationSettings(),
+          macOS: DarwinInitializationSettings(),
+        ),
+      );
+    } catch (_) {
+      // Notifications just won't work; the app itself must stay alive.
+    }
   }
 
   // Android 13+ needs runtime permission; older versions grant it by default.
@@ -80,6 +100,25 @@ class ReminderService {
     return next;
   }
 
+  // Runs [fn] with the custom icon, retrying with the default icon when
+  // the custom one didn't survive the build.
+  static Future<T> _withIconFallback<T>(
+      Future<T> Function(NotificationDetails d) fn) async {
+    const withIcon = NotificationDetails(
+      android: _androidDetails,
+      iOS: DarwinNotificationDetails(),
+    );
+    const fallback = NotificationDetails(
+      android: _androidDetailsFallback,
+      iOS: DarwinNotificationDetails(),
+    );
+    try {
+      return await fn(withIcon);
+    } catch (_) {
+      return await fn(fallback);
+    }
+  }
+
   static Future<void> _schedule({
     required int weekday,
     required int hour,
@@ -87,17 +126,16 @@ class ReminderService {
     required AndroidScheduleMode mode,
   }) async {
     final next = nextOccurrence(weekday, hour, minute);
-    await _plugin.zonedSchedule(
-      _weeklyId,
-      'Weigh-in time',
-      'Hop on the scale and log your weight in Raga.',
-      next,
-      const NotificationDetails(
-        android: _androidDetails,
-        iOS: DarwinNotificationDetails(),
+    await _withIconFallback(
+      (d) => _plugin.zonedSchedule(
+        _weeklyId,
+        'Weigh-in time',
+        'Hop on the scale and log your weight in Raga.',
+        next,
+        d,
+        androidScheduleMode: mode,
+        matchDateTimeComponents: DateTimeComponents.dayOfWeekAndTime,
       ),
-      androidScheduleMode: mode,
-      matchDateTimeComponents: DateTimeComponents.dayOfWeekAndTime,
     );
   }
 
@@ -126,33 +164,53 @@ class ReminderService {
       );
 
   /// Schedules with exact alarms when allowed, otherwise inexact.
-  /// Returns true when the exact path was used.
+  /// Returns true when the exact path was used. Never throws — worst
+  /// case the reminder just doesn't get scheduled.
   static Future<bool> scheduleBestEffort({
     required int weekday,
     required int hour,
     required int minute,
   }) async {
-    if (await canScheduleExact()) {
-      await scheduleWeekly(weekday: weekday, hour: hour, minute: minute);
-      return true;
+    try {
+      if (await canScheduleExact()) {
+        try {
+          await scheduleWeekly(
+              weekday: weekday, hour: hour, minute: minute);
+          return true;
+        } catch (_) {
+          // Permission lost between check and schedule — fall through.
+        }
+      }
+      await scheduleWeeklyInexact(
+          weekday: weekday, hour: hour, minute: minute);
+      return false;
+    } catch (_) {
+      return false;
     }
-    await scheduleWeeklyInexact(weekday: weekday, hour: hour, minute: minute);
-    return false;
   }
 
-  static Future<void> cancel() => _plugin.cancel(_weeklyId);
+  static Future<void> cancel() async {
+    try {
+      await _plugin.cancel(_weeklyId);
+    } catch (_) {}
+  }
 
   // Immediate test notification (developer mode). Proves the channel,
   // permission, and icon all work without waiting a week.
-  static Future<void> showTest() async {
-    await _plugin.show(
-      _testId,
-      'Test notification',
-      'Reminders are working — your weekly nudge will arrive on schedule.',
-      const NotificationDetails(
-        android: _androidDetails,
-        iOS: DarwinNotificationDetails(),
-      ),
-    );
+  // Returns false when nothing could be shown.
+  static Future<bool> showTest() async {
+    try {
+      await _withIconFallback(
+        (d) => _plugin.show(
+          _testId,
+          'Test notification',
+          'Reminders are working — your weekly nudge will arrive on schedule.',
+          d,
+        ),
+      );
+      return true;
+    } catch (_) {
+      return false;
+    }
   }
 }

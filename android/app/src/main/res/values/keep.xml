@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Keep the notification icon: it's only referenced by name from Dart
+     (via getIdentifier), so the resource shrinker can't see the usage
+     and would otherwise strip it — which hard-crashes plugin init. -->
+<resources xmlns:tools="http://schemas.android.com/tools"
+    tools:keep="@drawable/ic_stat_notify" />
