@@ -289,121 +289,6 @@ class HealthScreen extends StatelessWidget {
       ],
     );
   }
-}
-
-// Ideal-weight range bar with a marker for the current weight.
-class _IdealBar extends StatelessWidget {
-  final double min;
-  final double max;
-  final double current;
-
-  const _IdealBar({
-    required this.min,
-    required this.max,
-    required this.current,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    // Bar scale: min-15 .. max+15 so the marker never hugs the edge.
-    final lo = min - 15;
-    final hi = max + 15;
-    double posOf(double v) =>
-        ((v - lo) / (hi - lo)).clamp(0.02, 0.98).toDouble();
-
-    return Column(
-      children: [
-        SizedBox(
-          height: 26,
-          child: LayoutBuilder(
-            builder: (context, c) {
-              final w = c.maxWidth;
-              final left = posOf(min) * w;
-              final right = posOf(max) * w;
-              final cur = posOf(current) * w;
-              return Stack(
-                alignment: Alignment.centerLeft,
-                children: [
-                  Container(
-                    height: 10,
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFE4DEFB),
-                      borderRadius: BorderRadius.circular(999),
-                    ),
-                  ),
-                  Positioned(
-                    left: left,
-                    child: Container(
-                      width: right - left,
-                      height: 10,
-                      decoration: BoxDecoration(
-                        color: const Color(0xFF3ED598),
-                        borderRadius: BorderRadius.circular(999),
-                      ),
-                    ),
-                  ),
-                  Positioned(
-                    left: cur - 11,
-                    child: Container(
-                      width: 22,
-                      height: 22,
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        shape: BoxShape.circle,
-                        border: Border.all(
-                          color: const Color(0xFF8B7CF0),
-                          width: 6,
-                        ),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withValues(alpha: 0.2),
-                            blurRadius: 8,
-                            offset: const Offset(0, 3),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ],
-              );
-            },
-          ),
-        ),
-        const SizedBox(height: 6),
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Text(
-              formatNum(lo, 0),
-              style: const TextStyle(
-                fontSize: 12.5,
-                fontWeight: FontWeight.w600,
-                color: Color(0xFF8A86AD),
-                fontFeatures: [FontFeature.tabularFigures()],
-              ),
-            ),
-            Text(
-              'You: ${formatNum(current, 0)} kg',
-              style: const TextStyle(
-                fontSize: 13,
-                fontWeight: FontWeight.w700,
-                color: Color(0xFF5A5680),
-              ),
-            ),
-            Text(
-              formatNum(hi, 0),
-              style: const TextStyle(
-                fontSize: 12.5,
-                fontWeight: FontWeight.w600,
-                color: Color(0xFF8A86AD),
-                fontFeatures: [FontFeature.tabularFigures()],
-              ),
-            ),
-          ],
-        ),
-      ],
-    );
-  }
 
   // Weight goal card: target, progress bar, and an ETA from the trend.
   Widget _goalCard(BuildContext context, RagaColors rc, AppState state) {
@@ -441,7 +326,7 @@ class _IdealBar extends StatelessWidget {
               : weights.reduce(min); // gaining: from the lightest
           final total = (goal - start).abs();
           if (total > 0.01) {
-            progress = (1 - diff / total).clamp(0.0, 1.0);
+            progress = (1 - diff / total).clamp(0.0, 1.0).toDouble();
           }
         }
       }
@@ -595,4 +480,120 @@ class _IdealBar extends StatelessWidget {
       ),
     );
   }
+}
+
+// Ideal-weight range bar with a marker for the current weight.
+class _IdealBar extends StatelessWidget {
+  final double min;
+  final double max;
+  final double current;
+
+  const _IdealBar({
+    required this.min,
+    required this.max,
+    required this.current,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    // Bar scale: min-15 .. max+15 so the marker never hugs the edge.
+    final lo = min - 15;
+    final hi = max + 15;
+    double posOf(double v) =>
+        ((v - lo) / (hi - lo)).clamp(0.02, 0.98).toDouble();
+
+    return Column(
+      children: [
+        SizedBox(
+          height: 26,
+          child: LayoutBuilder(
+            builder: (context, c) {
+              final w = c.maxWidth;
+              final left = posOf(min) * w;
+              final right = posOf(max) * w;
+              final cur = posOf(current) * w;
+              return Stack(
+                alignment: Alignment.centerLeft,
+                children: [
+                  Container(
+                    height: 10,
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFE4DEFB),
+                      borderRadius: BorderRadius.circular(999),
+                    ),
+                  ),
+                  Positioned(
+                    left: left,
+                    child: Container(
+                      width: right - left,
+                      height: 10,
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF3ED598),
+                        borderRadius: BorderRadius.circular(999),
+                      ),
+                    ),
+                  ),
+                  Positioned(
+                    left: cur - 11,
+                    child: Container(
+                      width: 22,
+                      height: 22,
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        shape: BoxShape.circle,
+                        border: Border.all(
+                          color: const Color(0xFF8B7CF0),
+                          width: 6,
+                        ),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withValues(alpha: 0.2),
+                            blurRadius: 8,
+                            offset: const Offset(0, 3),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
+              );
+            },
+          ),
+        ),
+        const SizedBox(height: 6),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text(
+              formatNum(lo, 0),
+              style: const TextStyle(
+                fontSize: 12.5,
+                fontWeight: FontWeight.w600,
+                color: Color(0xFF8A86AD),
+                fontFeatures: [FontFeature.tabularFigures()],
+              ),
+            ),
+            Text(
+              'You: ${formatNum(current, 0)} kg',
+              style: const TextStyle(
+                fontSize: 13,
+                fontWeight: FontWeight.w700,
+                color: Color(0xFF5A5680),
+              ),
+            ),
+            Text(
+              formatNum(hi, 0),
+              style: const TextStyle(
+                fontSize: 12.5,
+                fontWeight: FontWeight.w600,
+                color: Color(0xFF8A86AD),
+                fontFeatures: [FontFeature.tabularFigures()],
+              ),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+
 }
