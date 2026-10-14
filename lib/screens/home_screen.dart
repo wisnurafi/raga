@@ -78,7 +78,7 @@ class _HomeScreenState extends State<HomeScreen> {
         itemBuilder: (context, i) {
           if (i == profiles.length) {
             return ProfileChip(
-              label: '+ Tambah',
+              label: 'Tambah',
               selected: false,
               isAdd: true,
               onTap: () => _addProfileSheet(state),
