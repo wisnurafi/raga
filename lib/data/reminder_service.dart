@@ -105,6 +105,14 @@ class ReminderService {
     return next;
   }
 
+  /// The occurrence [weeksAhead] weeks after the next one. Used to arm
+  /// several future weeks as one-time exact alarms (see _schedule).
+  static tz.TZDateTime occurrenceInWeeks(
+      int weekday, int hour, int minute, int weeksAhead) {
+    return nextOccurrence(weekday, hour, minute)
+        .add(Duration(days: 7 * weeksAhead));
+  }
+
   // Runs [fn] with the custom icon, retrying with the default icon when
   // the custom one didn't survive the build.
   static Future<T> _withIconFallback<T>(
@@ -124,29 +132,39 @@ class ReminderService {
     }
   }
 
-  /// One notification id per weekday so several days can be armed at once.
-  /// 1101..1107; the legacy single-day id 1001 is kept for cancel only.
-  static int _idForDay(int weekday) => 1100 + weekday;
+  /// One notification id per weekday per week, so several days can be
+  /// armed at once and each week is a separate one-time alarm.
+  /// Week 0: 1101..1107; week 1: 1201..1207; week 2: 1301..1307;
+  /// week 3: 1401..1407. The legacy single-day id 1001 is kept for
+  /// cancel only.
+  static int _idForDay(int weekday, [int week = 0]) =>
+      1100 + weekday + week * 100;
+
+  /// How many future weeks to arm. Each week is a separate one-time
+  /// exact alarm (no matchDateTimeComponents — see _schedule).
+  static const _weeksToArm = 4;
 
   static Future<void> _schedule({
     required int id,
-    required int weekday,
-    required int hour,
-    required int minute,
+    required tz.TZDateTime when,
     required AndroidScheduleMode mode,
   }) async {
-    final next = nextOccurrence(weekday, hour, minute);
-    onLog('reminder: schedule d$weekday $hour:${minute.toString().padLeft(2, '0')}'
-        ' -> $next (tz=${tz.local.name}, mode=$mode)');
+    onLog('reminder: schedule #$id -> $when '
+        '(tz=${tz.local.name}, mode=$mode)');
     await _withIconFallback(
       (d) => _plugin.zonedSchedule(
         id,
         'Weigh-in time',
         'Hop on the scale and log your weight in Raga.',
-        next,
+        when,
         d,
+        // One-time exact alarm. NOTE: no matchDateTimeComponents here.
+        // With matchDateTimeComponents set, the plugin switches to its
+        // repeating path which does not honor exactAllowWhileIdle on
+        // modern Android — the alarm shows as "registered" but never
+        // fires. Weekly repetition is achieved by arming several future
+        // weeks as separate one-time alarms (see scheduleBestEffortDays).
         androidScheduleMode: mode,
-        matchDateTimeComponents: DateTimeComponents.dayOfWeekAndTime,
       ),
     );
     // Verify the OS actually registered it — a silently dropped alarm is
@@ -161,59 +179,39 @@ class ReminderService {
     }
   }
 
-  static Future<void> scheduleWeekly({
-    required int weekday,
-    required int hour,
-    required int minute,
-    int? id,
-  }) =>
-      _schedule(
-        id: id ?? _weeklyId,
-        weekday: weekday,
-        hour: hour,
-        minute: minute,
-        mode: AndroidScheduleMode.exactAllowWhileIdle,
-      );
-
-  static Future<void> scheduleWeeklyInexact({
-    required int weekday,
-    required int hour,
-    required int minute,
-    int? id,
-  }) =>
-      _schedule(
-        id: id ?? _weeklyId,
-        weekday: weekday,
-        hour: hour,
-        minute: minute,
-        mode: AndroidScheduleMode.inexactAllowWhileIdle,
-      );
-
   /// Schedules with exact alarms when allowed, otherwise inexact.
+  /// Arms [_weeksToArm] future weeks as separate one-time alarms
+  /// (no matchDateTimeComponents — see _schedule).
   /// Returns true when the exact path was used. Never throws — worst
   /// case the reminder just doesn't get scheduled.
   static Future<bool> scheduleBestEffort({
     required int weekday,
     required int hour,
     required int minute,
-    int? id,
   }) async {
+    var mode = AndroidScheduleMode.inexactAllowWhileIdle;
     try {
       if (await canScheduleExact()) {
-        try {
-          await scheduleWeekly(
-              weekday: weekday, hour: hour, minute: minute, id: id);
-          return true;
-        } catch (_) {
-          // Permission lost between check and schedule — fall through.
+        mode = AndroidScheduleMode.exactAllowWhileIdle;
+      }
+    } catch (_) {}
+    for (var w = 0; w < _weeksToArm; w++) {
+      final when = occurrenceInWeeks(weekday, hour, minute, w);
+      final id = _idForDay(weekday, w);
+      try {
+        await _schedule(id: id, when: when, mode: mode);
+      } catch (_) {
+        // Permission lost between check and schedule — fall back to
+        // inexact for this and remaining weeks.
+        if (mode == AndroidScheduleMode.exactAllowWhileIdle) {
+          mode = AndroidScheduleMode.inexactAllowWhileIdle;
+          try {
+            await _schedule(id: id, when: when, mode: mode);
+          } catch (_) {}
         }
       }
-      await scheduleWeeklyInexact(
-          weekday: weekday, hour: hour, minute: minute, id: id);
-      return false;
-    } catch (_) {
-      return false;
     }
+    return mode == AndroidScheduleMode.exactAllowWhileIdle;
   }
 
   /// Arms the nudge on every selected weekday. Cancels stale days first
@@ -232,7 +230,6 @@ class ReminderService {
         weekday: d,
         hour: hour,
         minute: minute,
-        id: _idForDay(d),
       );
       if (!exact) allExact = false;
     }
@@ -245,12 +242,14 @@ class ReminderService {
     } catch (_) {}
   }
 
-  /// Cancels the legacy id plus every per-day id.
+  /// Cancels the legacy id plus every per-day per-week id.
   static Future<void> cancelAll() async {
     try {
       await _plugin.cancel(_weeklyId);
-      for (var d = 1; d <= 7; d++) {
-        await _plugin.cancel(_idForDay(d));
+      for (var w = 0; w < _weeksToArm; w++) {
+        for (var d = 1; d <= 7; d++) {
+          await _plugin.cancel(_idForDay(d, w));
+        }
       }
     } catch (_) {}
   }
