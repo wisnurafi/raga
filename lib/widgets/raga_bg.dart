@@ -24,7 +24,10 @@ class RagaBg extends StatelessWidget {
               fit: BoxFit.cover,
             ),
           ),
-          child,
+          // Must fill: a bare Stack child gets loose constraints and
+          // shrink-wraps (a Column then pins top-left instead of
+          // centering full-width). This was the off-center splash.
+          Positioned.fill(child: child),
         ],
       ),
     );
