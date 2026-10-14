@@ -180,6 +180,27 @@ class HealthBg extends StatelessWidget {
               fit: BoxFit.cover,
             ),
           ),
+          // Light-lavender veil: the artwork runs from light lavender at
+          // the top to near-black at the bottom, so a glass card refracts
+          // a wildly different tone depending on scroll position. This
+          // compresses that range toward a soft, consistent lavender —
+          // cards keep the same color wherever they sit — while the
+          // purple nuance and the artwork's texture still show through.
+          // Stronger at the bottom, where the artwork is darkest.
+          Positioned.fill(
+            child: DecoratedBox(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: [
+                    const Color(0xFFCFC8F5).withValues(alpha: 0.30),
+                    const Color(0xFFCFC8F5).withValues(alpha: 0.78),
+                  ],
+                ),
+              ),
+            ),
+          ),
           child,
         ],
       ),
