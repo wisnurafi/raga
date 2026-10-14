@@ -362,7 +362,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                   style: TextStyle(
                     fontSize: 12.5,
                     fontWeight: FontWeight.w700,
-                    color: rc.onCardMuted,
+                    color: rc.onCardAccent,
                   ),
                 ),
                 TextField(
@@ -479,7 +479,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                       style: TextStyle(
                         fontSize: 12.5,
                         fontWeight: FontWeight.w700,
-                        color: rc.onCardMuted,
+                        color: rc.onCardAccent,
                       ),
                     ),
                     const SizedBox(height: 8),

@@ -99,7 +99,7 @@ class HealthScreen extends StatelessWidget {
                     style: TextStyle(
                       fontSize: 14.5,
                       fontWeight: FontWeight.w700,
-                      color: rc.onCardMuted,
+                      color: rc.onCardAccent,
                     ),
                   ),
                 ],
@@ -166,7 +166,7 @@ class HealthScreen extends StatelessWidget {
                     style: TextStyle(
                       fontSize: 14.5,
                       fontWeight: FontWeight.w700,
-                      color: rc.onCardMuted,
+                      color: rc.onCardAccent,
                     ),
                   ),
                 ],

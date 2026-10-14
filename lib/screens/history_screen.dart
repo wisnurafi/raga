@@ -9,6 +9,7 @@ import '../state/app_state.dart';
 import '../models/bmi_record.dart';
 import '../widgets/glass.dart';
 import '../widgets/cards.dart';
+import '../widgets/shine_text.dart';
 
 // The "History" screen: weight/BMI trend chart + recent entries.
 class HistoryScreen extends StatefulWidget {
@@ -202,7 +203,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
                 style: TextStyle(
                   fontSize: 14,
                   fontWeight: FontWeight.w700,
-                  color: rc.onCardMuted,
+                  color: rc.onCardAccent,
                 ),
               ),
               Container(
@@ -226,7 +227,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
           Row(
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              Text(
+              ShineText(
                 formatNum(_showWeight ? latest.weightKg : latest.bmi),
                 style: TextStyle(
                   fontSize: 46,

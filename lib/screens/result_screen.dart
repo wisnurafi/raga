@@ -9,6 +9,7 @@ import '../core/tips.dart';
 import '../widgets/gauge.dart';
 import '../widgets/glass.dart';
 import '../widgets/cards.dart';
+import '../widgets/shine_text.dart';
 import '../state/app_state.dart';
 import '../data/cloud_sync.dart';
 
@@ -112,7 +113,7 @@ class _ResultScreenState extends State<ResultScreen> {
                   child: Column(
                     children: [
                       BmiGauge(bmi: bmi),
-                      Text(
+                      ShineText(
                         formatNum(bmi),
                         style: TextStyle(
                           fontSize: 64,

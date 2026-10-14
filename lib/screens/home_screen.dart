@@ -278,7 +278,11 @@ class _HomeScreenState extends State<HomeScreen> {
         width: 36,
         height: 36,
         decoration: BoxDecoration(
-          color: rc.primaryBtn,
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [const Color(0xFF9A8CF5), rc.primaryBtn],
+          ),
           shape: BoxShape.circle,
           boxShadow: [
             BoxShadow(

@@ -3,6 +3,7 @@ import '../core/theme.dart';
 import '../core/streak.dart';
 import '../state/app_state.dart';
 import '../widgets/glass.dart';
+import '../widgets/shine_text.dart';
 
 // Dedicated streak page: weekly weigh-in consistency, milestone badges,
 // and room to grow (freeze weeks, history heatmap, ...).
@@ -133,7 +134,7 @@ class _StreakScreenState extends State<StreakScreen> {
                 ],
               ),
               const Spacer(),
-              Text(
+              ShineText(
                 '${streak.weeks}',
                 style: TextStyle(
                   fontSize: 44,
@@ -170,7 +171,7 @@ class _StreakScreenState extends State<StreakScreen> {
                   style: TextStyle(
                     fontSize: 12.5,
                     fontWeight: FontWeight.w700,
-                    color: rc.onCardMuted,
+                    color: rc.onCardAccent,
                   ),
                 ),
                 Text(

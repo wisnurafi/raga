@@ -56,7 +56,7 @@ class MeasureCard extends StatelessWidget {
                 style: TextStyle(
                   fontSize: 14.5,
                   fontWeight: FontWeight.w700,
-                  color: rc.onCardMuted,
+                  color: rc.onCardAccent,
                 ),
               ),
             ],
@@ -309,29 +309,60 @@ class RagaButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final rc = context.rc;
+    // Gradient instead of FilledButton: a flat color can't do the
+    // luminous-top gradient, and Ink keeps the Material ripple.
     return SizedBox(
       width: double.infinity,
-      child: FilledButton(
-        onPressed: onPressed,
-        style: FilledButton.styleFrom(
-          backgroundColor: outlined
-              ? Colors.white.withValues(alpha: 0.5)
-              : rc.primaryBtn,
-          foregroundColor: outlined ? rc.onBg : rc.onPrimaryBtn,
-          padding: const EdgeInsets.symmetric(vertical: 18),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(26),
-            side: outlined
-                ? BorderSide(
-                    color: rc.primaryBtn.withValues(alpha: 0.55),
-                    width: 1.5,
-                  )
-                : BorderSide.none,
+      child: Material(
+        color: Colors.transparent,
+        borderRadius: BorderRadius.circular(26),
+        child: InkWell(
+          onTap: onPressed,
+          borderRadius: BorderRadius.circular(26),
+          child: Ink(
+            padding: const EdgeInsets.symmetric(vertical: 18),
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: outlined
+                    ? [
+                        Colors.white.withValues(alpha: 0.62),
+                        Colors.white.withValues(alpha: 0.38),
+                      ]
+                    : [
+                        const Color(0xFF9A8CF5),
+                        rc.primaryBtn,
+                      ],
+              ),
+              borderRadius: BorderRadius.circular(26),
+              border: outlined
+                  ? Border.all(
+                      color: rc.primaryBtn.withValues(alpha: 0.55),
+                      width: 1.5,
+                    )
+                  : null,
+              boxShadow: [
+                BoxShadow(
+                  color: rc.primaryBtn
+                      .withValues(alpha: outlined ? 0.14 : 0.38),
+                  blurRadius: 20,
+                  offset: const Offset(0, 9),
+                ),
+              ],
+            ),
+            child: Center(
+              child: Text(
+                label,
+                style: TextStyle(
+                  fontSize: 17,
+                  fontWeight: FontWeight.w700,
+                  color: outlined ? rc.onBg : rc.onPrimaryBtn,
+                ),
+              ),
+            ),
           ),
-          textStyle:
-              const TextStyle(fontSize: 17, fontWeight: FontWeight.w700),
         ),
-        child: Text(label),
       ),
     );
   }
