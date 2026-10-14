@@ -160,18 +160,19 @@ class _ResultScreenState extends State<ResultScreen> {
                 ],
               ),
               // The share card lives off-screen; only the screenshot sees it.
+              // NOTE: no Opacity wrapper here — RenderOpacity skips painting
+              // entirely at opacity 0, leaving the Screenshot's
+              // RepaintBoundary blank so capture() fails. Off-screen
+              // positioning alone keeps it invisible while still painted.
               Positioned(
                 left: -2000,
                 top: 0,
-                child: Opacity(
-                  opacity: 0,
-                  child: Screenshot(
-                    controller: _shot,
-                    child: _ShareCard(
-                      bmi: bmi,
-                      cat: cat,
-                      name: name,
-                    ),
+                child: Screenshot(
+                  controller: _shot,
+                  child: _ShareCard(
+                    bmi: bmi,
+                    cat: cat,
+                    name: name,
                   ),
                 ),
               ),
