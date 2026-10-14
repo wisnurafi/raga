@@ -1,7 +1,7 @@
 name: Build APK
 
-# Tiap push ke main: analisa, build APK release, upload sebagai artifact,
-# dan tempelkan otomatis ke GitHub Release "latest".
+# On every push to main: analyze, build the release APK, upload it as an
+# artifact, and attach it automatically to the GitHub Release "latest".
 
 on:
   push:
@@ -12,7 +12,7 @@ jobs:
   build:
     runs-on: ubuntu-latest
     permissions:
-      contents: write # butuh buat bikin/update Release "latest"
+      contents: write # needed to create/update the "latest" release
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -55,9 +55,9 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           tag_name: latest
-          name: Raga (build terbaru)
+          name: Raga (latest build)
           body: |
-            Build otomatis dari branch `main`.
-            Download `Raga.apk`, install di Android, dan coba langsung.
+            Automated build from the `main` branch.
+            Download `Raga.apk`, install it on Android, and try it out.
           files: build/app/outputs/flutter-apk/Raga.apk
           generate_release_notes: true

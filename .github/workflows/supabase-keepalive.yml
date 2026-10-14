@@ -1,9 +1,9 @@
 name: Supabase Keep-Alive
 
 # Ping Supabase hourly so the free-tier project doesn't get paused
-# (pause otomatis setelah 7 hari tanpa aktivitas).
-# Butuh secrets: SUPABASE_URL dan SUPABASE_ANON_KEY.
-# Kalau secrets belum diisi, workflow ini lewat tanpa gagal.
+# (auto-pauses after 7 days of inactivity).
+# Needs secrets: SUPABASE_URL and SUPABASE_ANON_KEY.
+# If the secrets aren't set, this workflow passes quietly.
 
 on:
   schedule:
@@ -20,10 +20,10 @@ jobs:
           SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
         run: |
           if [ -z "$SUPABASE_URL" ] || [ -z "$SUPABASE_ANON_KEY" ]; then
-            echo "Secrets SUPABASE_URL / SUPABASE_ANON_KEY belum diisi - lewati."
+            echo "SUPABASE_URL / SUPABASE_ANON_KEY secrets not set - skipping."
             exit 0
           fi
           curl -sf -o /dev/null \
             -H "apikey: $SUPABASE_ANON_KEY" \
             "$SUPABASE_URL/auth/v1/health" \
-            && echo "Supabase aktif, tidak jadi pause."
+            && echo "Supabase is active - won't be paused."
