@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import '../core/theme.dart';
 import '../core/bmi.dart';
+import '../core/insight.dart';
+import '../core/streak.dart';
 import '../state/app_state.dart';
 import '../widgets/glass.dart';
 import '../widgets/cards.dart';
@@ -64,6 +66,8 @@ class _HomeScreenState extends State<HomeScreen> {
           '${_dayName(DateTime.now())}, ${formatDate(DateTime.now())} ${DateTime.now().year}',
           style: TextStyle(fontSize: 14, color: rc.onImageMuted),
         ),
+        const SizedBox(height: 16),
+        _insightCard(context, rc, state, p),
         const SizedBox(height: 16),
         const ProfileChips(),
         const SizedBox(height: 22),
@@ -310,5 +314,60 @@ class _HomeScreenState extends State<HomeScreen> {
       'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'
     ];
     return days[d.weekday - 1];
+  }
+
+  // Smart one-liner under the greeting: trend, goal ETA, streak.
+  // Computed locally from history — no network, no waiting.
+  Widget _insightCard(
+      BuildContext context, RagaColors rc, AppState state, dynamic p) {
+    final history = state
+        .recordsOf(p.id as String)
+        .map((r) => (at: r.createdAt, weightKg: r.weightKg))
+        .toList()
+      ..sort((a, b) => a.at.compareTo(b.at));
+    final streak =
+        computeStreak(history.map((h) => h.at).toList());
+    final text = buildInsight(
+      history: history,
+      currentKg: (p.weightKg as num).toDouble(),
+      goalKg: state.goalFor(p.id as String),
+      streakWeeks: streak.weeks,
+    );
+    return GlassContainer(
+      padding: const EdgeInsets.fromLTRB(18, 14, 18, 14),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            width: 34,
+            height: 34,
+            decoration: BoxDecoration(
+              color: rc.mintSoft,
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Icon(
+              Icons.auto_awesome_outlined,
+              size: 18,
+              color: rc.mint,
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Padding(
+              padding: const EdgeInsets.only(top: 2),
+              child: Text(
+                text,
+                style: TextStyle(
+                  fontSize: 14,
+                  height: 1.5,
+                  fontWeight: FontWeight.w600,
+                  color: rc.onCard,
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
   }
 }
