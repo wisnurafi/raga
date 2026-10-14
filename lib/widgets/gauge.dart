@@ -1,28 +1,30 @@
 import 'dart:math';
 import 'package:flutter/material.dart';
-import '../core/bmi.dart';
+import '../core/theme.dart';
 
-// Half-circle BMI gauge, hand-drawn with a CustomPainter.
-// Four color segments for the categories + a marker for the value.
-class BmiGauge extends StatelessWidget {
+// Half-circle BMI gauge from the mockup: four color segments
+// (blue/green/yellow/red) with a white-dot marker sitting ON the arc,
+// dark-ringed like the design.
+class ResultGauge extends StatelessWidget {
   final double bmi;
-  const BmiGauge({super.key, required this.bmi});
+  const ResultGauge({super.key, required this.bmi});
 
   @override
   Widget build(BuildContext context) {
     return CustomPaint(
-      painter: _GaugePainter(bmi),
-      child: const SizedBox(height: 168, width: double.infinity),
+      painter: _GaugePainter(bmi, context.rc),
+      child: const SizedBox(height: 190, width: double.infinity),
     );
   }
 }
 
 class _GaugePainter extends CustomPainter {
   final double bmi;
-  _GaugePainter(this.bmi);
+  final RagaColors rc;
+  _GaugePainter(this.bmi, this.rc);
 
-  static const _min = 12.0;
-  static const _max = 42.0;
+  static const _min = 14.0;
+  static const _max = 34.0;
 
   double _angle(double v) {
     final c = v.clamp(_min, _max);
@@ -31,70 +33,55 @@ class _GaugePainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
-    final center = Offset(size.width / 2, size.height - 14);
-    final radius = min(size.width / 2 - 28, size.height - 28);
+    final center = Offset(size.width / 2, size.height - 16);
+    final radius = min(size.width / 2 - 30, size.height - 30);
     final rect = Rect.fromCircle(center: center, radius: radius);
 
-    const trackW = 26.0;
-    final trackPaint = Paint()
-      ..color = const Color(0xFFE7E2F8)
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = trackW
-      ..strokeCap = StrokeCap.round;
-    canvas.drawArc(rect, pi, pi, false, trackPaint);
-
-    // Category segments with small gaps between them.
-    const bounds = [12.0, 18.5, 25.0, 30.0, 42.0];
-    const colors = [
-      Color(0xFF5AA9E6),
-      Color(0xFF3ED598),
-      Color(0xFFF2B544),
-      Color(0xFFF2555A),
-    ];
-    const gap = 0.035;
+    const trackW = 24.0;
+    const bounds = [14.0, 18.5, 25.0, 30.0, 34.0];
+    final colors = [rc.catUnder, rc.catNormal, rc.catOver, rc.catObese];
+    const gap = 0.03;
     for (var i = 0; i < 4; i++) {
       final a0 = _angle(bounds[i]) + gap;
       final a1 = _angle(bounds[i + 1]) - gap;
-      final p = Paint()
-        ..color = colors[i]
-        ..style = PaintingStyle.stroke
-        ..strokeWidth = trackW
-        ..strokeCap = StrokeCap.butt;
-      canvas.drawArc(rect, a0, a1 - a0, false, p);
+      canvas.drawArc(
+        rect,
+        a0,
+        a1 - a0,
+        false,
+        Paint()
+          ..color = colors[i]
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = trackW
+          ..strokeCap = StrokeCap.butt,
+      );
     }
 
-    // Value marker: white dot with a dark ring.
+    // Value marker: white dot with a dark ring, sitting on the arc.
     final a = _angle(bmi);
     final pos = center + Offset(cos(a) * radius, sin(a) * radius);
-    canvas.drawCircle(
-      pos,
-      13,
-      Paint()..color = const Color(0xFF1B1B2F),
-    );
-    canvas.drawCircle(
-      pos,
-      9,
-      Paint()..color = Colors.white,
-    );
+    canvas.drawCircle(pos, 14, Paint()..color = const Color(0xFF2B2358));
+    canvas.drawCircle(pos, 9.5, Paint()..color = Colors.white);
   }
 
   @override
-  bool shouldRepaint(_GaugePainter old) => old.bmi != bmi;
+  bool shouldRepaint(_GaugePainter old) =>
+      old.bmi != bmi || old.rc != rc;
 }
 
-// Category legend under the gauge: color dot + name.
+// Category legend under the gauge: color dot + name, like the mockup.
 class GaugeLegend extends StatelessWidget {
-  final BmiCategory active;
+  final BmiCat active;
   const GaugeLegend({super.key, required this.active});
 
   @override
   Widget build(BuildContext context) {
+    final rc = context.rc;
     return Wrap(
       alignment: WrapAlignment.center,
-      spacing: 14,
-      runSpacing: 6,
-      children: BmiCategory.values.map((c) {
-        final meta = categoryMeta[c]!;
+      spacing: 16,
+      runSpacing: 8,
+      children: BmiCat.values.map((c) {
         final isActive = c == active;
         return Row(
           mainAxisSize: MainAxisSize.min,
@@ -103,19 +90,18 @@ class GaugeLegend extends StatelessWidget {
               width: 8,
               height: 8,
               decoration: BoxDecoration(
-                color: meta.color,
+                color: rc.badgeFor(c),
                 shape: BoxShape.circle,
               ),
             ),
-            const SizedBox(width: 5),
+            const SizedBox(width: 6),
             Text(
-              meta.label,
+              bmiCatLabel(c),
               style: TextStyle(
-                fontSize: 12.5,
-                fontWeight: isActive ? FontWeight.w800 : FontWeight.w500,
-                color: isActive
-                    ? const Color(0xFF1B1B2F)
-                    : const Color(0xFF8A86AD),
+                fontSize: 13,
+                fontWeight:
+                    isActive ? FontWeight.w800 : FontWeight.w500,
+                color: isActive ? rc.onCard : rc.onCardMuted,
               ),
             ),
           ],
