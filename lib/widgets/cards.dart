@@ -41,7 +41,9 @@ class MeasureCard extends StatelessWidget {
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Icon(
-                  label.contains('Tinggi')
+                  // Labels went English in the i18n pass; the old
+                  // 'Tinggi' check left every card with the weight icon.
+                  label == 'Height'
                       ? Icons.height
                       : Icons.monitor_weight_outlined,
                   size: 19,
