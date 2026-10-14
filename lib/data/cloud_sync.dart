@@ -208,8 +208,9 @@ class CloudSync {
       return null;
     }
     final code = normalizeCode(rawCode);
-    if (code.isEmpty) return BackupData(
-        records: [], profiles: [], goals: {}, settings: {});
+    if (code.isEmpty) {
+      return BackupData(records: [], profiles: [], goals: {}, settings: {});
+    }
     try {
       final res = await Supabase.instance.client
           .rpc('restore_backup', params: {'p_code': code});
