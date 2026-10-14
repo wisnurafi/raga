@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 
-/// Kategori BMI standar WHO.
+// Standard WHO BMI categories.
 enum BmiCategory { underweight, normal, overweight, obese }
 
-/// Metadata tampilan tiap kategori: label resmi (sesuai brief), penjelasan
-/// berbahasa Indonesia yang mudah dipahami, dan warna indikator.
+// What each category looks like on screen: its label, a plain-English
+// explanation, and the indicator color.
 class CategoryMeta {
   final String label;
   final String explanation;
@@ -15,22 +15,22 @@ class CategoryMeta {
 const Map<BmiCategory, CategoryMeta> categoryMeta = {
   BmiCategory.underweight: CategoryMeta(
     'Underweight',
-    'Berat badanmu di bawah rentang sehat. Yuk naikin pelan-pelan dengan cara yang sehat.',
+    "You're below the healthy range. Let's bring it up slowly, the healthy way.",
     Color(0xFF5AA9E6),
   ),
   BmiCategory.normal: CategoryMeta(
     'Normal',
-    'Berat badanmu ada di rentang sehat. Pertahankan!',
+    "You're in the healthy range. Keep it up!",
     Color(0xFF3ED598),
   ),
   BmiCategory.overweight: CategoryMeta(
     'Overweight',
-    'Berat badanmu sedikit di atas rentang sehat. Masih gampang dikejar, kok.',
+    "You're a bit above the healthy range. Totally doable to get back.",
     Color(0xFFF2B544),
   ),
   BmiCategory.obese: CategoryMeta(
     'Obese',
-    'Berat badanmu di atas rentang sehat. Nggak apa-apa, mulai dari langkah kecil aja.',
+    "You're above the healthy range. No worries — start with small steps.",
     Color(0xFFF2555A),
   ),
 };
@@ -42,20 +42,20 @@ BmiCategory categoryOf(double bmi) {
   return BmiCategory.obese;
 }
 
-/// BMI = berat (kg) / tinggi (m)^2
+// BMI = weight (kg) / height (m)^2
 double calcBmi({required double weightKg, required double heightCm}) {
   final m = heightCm / 100;
   if (m <= 0) return 0;
   return weightKg / (m * m);
 }
 
-/// Rentang berat ideal untuk tinggi tertentu (berdasar rentang BMI sehat 18.5 - 24.99).
+// Healthy weight range for a given height (BMI 18.5 – 24.99).
 ({double min, double max}) idealWeightRange(double heightCm) {
   final m2 = (heightCm / 100) * (heightCm / 100);
   return (min: 18.5 * m2, max: 24.99 * m2);
 }
 
-/// BMR dengan rumus Mifflin-St Jeor.
+// BMR via the Mifflin-St Jeor formula.
 double bmrMifflin({
   required double weightKg,
   required double heightCm,
@@ -65,43 +65,41 @@ double bmrMifflin({
   return 10 * weightKg + 6.25 * heightCm - 5 * age + (isMale ? 5 : -161);
 }
 
-/// Faktor aktivitas untuk TDEE.
+// Activity multipliers for daily calorie needs.
 const Map<String, double> activityFactors = {
-  'Minim': 1.2,
-  'Ringan': 1.375,
-  'Sedang': 1.55,
-  'Berat': 1.725,
+  'Minimal': 1.2,
+  'Light': 1.375,
+  'Moderate': 1.55,
+  'Active': 1.725,
 };
 
 double tdee(double bmr, double activityFactor) => bmr * activityFactor;
 
 String greetingFor(DateTime now) {
   final h = now.hour;
-  if (h < 11) return 'Selamat pagi';
-  if (h < 15) return 'Selamat siang';
-  if (h < 19) return 'Selamat sore';
-  return 'Selamat malam';
+  if (h < 11) return 'Good morning';
+  if (h < 18) return 'Good afternoon';
+  return 'Good evening';
 }
 
-/// Format angka ala Indonesia: koma sebagai pemisah desimal.
-String formatId(double value, [int decimals = 1]) {
-  return value.toStringAsFixed(decimals).replaceAll('.', ',');
+// Number formatting, US style: decimal point, thousands separator.
+String formatNum(double value, [int decimals = 1]) {
+  return value.toStringAsFixed(decimals);
 }
 
-/// Format angka ribuan ala Indonesia: 2217 -> "2.217"
-String formatIntId(int value) {
+String formatIntNum(int value) {
   final s = value.toString();
   final buf = StringBuffer();
   for (var i = 0; i < s.length; i++) {
-    if (i > 0 && (s.length - i) % 3 == 0) buf.write('.');
+    if (i > 0 && (s.length - i) % 3 == 0) buf.write(',');
     buf.write(s[i]);
   }
   return buf.toString();
 }
 
-const idMonths = [
-  'Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun',
-  'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des',
+const shortMonths = [
+  'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+  'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec',
 ];
 
-String formatDateId(DateTime d) => '${d.day} ${idMonths[d.month - 1]}';
+String formatDate(DateTime d) => '${d.day} ${shortMonths[d.month - 1]}';

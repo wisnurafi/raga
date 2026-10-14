@@ -2,8 +2,8 @@ import 'dart:math';
 import 'package:flutter/material.dart';
 import '../core/bmi.dart';
 
-/// Gauge BMI setengah lingkaran, digambar manual dengan CustomPainter.
-/// Empat segmen warna sesuai kategori + penanda posisi nilai.
+// Half-circle BMI gauge, hand-drawn with a CustomPainter.
+// Four color segments for the categories + a marker for the value.
 class BmiGauge extends StatelessWidget {
   final double bmi;
   const BmiGauge({super.key, required this.bmi});
@@ -43,7 +43,7 @@ class _GaugePainter extends CustomPainter {
       ..strokeCap = StrokeCap.round;
     canvas.drawArc(rect, pi, pi, false, trackPaint);
 
-    // Segmen kategori dengan sedikit jeda antar segmen.
+    // Category segments with small gaps between them.
     const bounds = [12.0, 18.5, 25.0, 30.0, 42.0];
     const colors = [
       Color(0xFF5AA9E6),
@@ -63,7 +63,7 @@ class _GaugePainter extends CustomPainter {
       canvas.drawArc(rect, a0, a1 - a0, false, p);
     }
 
-    // Penanda posisi nilai: lingkaran putih dengan ring gelap.
+    // Value marker: white dot with a dark ring.
     final a = _angle(bmi);
     final pos = center + Offset(cos(a) * radius, sin(a) * radius);
     canvas.drawCircle(
@@ -82,7 +82,7 @@ class _GaugePainter extends CustomPainter {
   bool shouldRepaint(_GaugePainter old) => old.bmi != bmi;
 }
 
-/// Legenda kategori di bawah gauge: titik warna + nama.
+// Category legend under the gauge: color dot + name.
 class GaugeLegend extends StatelessWidget {
   final BmiCategory active;
   const GaugeLegend({super.key, required this.active});

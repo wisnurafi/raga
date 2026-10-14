@@ -4,7 +4,7 @@ import '../core/bmi.dart';
 import '../state/app_state.dart';
 import '../widgets/glass.dart';
 
-/// Layar "Kesehatan": berat badan ideal, TDEE, dan BMR.
+// The "Health" screen: ideal weight, daily calories, and resting calories.
 class HealthScreen extends StatelessWidget {
   const HealthScreen({super.key});
 
@@ -25,7 +25,7 @@ class HealthScreen extends StatelessWidget {
     final tdeeVal = tdee(bmr, factor);
 
     final meta =
-        '${p.name} · ${p.isMale ? 'Pria' : 'Wanita'} · ${p.age} th · ${formatId(p.heightCm, 0)} cm · ${formatId(p.weightKg, 0)} kg';
+        '${p.name} · ${p.isMale ? 'Male' : 'Female'} · ${p.age} yrs · ${formatNum(p.heightCm, 0)} cm · ${formatNum(p.weightKg, 0)} kg';
 
     return ListView(
       padding: const EdgeInsets.fromLTRB(20, 8, 20, 110),
@@ -34,11 +34,11 @@ class HealthScreen extends StatelessWidget {
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             Text(
-              'Kesehatan',
+              'Health',
               style: TextStyle(
                 fontSize: 34,
                 fontWeight: FontWeight.w800,
-                color: rc.onBg,
+                color: rc.onImage,
                 letterSpacing: -0.8,
               ),
             ),
@@ -67,7 +67,7 @@ class HealthScreen extends StatelessWidget {
           ],
         ),
         const SizedBox(height: 4),
-        Text(meta, style: TextStyle(fontSize: 13.5, color: rc.onBgMuted)),
+        Text(meta, style: TextStyle(fontSize: 13.5, color: rc.onImageMuted)),
         const SizedBox(height: 18),
         // Berat badan ideal
         GlassContainer(
@@ -92,7 +92,7 @@ class HealthScreen extends StatelessWidget {
                   ),
                   const SizedBox(width: 10),
                   Text(
-                    'Berat badan ideal',
+                    'Ideal weight',
                     style: TextStyle(
                       fontSize: 14.5,
                       fontWeight: FontWeight.w700,
@@ -113,7 +113,7 @@ class HealthScreen extends StatelessWidget {
                   ),
                   children: [
                     TextSpan(
-                        text: '${formatId(range.min)} – ${formatId(range.max)} '),
+                        text: '${formatNum(range.min)} – ${formatNum(range.max)} '),
                     TextSpan(
                       text: 'kg',
                       style: TextStyle(
@@ -159,7 +159,7 @@ class HealthScreen extends StatelessWidget {
                   ),
                   const SizedBox(width: 10),
                   Text(
-                    'Kebutuhan kalori harian (TDEE)',
+                    'Daily calorie needs',
                     style: TextStyle(
                       fontSize: 14.5,
                       fontWeight: FontWeight.w700,
@@ -179,9 +179,9 @@ class HealthScreen extends StatelessWidget {
                     fontFeatures: const [FontFeature.tabularFigures()],
                   ),
                   children: [
-                    TextSpan(text: formatIntId(tdeeVal.round())),
+                    TextSpan(text: formatIntNum(tdeeVal.round())),
                     TextSpan(
-                      text: ' kcal/hari',
+                      text: ' kcal/day',
                       style: TextStyle(
                         fontSize: 18,
                         fontWeight: FontWeight.w600,
@@ -245,7 +245,7 @@ class HealthScreen extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'BMR (saat istirahat)',
+                    'Resting calories',
                     style: TextStyle(
                       fontSize: 15,
                       fontWeight: FontWeight.w700,
@@ -254,7 +254,7 @@ class HealthScreen extends StatelessWidget {
                   ),
                   const SizedBox(height: 4),
                   Text(
-                    'Rumus Mifflin-St Jeor',
+                    'Mifflin-St Jeor formula',
                     style: TextStyle(
                         fontSize: 12.5, color: rc.onCardMuted),
                   ),
@@ -269,7 +269,7 @@ class HealthScreen extends StatelessWidget {
                     fontFeatures: const [FontFeature.tabularFigures()],
                   ),
                   children: [
-                    TextSpan(text: formatIntId(bmr.round())),
+                    TextSpan(text: formatIntNum(bmr.round())),
                     TextSpan(
                       text: ' kcal',
                       style: TextStyle(
@@ -288,7 +288,7 @@ class HealthScreen extends StatelessWidget {
   }
 }
 
-/// Bar rentang berat ideal dengan penanda posisi berat saat ini.
+// Ideal-weight range bar with a marker for the current weight.
 class _IdealBar extends StatelessWidget {
   final double min;
   final double max;
@@ -302,7 +302,7 @@ class _IdealBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Skala bar: min-15 .. max+15 agar penanda tidak mentok di tepi.
+    // Bar scale: min-15 .. max+15 so the marker never hugs the edge.
     final lo = min - 15;
     final hi = max + 15;
     double posOf(double v) =>
@@ -371,7 +371,7 @@ class _IdealBar extends StatelessWidget {
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             Text(
-              formatId(lo, 0),
+              formatNum(lo, 0),
               style: const TextStyle(
                 fontSize: 12.5,
                 fontWeight: FontWeight.w600,
@@ -380,7 +380,7 @@ class _IdealBar extends StatelessWidget {
               ),
             ),
             Text(
-              'Kamu: ${formatId(current, 0)} kg',
+              'You: ${formatNum(current, 0)} kg',
               style: const TextStyle(
                 fontSize: 13,
                 fontWeight: FontWeight.w700,
@@ -388,7 +388,7 @@ class _IdealBar extends StatelessWidget {
               ),
             ),
             Text(
-              formatId(hi, 0),
+              formatNum(hi, 0),
               style: const TextStyle(
                 fontSize: 12.5,
                 fontWeight: FontWeight.w600,

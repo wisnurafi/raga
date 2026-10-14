@@ -4,7 +4,7 @@ import '../core/bmi.dart';
 import '../state/app_state.dart';
 import 'glass.dart';
 
-/// Kartu kaca untuk input angka + slider.
+// Glass card for number input + slider.
 class MeasureCard extends StatelessWidget {
   final String label;
   final double displayValue;
@@ -65,7 +65,7 @@ class MeasureCard extends StatelessWidget {
             textBaseline: TextBaseline.alphabetic,
             children: [
               Text(
-                formatId(displayValue, 0),
+                formatNum(displayValue, 0),
                 style: TextStyle(
                   fontSize: 56,
                   fontWeight: FontWeight.w800,
@@ -104,7 +104,7 @@ class MeasureCard extends StatelessWidget {
   }
 }
 
-/// Toggle satuan: cm·kg / in·lb (pil kaca).
+// Unit toggle: cm·kg / in·lb (glass pill).
 class UnitToggle extends StatelessWidget {
   const UnitToggle({super.key});
 
@@ -161,7 +161,7 @@ class UnitToggle extends StatelessWidget {
   }
 }
 
-/// Deretan chip profil + tombol tambah.
+// Profile chips row + add button.
 class ProfileChips extends StatelessWidget {
   const ProfileChips({super.key});
 
@@ -184,20 +184,20 @@ class ProfileChips extends StatelessWidget {
                     const EdgeInsets.symmetric(horizontal: 18, vertical: 10),
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(999),
-                  color: Colors.white.withValues(alpha: 0.4),
+                  color: Colors.white.withValues(alpha: 0.22),
                   border: Border.all(
-                    color: rc.onBgMuted.withValues(alpha: 0.45),
+                    color: Colors.white.withValues(alpha: 0.65),
                     width: 1.5,
                   ),
                 ),
                 child: Row(
                   children: [
-                    Icon(Icons.add, size: 16, color: rc.onBgMuted),
+                    Icon(Icons.add, size: 16, color: rc.onImage),
                     const SizedBox(width: 4),
                     Text(
-                      'Tambah',
+                      'Add',
                       style: TextStyle(
-                        color: rc.onBgMuted,
+                        color: rc.onImage,
                         fontWeight: FontWeight.w700,
                         fontSize: 14,
                       ),
@@ -260,12 +260,12 @@ class ProfileChips extends StatelessWidget {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Profil baru'),
+        title: const Text('New profile'),
         content: TextField(
           controller: ctrl,
           autofocus: true,
           decoration: const InputDecoration(
-            hintText: 'Nama, mis. Ayah',
+            hintText: 'Name, e.g. Dad',
             border: OutlineInputBorder(),
           ),
           onSubmitted: (_) => _submit(ctx, ctrl),
@@ -273,11 +273,11 @@ class ProfileChips extends StatelessWidget {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: const Text('Batal'),
+            child: const Text('Cancel'),
           ),
           FilledButton(
             onPressed: () => _submit(ctx, ctrl),
-            child: const Text('Tambah'),
+            child: const Text('Add'),
           ),
         ],
       ),
@@ -291,7 +291,7 @@ class ProfileChips extends StatelessWidget {
   }
 }
 
-/// Tombol utama Raga.
+// Raga's primary button.
 class RagaButton extends StatelessWidget {
   final String label;
   final VoidCallback onPressed;
@@ -335,7 +335,7 @@ class RagaButton extends StatelessWidget {
   }
 }
 
-/// Judul seksi kecil di atas konten.
+// Small section heading above content.
 class SectionTitle extends StatelessWidget {
   final String text;
   final Widget? trailing;
@@ -354,7 +354,7 @@ class SectionTitle extends StatelessWidget {
             style: TextStyle(
               fontSize: 19,
               fontWeight: FontWeight.w800,
-              color: rc.onBg,
+              color: rc.onImage,
               letterSpacing: -0.3,
             ),
           ),

@@ -12,7 +12,7 @@ Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   final state = await AppState.load();
   await CloudSync.init();
-  // Kirim ulang record yang tertunda (mis. tersimpan saat offline).
+  // Retry records that didn't make it up yet (e.g. saved while offline).
   await CloudSync.syncPending(state.records);
   runApp(AppStateScope(state: state, child: const RagaApp()));
 }

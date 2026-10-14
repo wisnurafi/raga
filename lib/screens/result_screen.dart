@@ -12,7 +12,7 @@ import '../widgets/cards.dart';
 import '../state/app_state.dart';
 import '../data/cloud_sync.dart';
 
-/// Layar "Hasil BMI": gauge, angka, kategori, tips, tombol simpan & bagikan.
+// The BMI result screen: gauge, number, category, tips, save & share.
 class ResultScreen extends StatefulWidget {
   final double heightCm;
   final double weightKg;
@@ -39,8 +39,8 @@ class _ResultScreenState extends State<ResultScreen> {
     final cat = categoryOf(bmi);
     final meta = categoryMeta[cat]!;
     final rc = context.rc;
-    final hTxt = formatId(widget.heightCm, 0);
-    final wTxt = formatId(widget.weightKg, 0);
+    final hTxt = formatNum(widget.heightCm, 0);
+    final wTxt = formatNum(widget.weightKg, 0);
 
     return HealthBg(
       child: Scaffold(
@@ -83,19 +83,19 @@ class _ResultScreenState extends State<ResultScreen> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          'Hasil BMI',
+                          'Your BMI',
                           style: TextStyle(
                             fontSize: 26,
                             fontWeight: FontWeight.w800,
-                            color: rc.onBg,
+                            color: rc.onImage,
                             letterSpacing: -0.5,
                           ),
                         ),
                         const SizedBox(height: 2),
                         Text(
-                          '${widget.profileName} · $hTxt cm · $wTxt kg · ${formatDateId(DateTime.now())}',
+                          '${widget.profileName} · $hTxt cm · $wTxt kg · ${formatDate(DateTime.now())}',
                           style: TextStyle(
-                              fontSize: 13.5, color: rc.onBgMuted),
+                              fontSize: 13.5, color: rc.onImageMuted),
                         ),
                       ],
                     ),
@@ -103,7 +103,7 @@ class _ResultScreenState extends State<ResultScreen> {
                 ],
               ),
               const SizedBox(height: 18),
-              // Kartu gauge (ini yang di-screenshot saat dibagikan).
+              // Gauge card (this is what gets screenshotted for sharing).
               Screenshot(
                 controller: _shot,
                 child: GlassContainer(
@@ -113,7 +113,7 @@ class _ResultScreenState extends State<ResultScreen> {
                     children: [
                       BmiGauge(bmi: bmi),
                       Text(
-                        formatId(bmi),
+                        formatNum(bmi),
                         style: TextStyle(
                           fontSize: 64,
                           fontWeight: FontWeight.w800,
@@ -196,7 +196,7 @@ class _ResultScreenState extends State<ResultScreen> {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
-                                'Tips untukmu',
+                                'Tips for you',
                                 style: TextStyle(
                                   fontSize: 20,
                                   fontWeight: FontWeight.w800,
@@ -206,7 +206,7 @@ class _ResultScreenState extends State<ResultScreen> {
                               ),
                               const SizedBox(height: 2),
                               Text(
-                                'Langkah kecil untuk kategori ${meta.label}',
+                                'Small steps for ${meta.label}',
                                 style: TextStyle(
                                   fontSize: 13,
                                   fontWeight: FontWeight.w600,
@@ -281,7 +281,7 @@ class _ResultScreenState extends State<ResultScreen> {
                     Padding(
                       padding: const EdgeInsets.only(top: 2),
                       child: Text(
-                        'Tips umum — konsultasi ke ahli gizi untuk saran yang personal.',
+                        'General tips — talk to a nutritionist for personal advice.',
                         style: TextStyle(
                           fontSize: 11.5,
                           fontStyle: FontStyle.italic,
@@ -297,14 +297,14 @@ class _ResultScreenState extends State<ResultScreen> {
                 children: [
                   Expanded(
                     child: RagaButton(
-                      label: 'Simpan ke riwayat',
+                      label: 'Save to history',
                       onPressed: () => _save(context),
                     ),
                   ),
                   const SizedBox(width: 12),
                   Expanded(
                     child: RagaButton(
-                      label: _sharing ? 'Menyiapkan…' : 'Bagikan',
+                      label: _sharing ? 'Preparing…' : 'Share',
                       outlined: true,
                       onPressed: _sharing ? () {} : () => _share(bmi, meta),
                     ),
@@ -328,8 +328,8 @@ class _ResultScreenState extends State<ResultScreen> {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(synced
-            ? 'Tersimpan ke riwayat & cloud'
-            : 'Tersimpan ke riwayat (cloud menyusul)'),
+            ? 'Saved to history & cloud'
+            : 'Saved to history (cloud will follow)'),
       ),
     );
     Navigator.pop(context);
@@ -346,12 +346,12 @@ class _ResultScreenState extends State<ResultScreen> {
       await Share.shareXFiles(
         [XFile(file.path)],
         text:
-            'BMI saya ${formatId(bmi)} (${meta.label}) — dihitung dengan Raga',
+            'My BMI is ${formatNum(bmi)} (${meta.label}) — calculated with Raga',
       );
     } catch (_) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Gagal membuat gambar')),
+          const SnackBar(content: Text("Couldn't create the image")),
         );
       }
     } finally {

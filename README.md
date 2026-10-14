@@ -1,63 +1,63 @@
-# Raga — Kalkulator BMI
+# Raga — BMI Calculator
 
-**Raga** adalah aplikasi kalkulator BMI (Body Mass Index) berbasis Flutter.
-Selain menghitung BMI, Raga menyimpan riwayat, menampilkan grafik tren,
-menghitung berat badan ideal, BMR, dan kebutuhan kalori harian (TDEE),
-mendukung banyak profil, dan bisa membagikan hasil sebagai gambar.
+**Raga** is a Flutter-based BMI (Body Mass Index) calculator. Beyond the
+number itself, it keeps your history, draws trend charts, figures out your
+ideal weight, BMR, and daily calorie needs, handles multiple profiles, and
+can share your result as an image.
 
-Dibuat sebagai tugas mata kuliah **Pemrograman Mobile**.
+Built as a **Mobile Programming** coursework project.
 
-## Fitur
+## Features
 
-**Wajib:**
-- Input tinggi badan (cm/inci)
-- Input berat badan (kg/lb)
-- Hitung BMI otomatis
-- Indikator visual gauge + warna per kategori
-- Kategori: Underweight, Normal, Overweight, Obese
-- Tips kesehatan sesuai kategori (bahasa Indonesia yang mudah dipahami)
+**Required:**
+- Height input (cm/in)
+- Weight input (kg/lb)
+- Automatic BMI calculation
+- Visual gauge indicator + color per category
+- Categories: Underweight, Normal, Overweight, Obese
+- Health tips per category, in plain casual English
 
-**Nilai plus:**
-- **Riwayat + grafik tren** — tiap hasil bisa disimpan, grafik berat/BMI per bulan
-- **Kalkulator pelengkap** — berat badan ideal, BMR (Mifflin-St Jeor), TDEE + level aktivitas
-- **Multi-profil** — hitung BMI untuk keluarga/teman dalam satu aplikasi
-- **Bagikan hasil** — ekspor kartu hasil sebagai gambar
-- **Mode terang glassmorphism** + toggle satuan metrik/imperial
-- **Sinkronisasi cloud** (Supabase) — cadangan otomatis, status kelihatan di Profil, retry otomatis, tetap jalan 100% offline
+**Bonus:**
+- **History + trend chart** — save every result, weight/BMI chart per month
+- **Extra calculators** — ideal weight, BMR (Mifflin-St Jeor), daily calories + activity level
+- **Multi-profile** — calculate BMI for family/friends in one app
+- **Share result** — export the result card as an image
+- **Light glassmorphism theme** + metric/imperial unit toggle
+- **Cloud backup** (Supabase) — automatic backup, visible status in Profile, auto-retry, works 100% offline
 
-## Tangkapan layar
+## Screenshots
 
-Tangkapan layar akan ditambahkan setelah build pertama di perangkat.
-Sementara itu, install APK dari [halaman Release](../../releases/tag/latest)
-untuk mencoba langsung.
+Screenshots will be added after the first on-device build.
+Meanwhile, install the APK from the [Release page](../../releases/tag/latest)
+and try it yourself.
 
-## Cara menjalankan
+## Running it
 
-Butuh [Flutter](https://docs.flutter.dev/get-started/install) 3.47+.
+Needs [Flutter](https://docs.flutter.dev/get-started/install) 3.47+.
 
 ```bash
 flutter pub get
 flutter run
 ```
 
-Build APK release secara manual:
+Manual release APK build:
 
 ```bash
 flutter build apk --release
 ```
 
-> Catatan: tiap push ke `main` otomatis memicu GitHub Actions yang
-> membangun APK dan menempelkannya di [Release "latest"](../../releases/tag/latest).
-> Jadi cara termudah dapat APK: download dari sana.
+> Note: every push to `main` triggers GitHub Actions, which builds the APK
+> and attaches it to [Release "latest"](../../releases/tag/latest).
+> Easiest way to get the APK: download it from there.
 
-## Konfigurasi Supabase (opsional)
+## Supabase setup (optional)
 
-Tanpa konfigurasi ini aplikasi tetap jalan penuh secara lokal.
-Supabase dipakai untuk cadangan cloud tiap riwayat yang disimpan.
+Without this the app runs fully offline on local storage.
+Supabase is used for cloud backup of every saved entry.
 
-1. Buat project gratis di [supabase.com](https://supabase.com).
-2. Di **Authentication → Sign In / Up**, aktifkan **Allow anonymous sign-ins**.
-3. Di **SQL Editor**, jalankan schema berikut:
+1. Create a free project at [supabase.com](https://supabase.com).
+2. In **Authentication → Sign In / Up**, enable **Allow anonymous sign-ins**.
+3. In the **SQL Editor**, run this schema:
 
 ```sql
 create table bmi_records (
@@ -79,8 +79,8 @@ create policy "own rows"
   with check (auth.uid() = user_id);
 ```
 
-4. Ambil **Project URL** dan **anon key** dari **Project Settings → API**.
-5. Untuk build lokal:
+4. Grab the **Project URL** and **anon key** from **Project Settings → API**.
+5. For a local build:
 
 ```bash
 flutter build apk --release \
@@ -88,34 +88,39 @@ flutter build apk --release \
   --dart-define=SUPABASE_ANON_KEY=xxx
 ```
 
-Untuk GitHub Actions, isi sebagai repository secrets
-`SUPABASE_URL` dan `SUPABASE_ANON_KEY` (Settings → Secrets → Actions).
-Workflow `supabase-keepalive.yml` memakai secrets yang sama untuk
-ping tiap jam agar project free-tier tidak pause.
+For GitHub Actions, add them as repository secrets
+`SUPABASE_URL` and `SUPABASE_ANON_KEY` (Settings → Secrets → Actions).
+The `supabase-keepalive.yml` workflow uses the same secrets to ping
+every hour so the free-tier project doesn't get paused.
 
-## Struktur proyek
+> Heads-up: mix up the two secrets and the app will tell you — the backup
+> status in Profile shows exactly what went wrong.
+
+## Project structure
 
 ```
 lib/
   main.dart            # entry point, bottom nav shell
   core/
-    bmi.dart           # rumus BMI, kategori, berat ideal, BMR, TDEE
-    tips.dart          # tips kesehatan per kategori
-    theme.dart         # tema terang Raga: palet light, HealthBg, glass
+    bmi.dart           # BMI math, categories, ideal weight, BMR, calories
+    tips.dart          # health tips per category
+    theme.dart         # light theme: palette, HealthBg artwork, glass
   models/              # Profile, BmiRecord
-  state/app_state.dart # state global (ChangeNotifier sederhana)
+  state/app_state.dart # global state (plain ChangeNotifier)
   data/
-    local_store.dart   # penyimpanan lokal (sumber kebenaran utama)
-    cloud_sync.dart    # sinkronisasi Supabase + status & retry otomatis
-  widgets/             # gauge, floating nav kaca, kartu kaca, kartu input, chips
-  screens/             # Hitung, Hasil, Riwayat, Kesehatan, Profil
+    local_store.dart   # local storage (the source of truth)
+    cloud_sync.dart    # Supabase backup + visible status & auto-retry
+  widgets/             # gauge, glass nav, glass cards, input cards, chips
+  screens/             # Calculate, Result, History, Health, Profile
+assets/
+  images/raga-background.svg  # background artwork
 ```
 
-## Privasi
+## Privacy
 
-Raga tidak punya iklan, tidak punya analytics, dan tidak menjual data.
-Detail lengkap: [PRIVACY.md](PRIVACY.md).
+Raga has no ads, no analytics, and doesn't sell data.
+Full details: [PRIVACY.md](PRIVACY.md).
 
-## Lisensi
+## License
 
-MIT — lihat [LICENSE](LICENSE).
+MIT — see [LICENSE](LICENSE).

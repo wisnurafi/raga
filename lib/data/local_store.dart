@@ -3,8 +3,8 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../models/profile.dart';
 import '../models/bmi_record.dart';
 
-/// Penyimpanan lokal (SharedPreferences). Ini sumber kebenaran utama —
-/// aplikasi tetap jalan penuh meski offline atau Supabase belum dikonfigurasi.
+// Local storage (SharedPreferences). This is the source of truth —
+// the app works fully offline or before Supabase is even configured.
 class LocalStore {
   static const _kProfiles = 'raga.profiles';
   static const _kActiveProfile = 'raga.active_profile';
@@ -57,7 +57,7 @@ class LocalStore {
   bool get metricUnits => _prefs.getBool(_kMetric) ?? true;
   Future<void> saveMetricUnits(bool v) => _prefs.setBool(_kMetric, v);
 
-  String get activity => _prefs.getString(_kActivity) ?? 'Ringan';
+  String get activity => _prefs.getString(_kActivity) ?? 'Light';
   Future<void> saveActivity(String v) => _prefs.setString(_kActivity, v);
 
   Future<void> clearAll() async {

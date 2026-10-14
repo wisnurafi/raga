@@ -2,11 +2,10 @@ import 'dart:ui';
 
 import 'package:flutter/material.dart';
 
-/// Kartu kaca (glassmorphism): blur latar di belakangnya, permukaan putih
-/// transparan, border terang tipis, dan bayangan lembut.
-///
-/// Syarat: harus ada sesuatu di belakangnya (mis. [HealthBg]) supaya
-/// efek blur-nya kelihatan.
+// Frosted-glass card: blurs what's behind it, translucent white surface,
+// thin light border, soft shadow.
+//
+// Needs something behind it (like [HealthBg]) for the blur to show.
 class GlassContainer extends StatelessWidget {
   final Widget child;
   final double borderRadius;

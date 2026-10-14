@@ -6,8 +6,8 @@ import '../widgets/glass.dart';
 import '../widgets/cards.dart';
 import 'result_screen.dart';
 
-/// Layar "Hitung": input tinggi & berat badan, pilihan profil,
-/// jenis kelamin, dan umur.
+// The "Calculate" screen: height & weight input, profile picker,
+// gender, and age.
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
 
@@ -55,30 +55,30 @@ class _HomeScreenState extends State<HomeScreen> {
           style: TextStyle(
             fontSize: 23,
             fontWeight: FontWeight.w800,
-            color: rc.onBg,
+            color: rc.onImage,
             letterSpacing: -0.4,
           ),
         ),
         const SizedBox(height: 4),
         Text(
-          '${_dayName(DateTime.now())}, ${formatDateId(DateTime.now())} ${DateTime.now().year}',
-          style: TextStyle(fontSize: 14, color: rc.onBgMuted),
+          '${_dayName(DateTime.now())}, ${formatDate(DateTime.now())} ${DateTime.now().year}',
+          style: TextStyle(fontSize: 14, color: rc.onImageMuted),
         ),
         const SizedBox(height: 16),
         const ProfileChips(),
         const SizedBox(height: 22),
-        SectionTitle('Data tubuh', trailing: const UnitToggle()),
+        SectionTitle('Body stats', trailing: const UnitToggle()),
         MeasureCard(
-          label: 'Tinggi badan',
+          label: 'Height',
           displayValue: hDisp,
-          unit: metric ? 'cm' : 'inci',
+          unit: metric ? 'cm' : 'in',
           min: metric ? 120 : 47,
           max: metric ? 220 : 87,
           onChanged: (v) => setState(() => _h = metric ? v : v * 2.54),
         ),
         const SizedBox(height: 14),
         MeasureCard(
-          label: 'Berat badan',
+          label: 'Weight',
           displayValue: wDisp,
           unit: metric ? 'kg' : 'lb',
           min: metric ? 30 : 66,
@@ -89,7 +89,7 @@ class _HomeScreenState extends State<HomeScreen> {
         _genderAgeCard(context, state, rc),
         const SizedBox(height: 18),
         RagaButton(
-          label: 'Hitung BMI',
+          label: 'Calculate BMI',
           onPressed: () => _calculate(context, state, p),
         ),
       ],
@@ -132,7 +132,7 @@ class _HomeScreenState extends State<HomeScreen> {
               style: TextStyle(
                 fontSize: 34,
                 fontWeight: FontWeight.w800,
-                color: rc.onBg,
+                color: rc.onImage,
                 letterSpacing: -0.8,
               ),
             ),
@@ -186,11 +186,11 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
               child: Row(
                 children: [
-                  _genderSeg(context, 'Pria', _isMale, () {
+                  _genderSeg(context, 'Male', _isMale, () {
                     setState(() => _isMale = true);
                     state.updateActiveProfile((p) => p.copyWith(isMale: true));
                   }),
-                  _genderSeg(context, 'Wanita', !_isMale, () {
+                  _genderSeg(context, 'Female', !_isMale, () {
                     setState(() => _isMale = false);
                     state.updateActiveProfile((p) => p.copyWith(isMale: false));
                   }),
@@ -211,7 +211,7 @@ class _HomeScreenState extends State<HomeScreen> {
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 8),
                 child: Text(
-                  '$_age thn',
+                  '$_age yrs',
                   style: TextStyle(
                     color: rc.onBg,
                     fontSize: 15,
@@ -283,7 +283,7 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   void _calculate(BuildContext context, AppState state, dynamic p) {
-    // Simpan data tubuh terakhir ke profil.
+    // Remember the latest body stats on the profile.
     state.updateActiveProfile(
       (old) => old.copyWith(heightCm: _h, weightKg: _w),
     );
@@ -300,7 +300,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
   String _dayName(DateTime d) {
     const days = [
-      'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu', 'Minggu'
+      'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'
     ];
     return days[d.weekday - 1];
   }

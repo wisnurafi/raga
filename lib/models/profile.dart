@@ -1,7 +1,7 @@
 import 'dart:math';
 
-/// Profil pengguna. Satu perangkat bisa punya beberapa profil
-/// (mis. anggota keluarga) — dipilih lewat chip di layar utama.
+// A user profile. One device can hold several (family members, etc.)
+// — picked via the chips on the main screen.
 class Profile {
   final String id;
   final String name;

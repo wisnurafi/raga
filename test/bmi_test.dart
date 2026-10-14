@@ -9,7 +9,7 @@ void main() {
       expect(categoryOf(bmi), BmiCategory.normal);
     });
 
-    test('batas kategori WHO', () {
+    test('WHO category boundaries', () {
       expect(categoryOf(18.4), BmiCategory.underweight);
       expect(categoryOf(18.5), BmiCategory.normal);
       expect(categoryOf(24.9), BmiCategory.normal);
@@ -28,25 +28,25 @@ void main() {
   });
 
   group('bmrMifflin', () {
-    test('pria 65 kg / 170 cm / 21 th = 1612.5', () {
+    test('male 65 kg / 170 cm / 21 yrs = 1612.5', () {
       final bmr = bmrMifflin(
           weightKg: 65, heightCm: 170, age: 21, isMale: true);
       expect(bmr, closeTo(1612.5, 0.01));
     });
 
-    test('wanita memakai konstanta -161', () {
-      final pria = bmrMifflin(
+    test('female uses the -161 constant', () {
+      final male = bmrMifflin(
           weightKg: 65, heightCm: 170, age: 21, isMale: true);
-      final wanita = bmrMifflin(
+      final female = bmrMifflin(
           weightKg: 65, heightCm: 170, age: 21, isMale: false);
-      expect(pria - wanita, closeTo(166, 0.01));
+      expect(male - female, closeTo(166, 0.01));
     });
   });
 
-  group('formatId', () {
-    test('koma sebagai pemisah desimal', () {
-      expect(formatId(22.5), '22,5');
-      expect(formatIntId(2217), '2.217');
+  group('formatNum', () {
+    test('dot as decimal separator', () {
+      expect(formatNum(22.5), '22.5');
+      expect(formatIntNum(2217), '2,217');
     });
   });
 }

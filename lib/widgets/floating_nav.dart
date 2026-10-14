@@ -3,8 +3,8 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import '../core/theme.dart';
 
-/// Bottom navigation glassmorphism: pil kaca mengambang dengan blur,
-/// tab aktif jadi kapsul gradien dengan animasi membesar yang halus.
+// Glassmorphism bottom nav: a floating frosted pill. The active tab
+// becomes a gradient capsule with a smooth expand animation.
 class FloatingNav extends StatelessWidget {
   final int index;
   final ValueChanged<int> onTap;
@@ -12,10 +12,10 @@ class FloatingNav extends StatelessWidget {
   const FloatingNav({super.key, required this.index, required this.onTap});
 
   static const _items = [
-    (Icons.calculate_outlined, Icons.calculate, 'Hitung'),
-    (Icons.show_chart_outlined, Icons.show_chart, 'Riwayat'),
-    (Icons.favorite_outline, Icons.favorite, 'Kesehatan'),
-    (Icons.person_outline, Icons.person, 'Profil'),
+    (Icons.calculate_outlined, Icons.calculate, 'Calculate'),
+    (Icons.show_chart_outlined, Icons.show_chart, 'History'),
+    (Icons.favorite_outline, Icons.favorite, 'Health'),
+    (Icons.person_outline, Icons.person, 'Profile'),
   ];
 
   @override

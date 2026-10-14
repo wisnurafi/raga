@@ -4,19 +4,19 @@ import '../data/cloud_sync.dart';
 import '../models/profile.dart';
 import '../models/bmi_record.dart';
 
-/// State global aplikasi. Sederhana dan tanpa dependency tambahan:
-/// ChangeNotifier + InheritedNotifier.
+// App-wide state. Kept simple on purpose: ChangeNotifier +
+// InheritedNotifier, no extra dependencies.
 class AppState extends ChangeNotifier {
   final LocalStore _store;
 
-  /// Akses state dari widget tree: AppState.of(context)
+  // Grab the state from anywhere in the widget tree.
   static AppState of(BuildContext context) => AppStateScope.of(context);
 
   List<Profile> profiles = [];
   String activeProfileId = '';
   List<BmiRecord> records = [];
   bool metricUnits = true;
-  String activity = 'Ringan';
+  String activity = 'Light';
 
   AppState(this._store);
 
@@ -55,7 +55,7 @@ class AppState extends ChangeNotifier {
   }
 
   Future<void> addProfile(String name) async {
-    final p = Profile(name: name.trim().isEmpty ? 'Profil' : name.trim());
+    final p = Profile(name: name.trim().isEmpty ? 'Profile' : name.trim());
     profiles = [...profiles, p];
     await _store.saveProfiles(profiles);
     await setActiveProfile(p.id);
@@ -82,7 +82,7 @@ class AppState extends ChangeNotifier {
     }
   }
 
-  /// Simpan hasil hitungan ke riwayat (lokal + cloud bila tersedia).
+  // Save a result to history (local first, cloud when available).
   Future<void> saveRecord({
     required double heightCm,
     required double weightKg,
@@ -95,7 +95,7 @@ class AppState extends ChangeNotifier {
     records = [r, ...records];
     await _store.saveRecords(records);
     notifyListeners();
-    // Sinkronisasi cloud jalan di background; statusnya bisa dicek di Profil.
+    // Cloud backup runs in the background; check its status in Profile.
     await CloudSync.pushRecord(r);
     notifyListeners();
   }
@@ -106,7 +106,7 @@ class AppState extends ChangeNotifier {
     notifyListeners();
   }
 
-  /// Coba kirim ulang record yang tertunda ke cloud, lalu refresh UI.
+  // Retry pending uploads, then refresh the UI.
   Future<void> refreshSync() async {
     await CloudSync.syncPending(records);
     notifyListeners();

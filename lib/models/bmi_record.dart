@@ -1,7 +1,7 @@
 import 'dart:math';
 import '../core/bmi.dart';
 
-/// Satu hasil perhitungan BMI yang tersimpan di riwayat.
+// One BMI result saved to history.
 class BmiRecord {
   final String id;
   final String profileId;
@@ -57,7 +57,7 @@ class BmiRecord {
         'createdAt': createdAt.toIso8601String(),
       };
 
-  /// Payload untuk Supabase (nama kolom mengikuti schema SQL di README).
+  // Payload for Supabase (column names match the SQL schema in the README).
   Map<String, dynamic> toCloudJson(String userId) => {
         'user_id': userId,
         'profile_id': profileId,

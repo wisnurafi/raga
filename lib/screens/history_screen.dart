@@ -7,7 +7,7 @@ import '../models/bmi_record.dart';
 import '../widgets/glass.dart';
 import '../widgets/cards.dart';
 
-/// Layar "Riwayat": grafik tren berat/BMI + daftar catatan terakhir.
+// The "History" screen: weight/BMI trend chart + recent entries.
 class HistoryScreen extends StatefulWidget {
   const HistoryScreen({super.key});
 
@@ -32,11 +32,11 @@ class _HistoryScreenState extends State<HistoryScreen> {
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             Text(
-              'Riwayat',
+              'History',
               style: TextStyle(
                 fontSize: 34,
                 fontWeight: FontWeight.w800,
-                color: rc.onBg,
+                color: rc.onImage,
                 letterSpacing: -0.8,
               ),
             ),
@@ -72,7 +72,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
         else ...[
           _trendCard(context, rc, records),
           const SizedBox(height: 22),
-          const SectionTitle('Catatan terakhir'),
+          const SectionTitle('Recent entries'),
           _listCard(context, rc, records),
         ],
       ],
@@ -95,7 +95,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
           ),
           const SizedBox(height: 14),
           Text(
-            'Belum ada catatan',
+            'No entries yet',
             style: TextStyle(
               fontSize: 17,
               fontWeight: FontWeight.w800,
@@ -104,7 +104,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
           ),
           const SizedBox(height: 6),
           Text(
-            'Hitung BMI lalu simpan ke riwayat,\ntrensmu akan muncul di sini.',
+            'Calculate your BMI and save it —\nyour trend will show up here.',
             textAlign: TextAlign.center,
             style: TextStyle(fontSize: 13.5, color: rc.onCardMuted, height: 1.5),
           ),
@@ -120,10 +120,10 @@ class _HistoryScreenState extends State<HistoryScreen> {
     final first = chrono.first;
     final diff = latest.weightKg - first.weightKg;
     final days = latest.createdAt.difference(first.createdAt).inDays;
-    final spanTxt = days < 32 ? '$days hari' : '${(days / 30).round()} bulan';
+    final spanTxt = days < 32 ? '$days days' : '${(days / 30).round()} mo';
     final deltaTxt = diff == 0
-        ? 'tetap · $spanTxt'
-        : '${diff < 0 ? '↓' : '↑'} ${formatId(diff.abs())} kg · $spanTxt';
+        ? 'steady · $spanTxt'
+        : '${diff < 0 ? '↓' : '↑'} ${formatNum(diff.abs())} kg · $spanTxt';
 
     final spots = <FlSpot>[];
     for (var i = 0; i < chrono.length; i++) {
@@ -140,7 +140,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(
-                _showWeight ? 'Berat badan (kg)' : 'BMI',
+                _showWeight ? 'Weight (kg)' : 'BMI',
                 style: TextStyle(
                   fontSize: 14,
                   fontWeight: FontWeight.w700,
@@ -155,7 +155,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
                 ),
                 child: Row(
                   children: [
-                    _miniSeg(context, 'Berat', _showWeight,
+                    _miniSeg(context, 'Weight', _showWeight,
                         () => setState(() => _showWeight = true)),
                     _miniSeg(context, 'BMI', !_showWeight,
                         () => setState(() => _showWeight = false)),
@@ -169,7 +169,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
               Text(
-                formatId(_showWeight ? latest.weightKg : latest.bmi),
+                formatNum(_showWeight ? latest.weightKg : latest.bmi),
                 style: TextStyle(
                   fontSize: 46,
                   fontWeight: FontWeight.w800,
@@ -232,7 +232,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
                         return Padding(
                           padding: const EdgeInsets.only(top: 8),
                           child: Text(
-                            idMonths[chrono[i].createdAt.month - 1],
+                            shortMonths[chrono[i].createdAt.month - 1],
                             style: const TextStyle(
                               fontSize: 11,
                               fontWeight: FontWeight.w600,
@@ -321,7 +321,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
                   children: [
                     Expanded(
                       child: Text(
-                        formatDateId(r.createdAt),
+                        formatDate(r.createdAt),
                         style: TextStyle(
                           fontSize: 15,
                           fontWeight: FontWeight.w600,
@@ -331,7 +331,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
                     ),
                     Expanded(
                       child: Text(
-                        '${formatId(r.weightKg)} kg',
+                        '${formatNum(r.weightKg)} kg',
                         style: TextStyle(
                           fontSize: 15,
                           fontWeight: FontWeight.w700,
@@ -348,7 +348,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
                         borderRadius: BorderRadius.circular(999),
                       ),
                       child: Text(
-                        'BMI ${formatId(r.bmi)} · ${meta.label}',
+                        'BMI ${formatNum(r.bmi)} · ${meta.label}',
                         style: TextStyle(
                           fontSize: 12.5,
                           fontWeight: FontWeight.w800,

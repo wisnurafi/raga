@@ -1,24 +1,24 @@
 Raga - roadmap.txt
 ====================
 
-v1.0.0 (saat ini)
------------------
-[x] Input tinggi & berat badan (metrik + imperial)
-[x] Hitung BMI + gauge warna + kategori (Underweight/Normal/Overweight/Obese)
-[x] Tips kesehatan per kategori (Bahasa Indonesia)
-[x] Riwayat + grafik tren berat/BMI
-[x] Berat badan ideal, BMR (Mifflin-St Jeor), TDEE + level aktivitas
-[x] Multi-profil (keluarga/teman)
-[x] Bagikan hasil sebagai gambar
-[x] Mode terang glassmorphism (switch mode dihapus)
-[x] Penyimpanan lokal + sinkronisasi cloud Supabase (status & retry otomatis)
-[x] CI: build APK otomatis + keep-alive Supabase tiap jam
-[x] Dokumentasi: README, PRIVACY.md, CONTRIBUTING.md, LICENSE
+v1.0.0 (current)
+----------------
+[x] Height & weight input (metric + imperial)
+[x] BMI calculation + color gauge + categories (Underweight/Normal/Overweight/Obese)
+[x] Health tips per category (plain casual English)
+[x] History + weight/BMI trend chart
+[x] Ideal weight, BMR (Mifflin-St Jeor), daily calories + activity level
+[x] Multi-profile (family/friends)
+[x] Share result as an image
+[x] Light glassmorphism theme (theme switch removed)
+[x] Local storage + Supabase cloud backup (visible status & auto-retry)
+[x] CI: automatic APK build + hourly Supabase keep-alive
+[x] Docs: README, PRIVACY.md, CONTRIBUTING.md, LICENSE
 
-Ide ke depan (belum terjadwal)
-------------------------------
-[ ] Pengingat timbang badan mingguan (notifikasi lokal)
-[ ] Target berat badan + proyeksi waktu tercapai
-[ ] Ekspor riwayat ke CSV
-[ ] Widget home screen Android
-[ ] Bahasa Inggris sebagai opsi kedua
+Future ideas (unscheduled)
+--------------------------
+[ ] Weekly weigh-in reminder (local notification)
+[ ] Weight goal + estimated time to reach it
+[ ] Export history to CSV
+[ ] Android home screen widget
+[ ] Dark mode (background artwork already supports it)

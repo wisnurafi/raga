@@ -1,34 +1,33 @@
-# Kebijakan Privasi — Raga
+# Privacy Policy — Raga
 
-Terakhir diperbarui: 14 Oktober 2026.
+Last updated: October 14, 2026.
 
-Raga dibuat dengan prinsip sederhana: **data kesehatanmu adalah milikmu.**
+Raga is built on a simple idea: **your health data is yours.**
 
-## Data yang disimpan
+## What gets stored
 
-- **Di perangkatmu (utama):** profil (nama, jenis kelamin, umur, tinggi, berat)
-  dan riwayat hasil BMI tersimpan secara lokal di HP-mu memakai penyimpanan
-  aplikasi standar Android. Data ini tidak pernah keluar dari HP-mu kecuali
-  kamu mengaktifkan sinkronisasi cloud di bawah.
-- **Di cloud (opsional):** jika aplikasi dikonfigurasi dengan Supabase,
-  tiap riwayat yang kamu simpan juga dicadangkan ke database cloud.
-  Identitas yang dipakai adalah *anonymous* — tanpa nama, tanpa email,
-  tanpa password. Akses database dibatasi per identitas (Row Level Security),
-  jadi tidak ada pengguna lain yang bisa membaca datamu.
+- **On your phone (the main copy):** profiles (name, gender, age, height,
+  weight) and your BMI history are stored locally on your device using
+  standard Android app storage. This data never leaves your phone unless
+  you turn on cloud backup below.
+- **In the cloud (optional):** if the app is configured with Supabase,
+  every entry you save is also backed up to a cloud database. The identity
+  used is *anonymous* — no name, no email, no password. Database access is
+  scoped per identity (Row Level Security), so no other user can read
+  your data.
 
-## Data yang TIDAK dikumpulkan
+## What is NOT collected
 
-- Tidak ada iklan.
-- Tidak ada analytics / pelacakan perilaku.
-- Tidak ada data lokasi.
-- Tidak ada data yang dijual atau dibagikan ke pihak ketiga.
+- No ads.
+- No analytics / behavior tracking.
+- No location data.
+- No data sold or shared with third parties.
 
-## Kontrolmu
+## Your control
 
-- Kamu bisa menghapus semua data lokal kapan saja dari menu
-  Profil → Hapus semua data.
-- Uninstall aplikasi akan menghapus seluruh data lokal.
+- You can wipe all local data any time from Profile → Delete all data.
+- Uninstalling the app deletes all local data.
 
-## Kontak
+## Contact
 
-Ada pertanyaan soal privasi? Buka *issue* di repository ini.
+Questions about privacy? Open an *issue* on this repo.

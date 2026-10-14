@@ -4,7 +4,7 @@ import '../state/app_state.dart';
 import '../data/cloud_sync.dart';
 import '../widgets/glass.dart';
 
-/// Layar "Profil": info profil aktif + pengaturan aplikasi.
+// The "Profile" screen: active profile info + app settings.
 class ProfileScreen extends StatelessWidget {
   const ProfileScreen({super.key});
 
@@ -18,11 +18,11 @@ class ProfileScreen extends StatelessWidget {
       padding: const EdgeInsets.fromLTRB(20, 8, 20, 110),
       children: [
         Text(
-          'Profil',
+          'Profile',
           style: TextStyle(
             fontSize: 34,
             fontWeight: FontWeight.w800,
-            color: rc.onBg,
+            color: rc.onImage,
             letterSpacing: -0.8,
           ),
         ),
@@ -63,14 +63,14 @@ class ProfileScreen extends StatelessWidget {
                       style: TextStyle(
                         fontSize: 20,
                         fontWeight: FontWeight.w800,
-                        color: rc.onBg,
+                        color: rc.onImage,
                       ),
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      '${p.isMale ? 'Pria' : 'Wanita'} · ${p.age} tahun',
+                      '${p.isMale ? 'Male' : 'Female'} · ${p.age} yrs old',
                       style:
-                          TextStyle(fontSize: 13.5, color: rc.onBgMuted),
+                          TextStyle(fontSize: 13.5, color: rc.onImageMuted),
                     ),
                   ],
                 ),
@@ -85,7 +85,7 @@ class ProfileScreen extends StatelessWidget {
                     borderRadius: BorderRadius.circular(999),
                   ),
                   child: Text(
-                    'Ubah',
+                    'Edit',
                     style: TextStyle(
                       fontSize: 13,
                       fontWeight: FontWeight.w700,
@@ -98,13 +98,13 @@ class ProfileScreen extends StatelessWidget {
           ),
         ),
         const SizedBox(height: 22),
-        _sectionLabel(context, 'Pengaturan'),
+        _sectionLabel(context, 'Settings'),
         _tile(
           context,
           icon: Icons.straighten_outlined,
-          title: 'Satuan',
+          title: 'Units',
           subtitle:
-              state.metricUnits ? 'Sentimeter · kilogram' : 'Inci · pon',
+              state.metricUnits ? 'Centimeters · kilograms' : 'Inches · pounds',
           trailing: Switch(
             value: state.metricUnits,
             onChanged: state.setMetricUnits,
@@ -115,7 +115,7 @@ class ProfileScreen extends StatelessWidget {
         _tile(
           context,
           icon: Icons.cloud_outlined,
-          title: 'Sinkronisasi cloud',
+          title: 'Cloud backup',
           subtitle: CloudSync.describe(state.records),
           trailing: _syncDot(context),
           onTap: () => _syncDialog(context, state),
@@ -123,19 +123,19 @@ class ProfileScreen extends StatelessWidget {
         _tile(
           context,
           icon: Icons.delete_outline,
-          title: 'Hapus semua data',
-          subtitle: 'Riwayat dan profil di perangkat ini',
+          title: 'Delete all data',
+          subtitle: 'History and profiles on this device',
           trailing: null,
           danger: true,
           onTap: () => _confirmClear(context, state),
         ),
         const SizedBox(height: 22),
-        _sectionLabel(context, 'Tentang'),
+        _sectionLabel(context, 'About'),
         _tile(
           context,
           icon: Icons.info_outline,
           title: 'Raga v1.0.0',
-          subtitle: 'Kalkulator BMI — tugas Pemrograman Mobile',
+          subtitle: 'BMI Calculator',
           trailing: null,
         ),
         Padding(
@@ -144,11 +144,11 @@ class ProfileScreen extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               Icon(Icons.lock_outline,
-                  size: 14, color: rc.onBgMuted),
+                  size: 14, color: rc.onImageMuted),
               const SizedBox(width: 6),
               Text(
-                'Datamu cuma tersimpan di HP ini & cloud pribadimu',
-                style: TextStyle(fontSize: 12.5, color: rc.onBgMuted),
+                'Your data stays on this phone & your private cloud',
+                style: TextStyle(fontSize: 12.5, color: rc.onImageMuted),
               ),
             ],
           ),
@@ -177,7 +177,7 @@ class ProfileScreen extends StatelessWidget {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Sinkronisasi cloud'),
+        title: const Text('Cloud backup'),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -196,7 +196,7 @@ class ProfileScreen extends StatelessWidget {
             ),
             if (pending > 0) ...[
               const SizedBox(height: 8),
-              Text('$pending data menunggu dikirim ke Supabase.',
+              Text('$pending ${pending == 1 ? 'entry' : 'entries'} waiting to upload.',
                   style: TextStyle(color: rc.onCardMuted)),
             ],
             if (CloudSync.lastError.isNotEmpty &&
@@ -207,7 +207,7 @@ class ProfileScreen extends StatelessWidget {
             ],
             const SizedBox(height: 8),
             Text(
-              'Data dikirim anonim ke database Supabase pribadimu.',
+              'Sent anonymously to your private Supabase database.',
               style: TextStyle(fontSize: 12.5, color: rc.onCardMuted),
             ),
           ],
@@ -215,7 +215,7 @@ class ProfileScreen extends StatelessWidget {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: const Text('Tutup'),
+            child: const Text('Close'),
           ),
           FilledButton(
             onPressed: () async {
@@ -229,7 +229,7 @@ class ProfileScreen extends StatelessWidget {
                 );
               }
             },
-            child: const Text('Sinkronkan sekarang'),
+            child: const Text('Sync now'),
           ),
         ],
       ),
@@ -244,7 +244,7 @@ class ProfileScreen extends StatelessWidget {
         style: TextStyle(
           fontSize: 15,
           fontWeight: FontWeight.w700,
-          color: context.rc.onBgMuted,
+          color: context.rc.onImageMuted,
         ),
       ),
     );
@@ -321,7 +321,7 @@ class ProfileScreen extends StatelessWidget {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Ubah nama'),
+        title: const Text('Edit name'),
         content: TextField(
           controller: ctrl,
           autofocus: true,
@@ -334,14 +334,14 @@ class ProfileScreen extends StatelessWidget {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: const Text('Batal'),
+            child: const Text('Cancel'),
           ),
           FilledButton(
             onPressed: () {
               Navigator.pop(ctx);
               _applyRename(state, ctrl.text);
             },
-            child: const Text('Simpan'),
+            child: const Text('Save'),
           ),
         ],
       ),
@@ -359,13 +359,13 @@ class ProfileScreen extends StatelessWidget {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Hapus semua data?'),
+        title: const Text('Delete all data?'),
         content: const Text(
-            'Riwayat dan profil di perangkat ini akan dihapus permanen.'),
+            'Your history and profiles on this device will be gone for good.'),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: const Text('Batal'),
+            child: const Text('Cancel'),
           ),
           FilledButton(
             style: FilledButton.styleFrom(
@@ -374,10 +374,10 @@ class ProfileScreen extends StatelessWidget {
               Navigator.pop(ctx);
               state.clearAllData();
               ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Semua data dihapus')),
+                const SnackBar(content: Text('All data deleted')),
               );
             },
-            child: const Text('Hapus'),
+            child: const Text('Delete'),
           ),
         ],
       ),

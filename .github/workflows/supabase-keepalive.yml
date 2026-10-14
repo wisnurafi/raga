@@ -1,6 +1,6 @@
 name: Supabase Keep-Alive
 
-# Ping Supabase tiap jam agar project free-tier tidak pause
+# Ping Supabase hourly so the free-tier project doesn't get paused
 # (pause otomatis setelah 7 hari tanpa aktivitas).
 # Butuh secrets: SUPABASE_URL dan SUPABASE_ANON_KEY.
 # Kalau secrets belum diisi, workflow ini lewat tanpa gagal.

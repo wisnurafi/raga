@@ -2,26 +2,26 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../models/bmi_record.dart';
 
-/// Status sinkronisasi cloud yang bisa ditampilkan ke pengguna.
+// Cloud backup state, shown in the UI so it's never a mystery.
 enum SyncState {
-  /// dart-define SUPABASE_URL / SUPABASE_ANON_KEY kosong.
+  // SUPABASE_URL / SUPABASE_ANON_KEY were empty at build time.
   notConfigured,
 
-  /// Terhubung dan siap (anon sign-in sukses).
+  // Signed in anonymously, ready to push.
   ready,
 
-  /// Gagal init / gagal push terakhir. Lihat [CloudSync.lastError].
+  // Last init or push failed. See [CloudSync.lastError].
   error,
 }
 
-/// Sinkronisasi cloud ke Supabase, memakai *anonymous auth*: tiap perangkat
-/// otomatis dapat identitas unik tanpa layar login. RLS di database membatasi
-/// tiap user hanya bisa membaca/menulis datanya sendiri.
-///
-/// Berbeda dari versi lama yang gagal diam-diam, versi ini:
-/// - menyimpan status + pesan error terakhir agar bisa ditampilkan di UI,
-/// - mencatat id record yang sudah terkirim, dan mengirim ulang yang
-///   tertunda saat aplikasi dibuka (retry otomatis).
+// Backs records up to Supabase. Uses anonymous sign-in, so each device
+// gets its own identity with no login screen. Row-level security in the
+// database keeps every user to their own rows.
+//
+// Unlike the first version, this one doesn't fail silently:
+// - it exposes its status + last error for the UI,
+// - it remembers which records made it up, and retries the rest
+//   automatically next launch.
 class CloudSync {
   static const _url = String.fromEnvironment('SUPABASE_URL');
   static const _anonKey = String.fromEnvironment('SUPABASE_ANON_KEY');
@@ -39,7 +39,7 @@ class CloudSync {
   static String? get _userId =>
       Supabase.instance.client.auth.currentUser?.id;
 
-  /// Jumlah record lokal yang belum terkirim ke cloud.
+  // Records saved locally that haven't made it to the cloud yet.
   static int pendingCount(List<BmiRecord> records) =>
       records.where((r) => !_syncedIds.contains(r.id)).length;
 
@@ -49,12 +49,12 @@ class CloudSync {
     if (!isConfigured) {
       state = SyncState.notConfigured;
       lastError =
-          'SUPABASE_URL / SUPABASE_ANON_KEY kosong (cek GitHub Secrets & build ulang).';
+          'SUPABASE_URL / SUPABASE_ANON_KEY is empty (check GitHub Secrets and rebuild).';
       return;
     }
     try {
       await Supabase.initialize(url: _url, publishableKey: _anonKey);
-      // Butuh "Allow anonymous sign-ins" aktif di dashboard Supabase.
+      // Needs "Allow anonymous sign-ins" turned on in the Supabase dashboard.
       await Supabase.instance.client.auth.signInAnonymously();
       state = SyncState.ready;
       lastError = '';
@@ -64,8 +64,8 @@ class CloudSync {
     }
   }
 
-  /// Kirim ulang semua record lokal yang belum terkirim. Dipanggil saat
-  /// aplikasi dibuka, dan bisa dipicu manual dari layar Profil.
+  // Pushes every local record that hasn't been uploaded yet. Runs at
+  // startup, and can be triggered by hand from the Profile screen.
   static Future<void> syncPending(List<BmiRecord> records) async {
     if (!isReady) return;
     for (final r in records) {
@@ -74,14 +74,14 @@ class CloudSync {
     }
   }
 
-  /// Kirim satu record ke cloud. Tidak melempar error ke pemanggil,
-  /// tapi mencatatnya di [lastError] agar bisa ditampilkan.
+  // Pushes one record. Never throws to the caller, but records the
+  // error in [lastError] so the UI can show it.
   static Future<void> pushRecord(BmiRecord record) async {
     if (!isReady) return;
     final uid = _userId;
     if (uid == null) {
       state = SyncState.error;
-      lastError = 'Sesi anonim Supabase hilang (coba restart aplikasi).';
+      lastError = 'Supabase anonymous session is gone (try restarting the app).';
       return;
     }
     try {
@@ -97,10 +97,9 @@ class CloudSync {
     }
   }
 
-  /// Pesan error yang aman ditampilkan (tanpa secret / URL).
+  // Error text that's safe to show (no secrets or URLs in it).
   static String _short(Object e) {
     final s = e.toString();
-    // Potong stack trace & prefix exception yang berisik.
     final oneLine = s.split('\n').first;
     final cleaned = oneLine
         .replaceFirst(RegExp(r'^Exception:\s*'), '')
@@ -108,16 +107,18 @@ class CloudSync {
     return cleaned.length > 140 ? '${cleaned.substring(0, 140)}…' : cleaned;
   }
 
-  /// Ringkasan status satu baris untuk UI.
+  // One-line status for the UI.
   static String describe(List<BmiRecord> records) {
     switch (state) {
       case SyncState.notConfigured:
-        return 'Belum dikonfigurasi';
+        return 'Not set up';
       case SyncState.error:
-        return lastError.isEmpty ? 'Gagal terhubung' : lastError;
+        return lastError.isEmpty ? "Couldn't connect" : lastError;
       case SyncState.ready:
         final n = pendingCount(records);
-        return n == 0 ? 'Terhubung — semua data tersinkron' : '$n data menunggu dikirim';
+        return n == 0
+            ? 'Connected — everything is synced'
+            : '$n ${n == 1 ? 'entry' : 'entries'} waiting to upload';
     }
   }
 }

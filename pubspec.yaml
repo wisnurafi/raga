@@ -1,5 +1,5 @@
 name: raga
-description: Raga - Kalkulator BMI dengan riwayat, berat ideal, BMR/TDEE, multi-profil, dan sinkronisasi cloud.
+description: Raga - BMI calculator with history, ideal weight, BMR/TDEE, multi-profile, and cloud backup.
 publish_to: 'none'
 version: 1.0.0+1
 
@@ -18,6 +18,7 @@ dependencies:
   cross_file: ^0.3.4
   path_provider: ^2.1.4
   screenshot: ^3.0.0
+  flutter_svg: ^2.0.0
 
 dev_dependencies:
   flutter_test:
@@ -26,3 +27,5 @@ dev_dependencies:
 
 flutter:
   uses-material-design: true
+  assets:
+    - assets/images/raga-background.svg
