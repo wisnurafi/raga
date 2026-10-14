@@ -15,7 +15,6 @@ class AppState extends ChangeNotifier {
   List<Profile> profiles = [];
   String activeProfileId = '';
   List<BmiRecord> records = [];
-  bool darkMode = true;
   bool metricUnits = true;
   String activity = 'Ringan';
 
@@ -26,7 +25,6 @@ class AppState extends ChangeNotifier {
     final state = AppState(store);
     state.profiles = store.profiles;
     state.records = store.records;
-    state.darkMode = store.darkMode;
     state.metricUnits = store.metricUnits;
     state.activity = store.activity;
     if (state.profiles.isEmpty) {
@@ -97,19 +95,20 @@ class AppState extends ChangeNotifier {
     records = [r, ...records];
     await _store.saveRecords(records);
     notifyListeners();
-    // Sinkronisasi cloud jalan di background, tidak ditunggu.
-    CloudSync.pushRecord(r);
-  }
-
-  Future<void> setDarkMode(bool v) async {
-    darkMode = v;
-    await _store.saveDarkMode(v);
+    // Sinkronisasi cloud jalan di background; statusnya bisa dicek di Profil.
+    await CloudSync.pushRecord(r);
     notifyListeners();
   }
 
   Future<void> setMetricUnits(bool v) async {
     metricUnits = v;
     await _store.saveMetricUnits(v);
+    notifyListeners();
+  }
+
+  /// Coba kirim ulang record yang tertunda ke cloud, lalu refresh UI.
+  Future<void> refreshSync() async {
+    await CloudSync.syncPending(records);
     notifyListeners();
   }
 
