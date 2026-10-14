@@ -554,7 +554,7 @@ class ProfileScreen extends StatelessWidget {
               RagaButton(
                 label: 'Simpan',
                 height: 56,
-                onTap: days.isEmpty
+                onPressed: days.isEmpty
                     ? null
                     : () async {
                         final messenger =
@@ -578,7 +578,7 @@ class ProfileScreen extends StatelessWidget {
               ),
               RagaTextButton(
                 label: 'Batal',
-                onTap: () => Navigator.pop(ctx2),
+                onPressed: () => Navigator.pop(ctx2),
               ),
             ],
           ),
@@ -668,7 +668,7 @@ class ProfileScreen extends StatelessWidget {
                 RagaButton(
                   label: 'Simpan target',
                   height: 56,
-                  onTap: () async {
+                  onPressed: () async {
                     await state.setGoalWeight(p.id, toKg(value));
                     if (ctx2.mounted) Navigator.pop(ctx2);
                   },
@@ -676,7 +676,7 @@ class ProfileScreen extends StatelessWidget {
                 if (hasGoal)
                   RagaTextButton(
                     label: 'Hapus target',
-                    onTap: () async {
+                    onPressed: () async {
                       await state.setGoalWeight(p.id, null);
                       if (ctx2.mounted) Navigator.pop(ctx2);
                     },
@@ -684,7 +684,7 @@ class ProfileScreen extends StatelessWidget {
                 else
                   RagaTextButton(
                     label: 'Batal',
-                    onTap: () => Navigator.pop(ctx2),
+                    onPressed: () => Navigator.pop(ctx2),
                   ),
               ],
             ),
@@ -782,7 +782,7 @@ class ProfileScreen extends StatelessWidget {
           RagaOutlineButton(
             label: 'Salin kode',
             height: 56,
-            onTap: () async {
+            onPressed: () async {
               await Clipboard.setData(ClipboardData(text: code));
               if (context.mounted) {
                 ScaffoldMessenger.of(context).showSnackBar(
@@ -796,7 +796,7 @@ class ProfileScreen extends StatelessWidget {
           RagaButton(
             label: 'Sinkron sekarang',
             height: 56,
-            onTap: () async {
+            onPressed: () async {
               await state.refreshSync();
               if (context.mounted) {
                 ScaffoldMessenger.of(context).showSnackBar(
@@ -811,7 +811,7 @@ class ProfileScreen extends StatelessWidget {
           RagaOutlineButton(
             label: 'Restore dari kode',
             height: 56,
-            onTap: () => _restoreCodeDialog(context, state),
+            onPressed: () => _restoreCodeDialog(context, state),
           ),
           if (state.devMode) ...[
             const SizedBox(height: 10),
@@ -959,14 +959,14 @@ class ProfileScreen extends StatelessWidget {
             RagaButton(
               label: 'Tambah',
               height: 56,
-              onTap: () {
+              onPressed: () {
                 Navigator.pop(ctx);
                 state.addProfile(ctl.text);
               },
             ),
             RagaTextButton(
               label: 'Batal',
-              onTap: () => Navigator.pop(ctx),
+              onPressed: () => Navigator.pop(ctx),
             ),
           ],
         ),
@@ -1000,14 +1000,14 @@ class ProfileScreen extends StatelessWidget {
             RagaButton(
               label: 'Simpan',
               height: 56,
-              onTap: () {
+              onPressed: () {
                 Navigator.pop(ctx);
                 _applyRename(state, ctrl.text);
               },
             ),
             RagaTextButton(
               label: 'Batal',
-              onTap: () => Navigator.pop(ctx),
+              onPressed: () => Navigator.pop(ctx),
             ),
           ],
         ),
@@ -1080,7 +1080,7 @@ class ProfileScreen extends StatelessWidget {
             ),
             RagaTextButton(
               label: 'Batal',
-              onTap: () => Navigator.pop(ctx),
+              onPressed: () => Navigator.pop(ctx),
             ),
           ],
         ),
@@ -1110,7 +1110,7 @@ class ProfileScreen extends StatelessWidget {
             RagaButton(
               label: 'Lanjut',
               height: 56,
-              onTap: () {
+              onPressed: () {
                 if (ctl.text.trim().isEmpty) return;
                 Navigator.pop(ctx);
                 _confirmRestore(context, state, ctl.text);
@@ -1118,7 +1118,7 @@ class ProfileScreen extends StatelessWidget {
             ),
             RagaTextButton(
               label: 'Batal',
-              onTap: () => Navigator.pop(ctx),
+              onPressed: () => Navigator.pop(ctx),
             ),
           ],
         ),
@@ -1186,7 +1186,7 @@ class ProfileScreen extends StatelessWidget {
             ),
             RagaTextButton(
               label: 'Batal',
-              onTap: () => Navigator.pop(ctx),
+              onPressed: () => Navigator.pop(ctx),
             ),
           ],
         ),
@@ -1324,7 +1324,7 @@ class ProfileScreen extends StatelessWidget {
             ),
             RagaTextButton(
               label: 'Batal',
-              onTap: () => Navigator.pop(ctx),
+              onPressed: () => Navigator.pop(ctx),
             ),
           ],
         ),

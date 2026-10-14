@@ -34,7 +34,7 @@ class DonutRing extends StatelessWidget {
             painter: _DonutPainter(
               percent: percent.clamp(0.0, 1.0),
               track: rc.isDark
-                  ? Colors.white.withOpacity(0.15)
+                  ? Colors.white.withValues(alpha: 0.15)
                   : const Color(0xFFEDF0F8),
               fill: rc.chipActive,
             ),

@@ -251,28 +251,28 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
               const SizedBox(height: 20),
               switch (_step) {
                 1 => RagaButton(
-                    label: 'Lanjut', onTap: _continueFromStep1),
+                    label: 'Lanjut', onPressed: _continueFromStep1),
                 2 => RagaButton(
                     label: 'Lanjut',
-                    onTap: () => setState(() => _step = 3)),
+                    onPressed: () => setState(() => _step = 3)),
                 3 => Column(
                     children: [
                       RagaButton(
-                          label: 'Simpan target', onTap: _saveGoal),
+                          label: 'Simpan target', onPressed: _saveGoal),
                       RagaTextButton(
-                          label: 'Lewati dulu', onTap: _skipGoal),
+                          label: 'Lewati dulu', onPressed: _skipGoal),
                     ],
                   ),
                 _ => Column(
                     children: [
                       RagaButton(
                         label: 'Selesai',
-                        onTap:
+                        onPressed:
                             _saving ? null : () => _finish(arm: true),
                       ),
                       RagaTextButton(
                         label: 'Lewati dulu',
-                        onTap:
+                        onPressed:
                             _saving ? null : () => _finish(arm: false),
                       ),
                     ],

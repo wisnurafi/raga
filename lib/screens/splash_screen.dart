@@ -34,7 +34,7 @@ class _SplashScreenState extends State<SplashScreen>
       parent: _c,
       curve: const Interval(0.0, 0.35, curve: Curves.easeOut),
     );
-    _introScale = const Tween<double>(begin: 0.88, end: 1.0).animate(
+    _introScale = Tween<double>(begin: 0.88, end: 1.0).animate(
       CurvedAnimation(
         parent: _c,
         curve: const Interval(0.0, 0.4, curve: Curves.easeOutCubic),
@@ -45,7 +45,7 @@ class _SplashScreenState extends State<SplashScreen>
       parent: _c,
       curve: const Interval(0.05, 0.92, curve: Curves.easeInOut),
     );
-    _outro = const Tween<double>(begin: 1.0, end: 0.0).animate(
+    _outro = Tween<double>(begin: 1.0, end: 0.0).animate(
       CurvedAnimation(
         parent: _c,
         curve: const Interval(0.92, 1.0, curve: Curves.easeIn),

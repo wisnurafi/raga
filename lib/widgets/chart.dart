@@ -52,7 +52,7 @@ class HistoryChart extends StatelessWidget {
             show: true,
             drawVerticalLine: false,
             getDrawingHorizontalLine: (v) => FlLine(
-              color: rc.onCard.withOpacity(0.08),
+              color: rc.onCard.withValues(alpha: 0.08),
               strokeWidth: 1,
             ),
           ),
@@ -91,8 +91,8 @@ class HistoryChart extends StatelessWidget {
                   begin: Alignment.topCenter,
                   end: Alignment.bottomCenter,
                   colors: [
-                    line.withOpacity(0.25),
-                    line.withOpacity(0.0),
+                    line.withValues(alpha: 0.25),
+                    line.withValues(alpha: 0.0),
                   ],
                 ),
               ),

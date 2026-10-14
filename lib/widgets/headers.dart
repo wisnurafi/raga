@@ -89,7 +89,6 @@ class _MoonButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final rc = context.rc;
     final state = AppState.of(context);
     return _CircleBtn(
       icon: state.darkMode
@@ -174,7 +173,7 @@ class OnboardingTopBar extends StatelessWidget {
                       borderRadius: BorderRadius.circular(3),
                       color: i < step
                           ? rc.chipActive
-                          : rc.onBg.withOpacity(0.18),
+                          : rc.onBg.withValues(alpha: 0.18),
                     ),
                   ),
                 ),
