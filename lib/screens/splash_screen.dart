@@ -3,8 +3,9 @@ import '../core/theme.dart';
 import '../widgets/glass.dart';
 import '../widgets/raga_bg.dart';
 
-// Branded splash from the mockup (p.6): the gauge mark in a glass tile,
-// the "Raga" wordmark, tagline, then a short loading bar. Runs ~1.9s,
+// Branded splash from the mockup: the gauge mark in a glass tile,
+// the "Raga" wordmark with a lavender glow (dark mode only),
+// the Indonesian tagline, then a short loading bar. Runs ~1.7s,
 // fades out, then hands off via [onDone].
 class SplashScreen extends StatefulWidget {
   final VoidCallback onDone;
@@ -27,27 +28,27 @@ class _SplashScreenState extends State<SplashScreen>
     super.initState();
     _c = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 1900),
+      duration: const Duration(milliseconds: 1700),
     );
     _intro = CurvedAnimation(
       parent: _c,
-      curve: const Interval(0.0, 0.32, curve: Curves.easeOut),
+      curve: const Interval(0.0, 0.35, curve: Curves.easeOut),
     );
-    _introScale = Tween<double>(begin: 0.88, end: 1.0).animate(
+    _introScale = const Tween<double>(begin: 0.88, end: 1.0).animate(
       CurvedAnimation(
         parent: _c,
-        curve: const Interval(0.0, 0.38, curve: Curves.easeOutCubic),
+        curve: const Interval(0.0, 0.4, curve: Curves.easeOutCubic),
       ),
     );
     // The loading bar fills over ~1.6s.
     _progress = CurvedAnimation(
       parent: _c,
-      curve: const Interval(0.06, 0.9, curve: Curves.easeInOut),
+      curve: const Interval(0.05, 0.92, curve: Curves.easeInOut),
     );
-    _outro = Tween<double>(begin: 1.0, end: 0.0).animate(
+    _outro = const Tween<double>(begin: 1.0, end: 0.0).animate(
       CurvedAnimation(
         parent: _c,
-        curve: const Interval(0.9, 1.0, curve: Curves.easeIn),
+        curve: const Interval(0.92, 1.0, curve: Curves.easeIn),
       ),
     );
     _c.addStatusListener((s) {
@@ -79,7 +80,6 @@ class _SplashScreenState extends State<SplashScreen>
                   child: GlassCard(
                     radius: 36,
                     padding: const EdgeInsets.all(12),
-                    blur: 18,
                     child: Image.asset(
                       'assets/images/raga-mark.png',
                       width: 132,
@@ -93,18 +93,19 @@ class _SplashScreenState extends State<SplashScreen>
                 opacity: _intro,
                 child: Text(
                   'Raga',
-                  style: TextStyle(
-                    fontSize: 64,
-                    fontWeight: FontWeight.w800,
+                  style: RagaType.hero(64, rc.onBg).copyWith(
                     letterSpacing: -2,
-                    color: rc.onBg,
-                    shadows: [
-                      Shadow(
-                        color: Colors.black.withValues(alpha: 0.35),
-                        blurRadius: 24,
-                        offset: const Offset(0, 6),
-                      ),
-                    ],
+                    // Lavender glow on dark; the light canvas stays clean.
+                    shadows: rc.isDark
+                        ? [
+                            BoxShadow(
+                              color: rc.chipActive
+                                  .withValues(alpha: 0.55),
+                              blurRadius: 32,
+                              offset: const Offset(0, 6),
+                            ),
+                          ]
+                        : null,
                   ),
                 ),
               ),
@@ -112,12 +113,10 @@ class _SplashScreenState extends State<SplashScreen>
               FadeTransition(
                 opacity: _intro,
                 child: Text(
-                  'Know your body, guard your health.',
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w500,
-                    color: rc.onBgMuted,
-                  ),
+                  'Kenali tubuhmu, jaga kesehatanmu.',
+                  textAlign: TextAlign.center,
+                  style: RagaType.body(rc.onBgMuted)
+                      .copyWith(fontSize: 16),
                 ),
               ),
               const Spacer(flex: 4),
@@ -133,7 +132,8 @@ class _SplashScreenState extends State<SplashScreen>
                   child: Align(
                     alignment: Alignment.centerLeft,
                     child: FractionallySizedBox(
-                      widthFactor: _progress.value.clamp(0.0, 1.0),
+                      widthFactor:
+                          _progress.value.clamp(0.0, 1.0).toDouble(),
                       child: Container(
                         decoration: BoxDecoration(
                           borderRadius: BorderRadius.circular(3),
@@ -146,12 +146,8 @@ class _SplashScreenState extends State<SplashScreen>
               ),
               const SizedBox(height: 12),
               Text(
-                'Loading...',
-                style: TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w500,
-                  color: rc.onBgMuted,
-                ),
+                'Memuat...',
+                style: RagaType.body(rc.onBgMuted),
               ),
               const SizedBox(height: 76),
             ],

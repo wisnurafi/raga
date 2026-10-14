@@ -9,11 +9,12 @@ import '../widgets/controls.dart';
 import '../widgets/glass.dart';
 import '../widgets/headers.dart';
 
-// First-launch setup from the mockup (p.7–10): 4 steps —
+// First-launch setup from the mockup: 4 steps —
 // 1. name/age/gender, 2. measurements, 3. optional weight goal,
 // 4. optional weigh-in schedule. Metric is canonical internally;
 // imperial is display-only. Finishes via [AppState.completeOnboarding]
-// then [onDone].
+// then [onDone]. Root is a transparent scaffold — main.dart already
+// wraps this screen in RagaBg.
 class OnboardingScreen extends StatefulWidget {
   final VoidCallback onDone;
   const OnboardingScreen({super.key, required this.onDone});
@@ -23,16 +24,6 @@ class OnboardingScreen extends StatefulWidget {
 }
 
 class _OnboardingScreenState extends State<OnboardingScreen> {
-  static const _dayNames = [
-    'Mon',
-    'Tue',
-    'Wed',
-    'Thu',
-    'Fri',
-    'Sat',
-    'Sun'
-  ];
-
   int _step = 1;
   bool _saving = false;
 
@@ -47,8 +38,8 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   double _heightCm = 170;
   double _weightKg = 65;
 
-  // Step 3.
-  String _direction = 'Lose';
+  // Step 3 — 0 = Turun, 1 = Jaga, 2 = Naik.
+  int _direction = 0;
   double _goalKg = 62;
   double _pace = 0.5;
   double? _pendingGoalKg;
@@ -85,11 +76,10 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
       ? v.toStringAsFixed(0)
       : v.toStringAsFixed(1);
 
-  Future<void> _setUnits(String v) async {
-    final m = v == 'cm · kg';
-    if (m == _metric) return;
-    setState(() => _metric = m);
-    await AppState.of(context).setMetricUnits(m);
+  Future<void> _setUnits(bool metric) async {
+    if (metric == _metric) return;
+    setState(() => _metric = metric);
+    await AppState.of(context).setMetricUnits(metric);
   }
 
   // ---------- step 1 ----------
@@ -97,7 +87,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   void _continueFromStep1() {
     if (_name.text.trim().isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please enter your name')),
+        const SnackBar(content: Text('Isi nama panggilan dulu')),
       );
       return;
     }
@@ -107,38 +97,36 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
 
   // ---------- step 3 ----------
 
-  void _setDirection(String d) {
+  void _setDirection(int i) {
     setState(() {
-      _direction = d;
-      _goalKg = switch (d) {
-        'Gain' => (_weightKg + 3).clamp(30.0, 150.0),
-        'Maintain' => _weightKg,
-        _ => (_weightKg - 3).clamp(30.0, 150.0),
+      _direction = i;
+      _goalKg = switch (i) {
+        2 => (_weightKg + 3).clamp(30.0, 150.0).toDouble(),
+        1 => _weightKg,
+        _ => (_weightKg - 3).clamp(30.0, 150.0).toDouble(),
       };
     });
   }
 
-  double get _goalDiffKg => (_direction == 'Gain'
-          ? _goalKg - _weightKg
-          : _weightKg - _goalKg)
-      .abs();
+  double get _goalDiffKg =>
+      (_direction == 2 ? _goalKg - _weightKg : _weightKg - _goalKg).abs();
 
   String _goalHint() {
     final w = '${_trimNum(_dispW(_weightKg))} $_wu';
-    if (_direction == 'Maintain') return 'Stay at $w';
-    final sign = _direction == 'Gain' ? '+' : '−';
-    return 'Now $w · $sign${formatNum(_goalDiffKg)} $_wu to go';
+    if (_direction == 1) return 'Tetap di $w';
+    final sign = _direction == 2 ? '+' : '−';
+    return 'Sekarang $w · selisih $sign${formatNum(_goalDiffKg)} $_wu';
   }
 
   String _eta() {
-    if (_direction == 'Maintain') return '—';
+    if (_direction == 1) return '—';
     final weeks = (_goalDiffKg / _pace).ceil();
     final date = DateTime.now().add(Duration(days: weeks * 7));
-    return '±$weeks weeks · ${formatDate(date)}';
+    return '±$weeks minggu · ${formatDateId(date)}';
   }
 
   void _saveGoal() {
-    _pendingGoalKg = _direction == 'Maintain' ? _weightKg : _goalKg;
+    _pendingGoalKg = _direction == 1 ? _weightKg : _goalKg;
     FocusScope.of(context).unfocus();
     setState(() => _step = 4);
   }
@@ -158,13 +146,13 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     final t =
         '${_hour.toString().padLeft(2, '0')}.${_minute.toString().padLeft(2, '0')}';
     final days = _days.toList()..sort();
-    if (days.length == 7) return 'Every day · $t';
-    final names = days.map((d) => _dayNames[d - 1]).toList();
-    if (names.length == 1) return '1× a week · ${names.first} · $t';
+    if (days.length == 7) return 'Setiap hari · $t';
+    final names = days.map((d) => idShortDays[d - 1]).toList();
+    if (names.length == 1) return '1× seminggu · ${names.first} · $t';
     final joined = names.length == 2
         ? names.join(' & ')
         : '${names.sublist(0, names.length - 1).join(', ')} & ${names.last}';
-    return '${names.length}× a week · $joined · $t';
+    return '${names.length}× seminggu · $joined · $t';
   }
 
   Future<void> _pickTime() async {
@@ -206,8 +194,8 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     }
   }
 
-  /// Permission-first arming, exactly the spec sequence: request
-  /// permission → setWeeklyReminder(true) → setReminderSchedule →
+  /// Permission-first arming: request permission →
+  /// setWeeklyReminder(true) → setReminderSchedule →
   /// scheduleBestEffortDays. Denied permission leaves the reminder off
   /// with an honest message instead of a dead toggle.
   Future<void> _armReminder(AppState state) async {
@@ -217,7 +205,8 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text('Turn on notifications in system settings first'),
+            content: Text(
+                'Nyalakan notifikasi di pengaturan sistem dulu'),
           ),
         );
       }
@@ -236,57 +225,61 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return SafeArea(
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(20, 12, 20, 28),
-        child: Column(
-          children: [
-            OnboardHeader(
-              step: _step,
-              total: 4,
-              onBack: _step > 1
-                  ? () => setState(() => _step--)
-                  : () {},
-            ),
-            const SizedBox(height: 24),
-            Expanded(
-              child: SingleChildScrollView(
-                child: switch (_step) {
-                  1 => _step1(),
-                  2 => _step2(),
-                  3 => _step3(),
-                  _ => _step4(),
-                },
+    return Scaffold(
+      backgroundColor: Colors.transparent,
+      body: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(22, 12, 22, 28),
+          child: Column(
+            children: [
+              OnboardingTopBar(
+                step: _step,
+                onBack:
+                    _step > 1 ? () => setState(() => _step--) : () {},
               ),
-            ),
-            const SizedBox(height: 20),
-            switch (_step) {
-              1 => RagaButton(
-                  label: 'Continue', onPressed: _continueFromStep1),
-              2 => RagaButton(
-                  label: 'Continue',
-                  onPressed: () => setState(() => _step = 3)),
-              3 => Column(
-                  children: [
-                    RagaButton(label: 'Save goal', onPressed: _saveGoal),
-                    RagaTextLink(label: 'Skip for now', onTap: _skipGoal),
-                  ],
+              const SizedBox(height: 24),
+              Expanded(
+                child: SingleChildScrollView(
+                  child: switch (_step) {
+                    1 => _step1(),
+                    2 => _step2(),
+                    3 => _step3(),
+                    _ => _step4(),
+                  },
                 ),
-              _ => Column(
-                  children: [
-                    RagaButton(
-                      label: 'Finish',
-                      onPressed:
-                          _saving ? null : () => _finish(arm: true),
-                    ),
-                    RagaTextLink(
-                      label: 'Skip for now',
-                      onTap: _saving ? null : () => _finish(arm: false),
-                    ),
-                  ],
-                ),
-            },
-          ],
+              ),
+              const SizedBox(height: 20),
+              switch (_step) {
+                1 => RagaButton(
+                    label: 'Lanjut', onTap: _continueFromStep1),
+                2 => RagaButton(
+                    label: 'Lanjut',
+                    onTap: () => setState(() => _step = 3)),
+                3 => Column(
+                    children: [
+                      RagaButton(
+                          label: 'Simpan target', onTap: _saveGoal),
+                      RagaTextButton(
+                          label: 'Lewati dulu', onTap: _skipGoal),
+                    ],
+                  ),
+                _ => Column(
+                    children: [
+                      RagaButton(
+                        label: 'Selesai',
+                        onTap:
+                            _saving ? null : () => _finish(arm: true),
+                      ),
+                      RagaTextButton(
+                        label: 'Lewati dulu',
+                        onTap:
+                            _saving ? null : () => _finish(arm: false),
+                      ),
+                    ],
+                  ),
+              },
+            ],
+          ),
         ),
       ),
     );
@@ -297,24 +290,9 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          t,
-          style: TextStyle(
-            fontSize: 32,
-            fontWeight: FontWeight.w800,
-            letterSpacing: -0.8,
-            color: rc.onBg,
-          ),
-        ),
+        Text(t, style: RagaType.bigTitle(rc.onBg)),
         const SizedBox(height: 8),
-        Text(
-          sub,
-          style: TextStyle(
-            fontSize: 15.5,
-            height: 1.5,
-            color: rc.onBgMuted,
-          ),
-        ),
+        Text(sub, style: RagaType.body(rc.onBgMuted)),
         const SizedBox(height: 24),
       ],
     );
@@ -323,19 +301,29 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   Widget _optionalBadge() {
     final rc = context.rc;
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
+      padding:
+          const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: rc.badgeOk, width: 1.5),
+        border: Border.all(color: rc.success, width: 1.5),
+      ),
+      child: Text('OPSIONAL', style: RagaType.badge(rc.success)),
+    );
+  }
+
+  /// Green category pill ("Normal"), dark label — like the mockup.
+  Widget _categoryPill(double bmi) {
+    final rc = context.rc;
+    return Container(
+      padding:
+          const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(20),
+        color: rc.badgeOk,
       ),
       child: Text(
-        'OPTIONAL',
-        style: TextStyle(
-          fontSize: 12,
-          fontWeight: FontWeight.w800,
-          letterSpacing: 1.2,
-          color: rc.badgeOk,
-        ),
+        bmiCatLabel(bmiCatOf(bmi)),
+        style: RagaType.chip(rc.onBadgeOk).copyWith(fontSize: 14),
       ),
     );
   }
@@ -348,29 +336,19 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         _title(
-          "Let's get acquainted",
-          'So Raga can greet you and calculate accurately.',
+          'Kenalan dulu, yuk',
+          'Biar Raga bisa menyapamu dan menghitung dengan tepat.',
         ),
         GlassCard(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(
-                'Nickname',
-                style: TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w600,
-                  color: rc.onCardMuted,
-                ),
-              ),
+              Text('Nama panggilan',
+                  style: RagaType.label(rc.onCardMuted)),
               TextField(
                 controller: _name,
                 textCapitalization: TextCapitalization.words,
-                style: TextStyle(
-                  fontSize: 28,
-                  fontWeight: FontWeight.w800,
-                  color: rc.onCard,
-                ),
+                style: RagaType.hero(26, rc.onCard),
                 decoration: const InputDecoration(
                   border: InputBorder.none,
                   isDense: true,
@@ -385,42 +363,22 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
         GlassCard(
           child: Row(
             children: [
-              Text(
-                'Age',
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w600,
-                  color: rc.onCardMuted,
-                ),
-              ),
+              Text('Umur', style: RagaType.cardTitle(rc.onCardMuted)),
               Expanded(
                 child: StepperRow(
-                  value: Text(
-                    '$_age',
-                    style: TextStyle(
-                      fontSize: 40,
-                      fontWeight: FontWeight.w800,
-                      color: rc.onCard,
-                    ),
-                  ),
-                  onMinus: () =>
-                      setState(() => _age = (_age - 1).clamp(5, 120)),
-                  onPlus: () =>
-                      setState(() => _age = (_age + 1).clamp(5, 120)),
+                  value: '$_age',
+                  onMinus: () => setState(
+                      () => _age = (_age - 1).clamp(5, 120).toInt()),
+                  onPlus: () => setState(
+                      () => _age = (_age + 1).clamp(5, 120).toInt()),
                 ),
               ),
             ],
           ),
         ),
         const SizedBox(height: 20),
-        Text(
-          'Gender',
-          style: TextStyle(
-            fontSize: 14,
-            fontWeight: FontWeight.w600,
-            color: rc.onCardMuted,
-          ),
-        ),
+        Text('Jenis kelamin',
+            style: RagaType.label(rc.onBgMuted)),
         const SizedBox(height: 10),
         Row(
           children: [
@@ -437,40 +395,44 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     final rc = context.rc;
     final selected = _isMale == male;
     return Expanded(
-      child: Container(
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(26),
-          border:
-              selected ? Border.all(color: rc.chipActive, width: 2) : null,
-        ),
-        child: GlassCard(
-          onTap: () => setState(() => _isMale = male),
+      child: GestureDetector(
+        onTap: () => setState(() => _isMale = male),
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 180),
+          padding: const EdgeInsets.symmetric(vertical: 20),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(26),
+            color: selected ? rc.chipActive : rc.chipInactive,
+            border: Border.all(
+              color: selected ? rc.chipActive : rc.chipBorder,
+              width: 1.2,
+            ),
+          ),
           child: Column(
             children: [
               Container(
-                width: 64,
-                height: 64,
+                width: 60,
+                height: 60,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  color: rc.chipInactive,
+                  color: rc.card,
                   border:
                       Border.all(color: rc.cardBorder, width: 1.2),
                 ),
-                child: Center(
-                  child: Text(
-                    male ? '♂' : '♀',
-                    style: TextStyle(fontSize: 28, color: rc.onCard),
-                  ),
+                child: Icon(
+                  male ? Icons.male : Icons.female,
+                  size: 30,
+                  color: selected
+                      ? rc.onChipActive
+                      : rc.onChipInactive,
                 ),
               ),
               const SizedBox(height: 10),
               Text(
-                male ? 'Male' : 'Female',
-                style: TextStyle(
-                  fontSize: 17,
-                  fontWeight: FontWeight.w700,
-                  color: rc.onCard,
-                ),
+                male ? 'Pria' : 'Wanita',
+                style: RagaType.chip(
+                  selected ? rc.onChipActive : rc.onChipInactive,
+                ).copyWith(fontSize: 16),
               ),
             ],
           ),
@@ -488,19 +450,18 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         _title(
-          'Your measurements',
-          'Used to calculate your starting BMI.',
+          'Ukuran tubuhmu',
+          'Dipakai untuk menghitung BMI awalmu.',
         ),
         Row(
           mainAxisAlignment: MainAxisAlignment.end,
           children: [
             SizedBox(
               width: 180,
-              child: Segmented<String>(
+              child: RagaSegmented(
                 options: const ['cm · kg', 'in · lb'],
-                value: _metric ? 'cm · kg' : 'in · lb',
-                onChanged: _setUnits,
-                labelOf: (s) => s,
+                selected: _metric ? 0 : 1,
+                onChanged: (i) => _setUnits(i == 0),
               ),
             ),
           ],
@@ -508,9 +469,10 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
         const SizedBox(height: 14),
         GlassCard(
           child: MeasureSlider(
-            label: 'Height',
-            value: _dispH(),
+            label: 'Tinggi badan',
+            value: _trimNum(_dispH()),
             unit: _hu,
+            sliderValue: _dispH(),
             min: _metric ? 130 : 51,
             max: _metric ? 220 : 87,
             onChanged: (v) => setState(
@@ -520,9 +482,10 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
         const SizedBox(height: 14),
         GlassCard(
           child: MeasureSlider(
-            label: 'Weight',
-            value: _dispW(_weightKg),
+            label: 'Berat badan',
+            value: _trimNum(_dispW(_weightKg)),
             unit: _wu,
+            sliderValue: _dispW(_weightKg),
             min: _metric ? 30 : 66,
             max: _metric ? 150 : 330,
             onChanged: (v) => setState(
@@ -532,30 +495,14 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
         const SizedBox(height: 14),
         GlassCard(
           child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text(
-                'Your starting BMI',
-                style: TextStyle(
-                  fontSize: 15,
-                  fontWeight: FontWeight.w600,
-                  color: rc.onCardMuted,
-                ),
-              ),
-              Row(
-                children: [
-                  Text(
-                    formatNum(bmi),
-                    style: TextStyle(
-                      fontSize: 24,
-                      fontWeight: FontWeight.w800,
-                      color: rc.onCard,
-                    ),
-                  ),
-                  const SizedBox(width: 10),
-                  CategoryBadge(cat: bmiCatOf(bmi)),
-                ],
-              ),
+              Text('BMI awalmu',
+                  style: RagaType.cardTitle(rc.onCard)),
+              const Spacer(),
+              Text(formatNum(bmi),
+                  style: RagaType.hero(28, rc.onCard)),
+              const SizedBox(width: 10),
+              _categoryPill(bmi),
             ],
           ),
         ),
@@ -567,7 +514,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
 
   Widget _step3() {
     final rc = context.rc;
-    final targetKg = _direction == 'Maintain' ? _weightKg : _goalKg;
+    final targetKg = _direction == 1 ? _weightKg : _goalKg;
     final targetBmi = calcBmi(weightKg: targetKg, heightCm: _heightCm);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -575,60 +522,33 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
         _optionalBadge(),
         const SizedBox(height: 14),
         _title(
-          'Have a weight goal?',
-          'Set it now or later in Profile. You can skip this.',
+          'Punya target berat?',
+          'Atur sekarang atau nanti di Profil. Boleh dilewati.',
         ),
         GlassCard(
           child: Column(
             children: [
-              Segmented<String>(
-                options: const ['Lose', 'Maintain', 'Gain'],
-                value: _direction,
+              RagaSegmented(
+                options: const ['Turun', 'Jaga', 'Naik'],
+                selected: _direction,
                 onChanged: _setDirection,
-                labelOf: (s) => s,
               ),
-              const SizedBox(height: 18),
+              const SizedBox(height: 8),
               StepperRow(
-                value: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.baseline,
-                  textBaseline: TextBaseline.alphabetic,
-                  children: [
-                    Text(
-                      _trimNum(_dispW(_goalKg)),
-                      style: TextStyle(
-                        fontSize: 56,
-                        fontWeight: FontWeight.w800,
-                        color: rc.onCard,
-                        height: 1.1,
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    Text(
-                      _wu,
-                      style: TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.w700,
-                        color: rc.onCardMuted,
-                      ),
-                    ),
-                  ],
-                ),
-                onMinus: () => setState(
-                    () => _goalKg = (_goalKg - 0.5).clamp(30.0, 150.0)),
-                onPlus: () => setState(
-                    () => _goalKg = (_goalKg + 0.5).clamp(30.0, 150.0)),
+                value: _trimNum(_dispW(_goalKg)),
+                unit: _wu,
+                valueSize: 56,
+                onMinus: () => setState(() => _goalKg =
+                    (_goalKg - 0.5).clamp(30.0, 150.0).toDouble()),
+                onPlus: () => setState(() => _goalKg =
+                    (_goalKg + 0.5).clamp(30.0, 150.0).toDouble()),
               ),
-              const SizedBox(height: 12),
+              const SizedBox(height: 10),
               Center(
                 child: Text(
                   _goalHint(),
                   textAlign: TextAlign.center,
-                  style: TextStyle(
-                    fontSize: 14.5,
-                    fontWeight: FontWeight.w600,
-                    color: rc.onCardMuted,
-                  ),
+                  style: RagaType.body(rc.onCardMuted),
                 ),
               ),
               const SizedBox(height: 12),
@@ -641,13 +561,10 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                     color: rc.badgeOk,
                   ),
                   child: Text(
-                    'Target BMI ${formatNum(targetBmi)} · '
+                    'BMI target ${formatNum(targetBmi)} · '
                     '${bmiCatLabel(bmiCatOf(targetBmi))}',
-                    style: TextStyle(
-                      fontSize: 15,
-                      fontWeight: FontWeight.w800,
-                      color: rc.onBadgeOk,
-                    ),
+                    style: RagaType.chip(rc.onBadgeOk)
+                        .copyWith(fontSize: 15),
                   ),
                 ),
               ),
@@ -659,22 +576,16 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(
-                'Weekly pace',
-                style: TextStyle(
-                  fontSize: 15,
-                  fontWeight: FontWeight.w600,
-                  color: rc.onCardMuted,
-                ),
-              ),
+              Text('Laju per minggu',
+                  style: RagaType.label(rc.onCardMuted)),
               const SizedBox(height: 12),
               Row(
                 children: [0.25, 0.5, 0.75].map((p) {
                   return Expanded(
                     child: Padding(
-                      padding: EdgeInsets.only(
-                          right: p == 0.75 ? 0 : 8),
-                      child: SelectChip(
+                      padding:
+                          EdgeInsets.only(right: p == 0.75 ? 0 : 8),
+                      child: PaceChip(
                         label: '$p kg',
                         selected: _pace == p,
                         onTap: () => setState(() => _pace = p),
@@ -684,7 +595,14 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                 }).toList(),
               ),
               const SizedBox(height: 14),
-              InfoRow(label: 'Estimated arrival', value: _eta()),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text('Perkiraan tercapai',
+                      style: RagaType.body(rc.onCardMuted)),
+                  Text(_eta(), style: RagaType.chip(rc.onCard)),
+                ],
+              ),
             ],
           ),
         ),
@@ -702,44 +620,38 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
         _optionalBadge(),
         const SizedBox(height: 14),
         _title(
-          'Weigh-in schedule',
-          'Pick days and a time — Raga will remind you. '
-          'You can skip this.',
+          'Jadwal menimbang',
+          'Pilih hari dan jam, Raga akan mengingatkanmu. '
+          'Boleh dilewati.',
         ),
         Row(
-          children: List.generate(7, (i) {
-            final day = i + 1;
-            return Expanded(
-              child: Padding(
-                padding: EdgeInsets.only(right: i == 6 ? 0 : 6),
-                child: DayPill(
-                  label: _dayNames[i],
-                  selected: _days.contains(day),
-                  onTap: () => setState(() {
-                    if (_days.contains(day)) {
-                      if (_days.length > 1) _days.remove(day);
-                    } else {
-                      _days.add(day);
-                    }
-                  }),
+          children: [
+            for (var i = 0; i < 7; i++)
+              Expanded(
+                child: Center(
+                  child: DayChip(
+                    label: idShortDays[i],
+                    selected: _days.contains(i + 1),
+                    onTap: () => setState(() {
+                      final day = i + 1;
+                      if (_days.contains(day)) {
+                        if (_days.length > 1) _days.remove(day);
+                      } else {
+                        _days.add(day);
+                      }
+                    }),
+                  ),
                 ),
               ),
-            );
-          }),
+          ],
         ),
         const SizedBox(height: 14),
         GlassCard(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(
-                'Reminder time',
-                style: TextStyle(
-                  fontSize: 15,
-                  fontWeight: FontWeight.w600,
-                  color: rc.onCardMuted,
-                ),
-              ),
+              Text('Jam pengingat',
+                  style: RagaType.label(rc.onCardMuted)),
               const SizedBox(height: 4),
               Row(
                 children: [
@@ -748,12 +660,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                     behavior: HitTestBehavior.opaque,
                     child: Text(
                       _timeColon(),
-                      style: TextStyle(
-                        fontSize: 48,
-                        fontWeight: FontWeight.w800,
-                        color: rc.onCard,
-                        height: 1.1,
-                      ),
+                      style: RagaType.hero(48, rc.onCard),
                     ),
                   ),
                   const Spacer(),
@@ -768,16 +675,22 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
           ),
         ),
         const SizedBox(height: 14),
-        GlassCard(child: InfoRow(label: 'Summary', value: _summary())),
+        GlassCard(
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text('Ringkasan',
+                  style: RagaType.cardTitle(rc.onCard)),
+              Text(_summary(),
+                  style: RagaType.chip(rc.onCardMuted)),
+            ],
+          ),
+        ),
         const SizedBox(height: 16),
         Center(
           child: Text(
-            'You can change this anytime in Profile.',
-            style: TextStyle(
-              fontSize: 13,
-              fontWeight: FontWeight.w500,
-              color: rc.onCardMuted,
-            ),
+            'Bisa diubah kapan saja di Profil.',
+            style: RagaType.caption(rc.onBgMuted),
           ),
         ),
       ],
