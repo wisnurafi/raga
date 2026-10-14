@@ -255,17 +255,18 @@ class ProfileScreen extends StatelessWidget {
   // permission — the one case where we must not flip the toggle on.
   // Everything else schedules (exact when allowed, inexact otherwise)
   // and says honestly which one it was.
-  Future<bool> _scheduleReminderFlow(BuildContext context, AppState state,
-      int weekday, int hour, int minute) async {
+  //
+  // Takes a ScaffoldMessengerState instead of a BuildContext: the caller
+  // captures it before any await, so no context crosses an async gap.
+  Future<bool> _scheduleReminderFlow(ScaffoldMessengerState messenger,
+      AppState state, int weekday, int hour, int minute) async {
     final ok = await ReminderService.requestPermission();
     if (!ok) {
-      if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Turn on notifications in system settings first'),
-          ),
-        );
-      }
+      messenger.showSnackBar(
+        const SnackBar(
+          content: Text('Turn on notifications in system settings first'),
+        ),
+      );
       return false;
     }
     // Exact alarms so the nudge fires on time, not "eventually".
@@ -278,25 +279,24 @@ class ProfileScreen extends StatelessWidget {
       hour: hour,
       minute: minute,
     );
-    if (context.mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(exact
-              ? 'Weekly reminder set'
-              : 'Reminder set, but exact alarms are off — it may arrive '
-                  'late. Allow "Alarms & reminders" in system settings '
-                  'for on-time nudges.'),
-        ),
-      );
-    }
+    messenger.showSnackBar(
+      SnackBar(
+        content: Text(exact
+            ? 'Weekly reminder set'
+            : 'Reminder set, but exact alarms are off — it may arrive '
+                'late. Allow "Alarms & reminders" in system settings '
+                'for on-time nudges.'),
+      ),
+    );
     return true;
   }
 
   void _toggleReminder(BuildContext context, bool v) async {
     final state = AppState.of(context);
+    final messenger = ScaffoldMessenger.of(context);
     if (v) {
       final scheduled = await _scheduleReminderFlow(
-        context,
+        messenger,
         state,
         state.reminderWeekday,
         state.reminderHour,
@@ -413,6 +413,8 @@ class ProfileScreen extends StatelessWidget {
             ),
             FilledButton(
               onPressed: () async {
+                // Capture before the async gap (lint: no context across awaits).
+                final messenger = ScaffoldMessenger.of(ctx);
                 await state.setReminderSchedule(
                   weekday: day,
                   hour: time.hour,
@@ -423,7 +425,7 @@ class ProfileScreen extends StatelessWidget {
                   // code called scheduleBestEffort bare, so an inexact
                   // fallback (or failure) was completely silent.
                   await _scheduleReminderFlow(
-                      ctx, state, day, time.hour, time.minute);
+                      messenger, state, day, time.hour, time.minute);
                 }
                 if (ctx.mounted) Navigator.pop(ctx);
               },
