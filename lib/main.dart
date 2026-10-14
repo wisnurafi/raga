@@ -12,6 +12,8 @@ Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   final state = await AppState.load();
   await CloudSync.init();
+  // Kirim ulang record yang tertunda (mis. tersimpan saat offline).
+  await CloudSync.syncPending(state.records);
   runApp(AppStateScope(state: state, child: const RagaApp()));
 }
 
@@ -27,8 +29,6 @@ class RagaApp extends StatelessWidget {
         title: 'Raga',
         debugShowCheckedModeBanner: false,
         theme: AppTheme.light,
-        darkTheme: AppTheme.dark,
-        themeMode: state.darkMode ? ThemeMode.dark : ThemeMode.light,
         home: const MainShell(),
       ),
     );
@@ -47,7 +47,7 @@ class _MainShellState extends State<MainShell> {
 
   @override
   Widget build(BuildContext context) {
-    return GradientBg(
+    return HealthBg(
       child: Scaffold(
         backgroundColor: Colors.transparent,
         extendBody: true,

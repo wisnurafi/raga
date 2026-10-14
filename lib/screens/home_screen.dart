@@ -2,7 +2,8 @@ import 'package:flutter/material.dart';
 import '../core/theme.dart';
 import '../core/bmi.dart';
 import '../state/app_state.dart';
-import '../widgets/cards.dart';
+import '../widgets/glass.dart';
+import 'cards.dart';
 import 'result_screen.dart';
 
 /// Layar "Hitung": input tinggi & berat badan, pilihan profil,
@@ -47,7 +48,7 @@ class _HomeScreenState extends State<HomeScreen> {
     return ListView(
       padding: const EdgeInsets.fromLTRB(20, 8, 20, 110),
       children: [
-        _header(context, state, rc, p),
+        _header(context, rc, p),
         const SizedBox(height: 18),
         Text(
           '${greetingFor(DateTime.now())}, ${p.name}',
@@ -95,58 +96,76 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Widget _header(
-      BuildContext context, AppState state, RagaColors rc, dynamic p) {
+  Widget _header(BuildContext context, RagaColors rc, dynamic p) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        Text(
-          'Raga',
-          style: TextStyle(
-            fontSize: 34,
-            fontWeight: FontWeight.w800,
-            color: rc.onBg,
-            letterSpacing: -0.8,
-          ),
-        ),
         Row(
           children: [
-            GestureDetector(
-              onTap: () => state.setDarkMode(!state.darkMode),
-              child: Container(
-                width: 44,
-                height: 44,
-                decoration: BoxDecoration(
-                  color: rc.chipInactive.withValues(alpha: 0.55),
-                  shape: BoxShape.circle,
-                ),
-                child: Icon(
-                  state.darkMode ? Icons.dark_mode_outlined : Icons.light_mode_outlined,
-                  color: Colors.white,
-                  size: 20,
-                ),
-              ),
-            ),
-            const SizedBox(width: 10),
             Container(
               width: 44,
               height: 44,
-              decoration: const BoxDecoration(
-                color: Color(0xFFE8C98F),
-                shape: BoxShape.circle,
-              ),
-              child: Center(
-                child: Text(
-                  p.initial,
-                  style: const TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.w800,
-                    color: Color(0xFF1B1B2F),
-                  ),
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [rc.primaryBtn, const Color(0xFF9A8CF5)],
                 ),
+                borderRadius: BorderRadius.circular(16),
+                boxShadow: [
+                  BoxShadow(
+                    color: rc.primaryBtn.withValues(alpha: 0.4),
+                    blurRadius: 14,
+                    offset: const Offset(0, 6),
+                  ),
+                ],
+              ),
+              child: const Icon(
+                Icons.monitor_heart_outlined,
+                color: Colors.white,
+                size: 24,
+              ),
+            ),
+            const SizedBox(width: 12),
+            Text(
+              'Raga',
+              style: TextStyle(
+                fontSize: 34,
+                fontWeight: FontWeight.w800,
+                color: rc.onBg,
+                letterSpacing: -0.8,
               ),
             ),
           ],
+        ),
+        Container(
+          width: 46,
+          height: 46,
+          decoration: BoxDecoration(
+            color: const Color(0xFFE8C98F),
+            shape: BoxShape.circle,
+            border: Border.all(
+              color: Colors.white.withValues(alpha: 0.9),
+              width: 2,
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.12),
+                blurRadius: 10,
+                offset: const Offset(0, 4),
+              ),
+            ],
+          ),
+          child: Center(
+            child: Text(
+              p.initial,
+              style: const TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.w800,
+                color: Color(0xFF1B1B2F),
+              ),
+            ),
+          ),
         ),
       ],
     );
@@ -154,20 +173,15 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Widget _genderAgeCard(
       BuildContext context, AppState state, RagaColors rc) {
-    return Container(
-      padding: const EdgeInsets.all(6),
-      decoration: BoxDecoration(
-        color: rc.cardDark.withValues(alpha: 0.75),
-        borderRadius: BorderRadius.circular(28),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
-      ),
+    return GlassContainer(
+      padding: const EdgeInsets.all(8),
       child: Row(
         children: [
           Expanded(
             child: Container(
               padding: const EdgeInsets.all(4),
               decoration: BoxDecoration(
-                color: Colors.black.withValues(alpha: 0.25),
+                color: rc.panel.withValues(alpha: 0.6),
                 borderRadius: BorderRadius.circular(22),
               ),
               child: Row(
@@ -198,8 +212,8 @@ class _HomeScreenState extends State<HomeScreen> {
                 padding: const EdgeInsets.symmetric(horizontal: 8),
                 child: Text(
                   '$_age thn',
-                  style: const TextStyle(
-                    color: Colors.white,
+                  style: TextStyle(
+                    color: rc.onBg,
                     fontSize: 15,
                     fontWeight: FontWeight.w700,
                   ),
@@ -230,7 +244,11 @@ class _HomeScreenState extends State<HomeScreen> {
           duration: const Duration(milliseconds: 200),
           padding: const EdgeInsets.symmetric(vertical: 10),
           decoration: BoxDecoration(
-            color: active ? rc.primaryBtn : Colors.transparent,
+            gradient: active
+                ? LinearGradient(
+                    colors: [rc.primaryBtn, const Color(0xFF9A8CF5)],
+                  )
+                : null,
             borderRadius: BorderRadius.circular(18),
           ),
           child: Center(
@@ -249,16 +267,17 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _ageBtn(BuildContext context, IconData icon, VoidCallback onTap) {
+    final rc = context.rc;
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        width: 30,
-        height: 30,
+        width: 32,
+        height: 32,
         decoration: BoxDecoration(
-          color: Colors.white.withValues(alpha: 0.14),
+          color: rc.primaryBtn.withValues(alpha: 0.14),
           shape: BoxShape.circle,
         ),
-        child: Icon(icon, size: 16, color: Colors.white),
+        child: Icon(icon, size: 17, color: rc.primaryBtn),
       ),
     );
   }

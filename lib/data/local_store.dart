@@ -9,7 +9,6 @@ class LocalStore {
   static const _kProfiles = 'raga.profiles';
   static const _kActiveProfile = 'raga.active_profile';
   static const _kRecords = 'raga.records';
-  static const _kDarkMode = 'raga.dark_mode';
   static const _kMetric = 'raga.metric_units';
   static const _kActivity = 'raga.activity';
 
@@ -54,9 +53,6 @@ class LocalStore {
 
   Future<void> saveRecords(List<BmiRecord> v) =>
       _prefs.setString(_kRecords, jsonEncode(v.map((e) => e.toJson()).toList()));
-
-  bool get darkMode => _prefs.getBool(_kDarkMode) ?? true;
-  Future<void> saveDarkMode(bool v) => _prefs.setBool(_kDarkMode, v);
 
   bool get metricUnits => _prefs.getBool(_kMetric) ?? true;
   Future<void> saveMetricUnits(bool v) => _prefs.setBool(_kMetric, v);
