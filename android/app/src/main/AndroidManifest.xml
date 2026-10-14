@@ -48,6 +48,12 @@
                 <action android:name="com.htc.intent.action.QUICKBOOT_POWERON"/>
             </intent-filter>
         </receiver>
+        <!-- Static reference so the resource shrinker keeps the notification
+             icon: it's otherwise only looked up by name from Dart, which the
+             shrinker can't see (missing icon hard-crashes plugin init). -->
+        <meta-data
+            android:name="com.wisnurafi.raga.NOTIFICATION_ICON"
+            android:resource="@drawable/ic_stat_notify" />
     </application>
     <!-- Required to query activities that can process text, see:
          https://developer.android.com/training/package-visibility and
