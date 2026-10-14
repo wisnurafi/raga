@@ -1,0 +1,29 @@
+name: Supabase Keep-Alive
+
+# Ping Supabase tiap jam agar project free-tier tidak pause
+# (pause otomatis setelah 7 hari tanpa aktivitas).
+# Butuh secrets: SUPABASE_URL dan SUPABASE_ANON_KEY.
+# Kalau secrets belum diisi, workflow ini lewat tanpa gagal.
+
+on:
+  schedule:
+    - cron: '0 * * * *'
+  workflow_dispatch:
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ping Supabase
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+        run: |
+          if [ -z "$SUPABASE_URL" ] || [ -z "$SUPABASE_ANON_KEY" ]; then
+            echo "Secrets SUPABASE_URL / SUPABASE_ANON_KEY belum diisi - lewati."
+            exit 0
+          fi
+          curl -sf -o /dev/null \
+            -H "apikey: $SUPABASE_ANON_KEY" \
+            "$SUPABASE_URL/auth/v1/health" \
+            && echo "Supabase aktif, tidak jadi pause."

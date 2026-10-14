@@ -1,0 +1,58 @@
+name: Build APK
+
+# Tiap push ke main: analisa, build APK release, upload sebagai artifact,
+# dan tempelkan otomatis ke GitHub Release "latest".
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'zulu'
+          java-version: '17'
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.47.7'
+          channel: stable
+          cache: true
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Analyze
+        run: flutter analyze
+
+      - name: Build APK (release)
+        run: >
+          flutter build apk --release
+          --dart-define=SUPABASE_URL=${{ secrets.SUPABASE_URL }}
+          --dart-define=SUPABASE_ANON_KEY=${{ secrets.SUPABASE_ANON_KEY }}
+
+      - name: Upload APK artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: raga-apk
+          path: build/app/outputs/flutter-apk/app-release.apk
+
+      - name: Attach APK to "latest" release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: latest
+          name: Raga (build terbaru)
+          body: |
+            Build otomatis dari branch `main`.
+            Download `app-release.apk`, install di Android, dan coba langsung.
+          files: build/app/outputs/flutter-apk/app-release.apk
+          generate_release_notes: true
