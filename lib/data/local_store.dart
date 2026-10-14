@@ -18,6 +18,8 @@ class LocalStore {
   static const _kGoals = 'raga.goal_weights';
   static const _kBackupCode = 'raga.backup_code';
   static const _kDevMode = 'raga.dev_mode';
+  static const _kOnboardingDone = 'raga.onboarding_done';
+  static const _kMilestonesSeen = 'raga.milestones_seen';
 
   final SharedPreferences _prefs;
   LocalStore(this._prefs);
@@ -115,6 +117,24 @@ class LocalStore {
 
   bool get devMode => _prefs.getBool(_kDevMode) ?? false;
   Future<void> saveDevMode(bool v) => _prefs.setBool(_kDevMode, v);
+
+  bool get onboardingDone => _prefs.getBool(_kOnboardingDone) ?? false;
+  Future<void> saveOnboardingDone(bool v) =>
+      _prefs.setBool(_kOnboardingDone, v);
+
+  // Milestone weeks already celebrated (so each fires exactly once).
+  List<int> get milestonesSeen {
+    final raw = _prefs.getString(_kMilestonesSeen);
+    if (raw == null || raw.isEmpty) return [];
+    try {
+      return (jsonDecode(raw) as List).map((e) => (e as num).toInt()).toList();
+    } catch (_) {
+      return [];
+    }
+  }
+
+  Future<void> saveMilestonesSeen(List<int> v) =>
+      _prefs.setString(_kMilestonesSeen, jsonEncode(v));
 
   Future<void> clearAll() async {
     await _prefs.remove(_kProfiles);

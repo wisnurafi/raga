@@ -8,6 +8,8 @@ import 'screens/home_screen.dart';
 import 'screens/history_screen.dart';
 import 'screens/health_screen.dart';
 import 'screens/profile_screen.dart';
+import 'screens/splash_screen.dart';
+import 'screens/onboarding_screen.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -60,9 +62,43 @@ class RagaApp extends StatelessWidget {
         title: 'Raga',
         debugShowCheckedModeBanner: false,
         theme: AppTheme.light,
-        home: const MainShell(),
+        home: const SplashGate(),
       ),
     );
+  }
+}
+
+// First frame: animated splash -> first-launch onboarding (once) ->
+// the main app. The OS-level launch_background already showed the
+// splash's first frame, so the transition feels continuous.
+class SplashGate extends StatefulWidget {
+  const SplashGate({super.key});
+
+  @override
+  State<SplashGate> createState() => _SplashGateState();
+}
+
+class _SplashGateState extends State<SplashGate> {
+  bool _splashDone = false;
+  bool _onboardingDone = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final state = AppState.of(context);
+    if (!_splashDone) {
+      return SplashScreen(
+        onDone: () => setState(() {
+          _splashDone = true;
+          _onboardingDone = state.onboardingDone;
+        }),
+      );
+    }
+    if (!_onboardingDone) {
+      return OnboardingScreen(
+        onDone: () => setState(() => _onboardingDone = true),
+      );
+    }
+    return const MainShell();
   }
 }
 

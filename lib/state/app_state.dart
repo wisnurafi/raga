@@ -24,6 +24,8 @@ class AppState extends ChangeNotifier {
   int reminderMinute = 0;
   Map<String, double> goalWeights = {};
   bool devMode = false;
+  bool onboardingDone = false;
+  List<int> milestonesSeen = [];
 
   AppState(this._store);
 
@@ -40,6 +42,8 @@ class AppState extends ChangeNotifier {
     state.reminderMinute = store.reminderMinute;
     state.goalWeights = store.goalWeights;
     state.devMode = store.devMode;
+    state.onboardingDone = store.onboardingDone;
+    state.milestonesSeen = store.milestonesSeen;
     if (state.profiles.isEmpty) {
       final p = Profile(name: 'Wisnu');
       state.profiles = [p];
@@ -174,6 +178,43 @@ class AppState extends ChangeNotifier {
     notifyListeners();
   }
 
+  // First-launch setup: replaces any auto-created placeholder profile
+  // with the real one, applies the goal, and marks onboarding done.
+  Future<void> completeOnboarding({
+    required String name,
+    required bool isMale,
+    required int age,
+    required double heightCm,
+    required double weightKg,
+    double? goalKg,
+  }) async {
+    final p = Profile(
+      name: name,
+      isMale: isMale,
+      age: age,
+      heightCm: heightCm,
+      weightKg: weightKg,
+    );
+    profiles = [p];
+    activeProfileId = p.id;
+    if (goalKg != null) goalWeights = {p.id: goalKg};
+    onboardingDone = true;
+    await _store.saveProfiles(profiles);
+    await _store.saveActiveProfileId(p.id);
+    if (goalKg != null) await _store.saveGoalWeight(p.id, goalKg);
+    await _store.saveOnboardingDone(true);
+    await _saveBackupBlob();
+    notifyListeners();
+  }
+
+  Future<void> markMilestoneSeen(int weeks) async {
+    if (milestonesSeen.contains(weeks)) return;
+    milestonesSeen = [...milestonesSeen, weeks];
+    await _store.saveMilestonesSeen(milestonesSeen);
+    await _saveBackupBlob();
+    notifyListeners();
+  }
+
   // Saves profiles/goals/settings next to the backup code. Cheap RPC,
   // no-op when the cloud isn't connected.
   Future<void> _saveBackupBlob() async {
@@ -188,6 +229,7 @@ class AppState extends ChangeNotifier {
         'reminderWeekday': reminderWeekday,
         'reminderHour': reminderHour,
         'reminderMinute': reminderMinute,
+        'milestonesSeen': milestonesSeen,
       },
     );
   }
@@ -214,6 +256,9 @@ class AppState extends ChangeNotifier {
     reminderWeekday = (s['reminderWeekday'] as num?)?.toInt() ?? 7;
     reminderHour = (s['reminderHour'] as num?)?.toInt() ?? 9;
     reminderMinute = (s['reminderMinute'] as num?)?.toInt() ?? 0;
+    milestonesSeen = ((s['milestonesSeen'] as List?) ?? [])
+        .map((e) => (e as num).toInt())
+        .toList();
     await _store.saveProfiles(profiles);
     await _store.saveRecords(records);
     await _store.saveGoalWeights(goalWeights);
@@ -223,6 +268,10 @@ class AppState extends ChangeNotifier {
     await _store.saveWeeklyReminder(weeklyReminder);
     await _store.saveReminderSchedule(
         weekday: reminderWeekday, hour: reminderHour, minute: reminderMinute);
+    await _store.saveMilestonesSeen(milestonesSeen);
+    // A restored phone has obviously been through onboarding.
+    onboardingDone = true;
+    await _store.saveOnboardingDone(true);
     // Adopt the code so future entries stamp it, and don't re-push
     // rows that are already in the cloud.
     final normalized = CloudSync.normalizeCode(code);
