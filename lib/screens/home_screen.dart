@@ -271,13 +271,20 @@ class _HomeScreenState extends State<HomeScreen> {
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        width: 32,
-        height: 32,
+        width: 36,
+        height: 36,
         decoration: BoxDecoration(
-          color: rc.primaryBtn.withValues(alpha: 0.14),
+          color: rc.primaryBtn,
           shape: BoxShape.circle,
+          boxShadow: [
+            BoxShadow(
+              color: rc.primaryBtn.withValues(alpha: 0.35),
+              blurRadius: 8,
+              offset: const Offset(0, 3),
+            ),
+          ],
         ),
-        child: Icon(icon, size: 17, color: rc.primaryBtn),
+        child: Icon(icon, size: 18, color: Colors.white),
       ),
     );
   }
