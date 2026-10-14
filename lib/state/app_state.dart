@@ -1,0 +1,144 @@
+import 'package:flutter/material.dart';
+import '../data/local_store.dart';
+import '../data/cloud_sync.dart';
+import '../models/profile.dart';
+import '../models/bmi_record.dart';
+
+/// State global aplikasi. Sederhana dan tanpa dependency tambahan:
+/// ChangeNotifier + InheritedNotifier.
+class AppState extends ChangeNotifier {
+  final LocalStore _store;
+
+  /// Akses state dari widget tree: AppState.of(context)
+  static AppState of(BuildContext context) => AppStateScope.of(context);
+
+  List<Profile> profiles = [];
+  String activeProfileId = '';
+  List<BmiRecord> records = [];
+  bool darkMode = true;
+  bool metricUnits = true;
+  String activity = 'Ringan';
+
+  AppState(this._store);
+
+  static Future<AppState> load() async {
+    final store = await LocalStore.load();
+    final state = AppState(store);
+    state.profiles = store.profiles;
+    state.records = store.records;
+    state.darkMode = store.darkMode;
+    state.metricUnits = store.metricUnits;
+    state.activity = store.activity;
+    if (state.profiles.isEmpty) {
+      final p = Profile(name: 'Wisnu');
+      state.profiles = [p];
+      await store.saveProfiles(state.profiles);
+    }
+    state.activeProfileId =
+        store.activeProfileId ?? state.profiles.first.id;
+    if (!state.profiles.any((p) => p.id == state.activeProfileId)) {
+      state.activeProfileId = state.profiles.first.id;
+    }
+    return state;
+  }
+
+  Profile get activeProfile => profiles.firstWhere(
+        (p) => p.id == activeProfileId,
+        orElse: () => profiles.first,
+      );
+
+  List<BmiRecord> recordsOf(String profileId) =>
+      records.where((r) => r.profileId == profileId).toList();
+
+  Future<void> setActiveProfile(String id) async {
+    activeProfileId = id;
+    await _store.saveActiveProfileId(id);
+    notifyListeners();
+  }
+
+  Future<void> addProfile(String name) async {
+    final p = Profile(name: name.trim().isEmpty ? 'Profil' : name.trim());
+    profiles = [...profiles, p];
+    await _store.saveProfiles(profiles);
+    await setActiveProfile(p.id);
+  }
+
+  Future<void> updateActiveProfile(Profile Function(Profile) fn) async {
+    profiles = profiles
+        .map((p) => p.id == activeProfileId ? fn(p) : p)
+        .toList();
+    await _store.saveProfiles(profiles);
+    notifyListeners();
+  }
+
+  Future<void> removeProfile(String id) async {
+    if (profiles.length <= 1) return;
+    profiles = profiles.where((p) => p.id != id).toList();
+    records = records.where((r) => r.profileId != id).toList();
+    await _store.saveProfiles(profiles);
+    await _store.saveRecords(records);
+    if (activeProfileId == id) {
+      await setActiveProfile(profiles.first.id);
+    } else {
+      notifyListeners();
+    }
+  }
+
+  /// Simpan hasil hitungan ke riwayat (lokal + cloud bila tersedia).
+  Future<void> saveRecord({
+    required double heightCm,
+    required double weightKg,
+  }) async {
+    final r = BmiRecord(
+      profileId: activeProfileId,
+      heightCm: heightCm,
+      weightKg: weightKg,
+    );
+    records = [r, ...records];
+    await _store.saveRecords(records);
+    notifyListeners();
+    // Sinkronisasi cloud jalan di background, tidak ditunggu.
+    CloudSync.pushRecord(r);
+  }
+
+  Future<void> setDarkMode(bool v) async {
+    darkMode = v;
+    await _store.saveDarkMode(v);
+    notifyListeners();
+  }
+
+  Future<void> setMetricUnits(bool v) async {
+    metricUnits = v;
+    await _store.saveMetricUnits(v);
+    notifyListeners();
+  }
+
+  Future<void> setActivity(String v) async {
+    activity = v;
+    await _store.saveActivity(v);
+    notifyListeners();
+  }
+
+  Future<void> clearAllData() async {
+    await _store.clearAll();
+    profiles = [Profile(name: 'Wisnu')];
+    activeProfileId = profiles.first.id;
+    records = [];
+    notifyListeners();
+  }
+}
+
+class AppStateScope extends InheritedNotifier<AppState> {
+  const AppStateScope({
+    super.key,
+    required AppState state,
+    required super.child,
+  }) : super(notifier: state);
+
+  static AppState of(BuildContext context) {
+    final scope =
+        context.dependOnInheritedWidgetOfExactType<AppStateScope>();
+    assert(scope != null, 'AppStateScope tidak ditemukan di widget tree');
+    return scope!.notifier!;
+  }
+}
