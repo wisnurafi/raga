@@ -606,7 +606,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
               Switch(
                 value: _remindWeekly,
                 onChanged: (v) => setState(() => _remindWeekly = v),
-                activeColor: rc.primaryBtn,
+                activeThumbColor: rc.primaryBtn,
               ),
             ],
           ),
