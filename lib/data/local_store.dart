@@ -136,10 +136,16 @@ class LocalStore {
   Future<void> saveMilestonesSeen(List<int> v) =>
       _prefs.setString(_kMilestonesSeen, jsonEncode(v));
 
+  // Factory reset for user DATA: profiles, history, goals, milestones,
+  // and the onboarding flag (so a wiped phone onboards again like new).
+  // Settings are deliberately kept: units, activity level, reminder
+  // schedule, backup code (still needed to restore), and dev mode.
   Future<void> clearAll() async {
     await _prefs.remove(_kProfiles);
     await _prefs.remove(_kActiveProfile);
     await _prefs.remove(_kRecords);
     await _prefs.remove(_kGoals);
+    await _prefs.remove(_kMilestonesSeen);
+    await _prefs.remove(_kOnboardingDone);
   }
 }

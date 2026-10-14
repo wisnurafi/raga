@@ -45,7 +45,7 @@ class AppState extends ChangeNotifier {
     state.onboardingDone = store.onboardingDone;
     state.milestonesSeen = store.milestonesSeen;
     if (state.profiles.isEmpty) {
-      final p = Profile(name: 'Wisnu');
+      final p = Profile(name: 'You');
       state.profiles = [p];
       await store.saveProfiles(state.profiles);
     }
@@ -293,11 +293,24 @@ class AppState extends ChangeNotifier {
     return true;
   }
 
+  // Matches LocalStore.clearAll: memory and disk end up identical, so a
+  // restart can't resurrect stale goals, milestones, or a phantom
+  // placeholder profile that was never saved.
   Future<void> clearAllData() async {
     await _store.clearAll();
-    profiles = [Profile(name: 'Wisnu')];
-    activeProfileId = profiles.first.id;
+    final p = Profile(name: 'You');
+    profiles = [p];
+    activeProfileId = p.id;
     records = [];
+    goalWeights = {};
+    milestonesSeen = [];
+    // A wiped phone is a fresh phone: onboarding runs again next launch.
+    onboardingDone = false;
+    await _store.saveProfiles(profiles);
+    await _store.saveActiveProfileId(p.id);
+    await _store.saveGoalWeights(goalWeights);
+    await _store.saveMilestonesSeen(milestonesSeen);
+    await _store.saveOnboardingDone(false);
     notifyListeners();
   }
 }
