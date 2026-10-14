@@ -126,3 +126,28 @@ const shortMonths = [
 ];
 
 String formatDate(DateTime d) => '${d.day} ${shortMonths[d.month - 1]}';
+
+// --- Indonesian presentation (what the mockup shows) ---
+// Thousands separated by '.', e.g. 2.217 for TDEE.
+// (formatIntNum above keeps the US style; the unit tests pin it.)
+String formatIntId(int value) {
+  final s = value.toString();
+  final buf = StringBuffer();
+  for (var i = 0; i < s.length; i++) {
+    if (i > 0 && (s.length - i) % 3 == 0) buf.write('.');
+    buf.write(s[i]);
+  }
+  return buf.toString();
+}
+
+const idShortMonths = [
+  'Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun',
+  'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des',
+];
+
+/// Monday-first short day names: Sen..Min.
+const idShortDays = ['Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab', 'Min'];
+
+String formatDateId(DateTime d) => '${d.day} ${idShortMonths[d.month - 1]}';
+
+String idDayName(DateTime d) => idShortDays[d.weekday - 1];

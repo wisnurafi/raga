@@ -1,30 +1,78 @@
+import 'package:flutter/material.dart';
 import 'bmi.dart';
 
-// Health tips per category — written like advice from a friend,
-// not a medical journal.
-const Map<BmiCategory, List<String>> healthTips = {
+// Health tips per category, in Indonesian — written like advice from a
+// friend, not a medical journal. The Normal trio matches the mockup
+// word for word ("Tetap aktif" / "Cukup minum" / "Tidur teratur").
+typedef TipItem = ({String title, String desc, IconData icon});
+
+const Map<BmiCategory, List<TipItem>> healthTips = {
   BmiCategory.underweight: [
-    'Eat more often, smaller portions but packed with nutrients.',
-    'Snack on things like nuts, avocado, and milk.',
-    'Try some light weight training 2–3 times a week.',
-    "Don't skip breakfast — it's your morning fuel.",
+    (
+      title: 'Makan lebih sering',
+      desc: 'Porsi kecil tapi padat nutrisi.',
+      icon: Icons.restaurant_outlined,
+    ),
+    (
+      title: 'Ngemil cerdas',
+      desc: 'Kacang, alpukat, dan susu pilihan tepat.',
+      icon: Icons.cookie_outlined,
+    ),
+    (
+      title: 'Jangan lewatkan sarapan',
+      desc: 'Bahan bakar pagimu.',
+      icon: Icons.free_breakfast_outlined,
+    ),
   ],
   BmiCategory.normal: [
-    'Your weight is right where it should be. Keep it up with a 30-minute walk, 5 days a week.',
-    'Drink about 2 liters of water a day.',
-    'Get 7–8 hours of sleep to keep your metabolism steady.',
-    'Weigh yourself once a week to stay on track.',
+    (
+      title: 'Tetap aktif',
+      desc: 'Jalan kaki 30 menit, 5 hari seminggu.',
+      icon: Icons.bolt_outlined,
+    ),
+    (
+      title: 'Cukup minum',
+      desc: 'Air putih sekitar 2 liter per hari.',
+      icon: Icons.water_drop_outlined,
+    ),
+    (
+      title: 'Tidur teratur',
+      desc: '7–8 jam tiap malam.',
+      icon: Icons.bedtime_outlined,
+    ),
   ],
   BmiCategory.overweight: [
-    'Swap sugary drinks for water.',
-    'Take a relaxed 30-minute walk every day.',
-    "Eat slowly, and stop when you're full.",
-    'Cut back on late-night snacking.',
+    (
+      title: 'Kurangi minuman manis',
+      desc: 'Ganti dengan air putih.',
+      icon: Icons.local_drink_outlined,
+    ),
+    (
+      title: 'Jalan santai tiap hari',
+      desc: '30 menit jalan santai setiap hari.',
+      icon: Icons.directions_walk_outlined,
+    ),
+    (
+      title: 'Makan perlahan',
+      desc: 'Berhenti saat sudah kenyang.',
+      icon: Icons.restaurant_outlined,
+    ),
   ],
   BmiCategory.obese: [
-    'Start with small steps you can actually stick to.',
-    'Cut back on fried food and soda first.',
-    'Walk 15 minutes a day, then add more little by little.',
-    'Consider talking to a nutritionist.',
+    (
+      title: 'Mulai dari yang kecil',
+      desc: 'Langkah kecil yang bisa kamu pertahankan.',
+      icon: Icons.eco_outlined,
+    ),
+    (
+      title: 'Bergerak lebih banyak',
+      desc: '15 menit sehari, tambah pelan-pelan.',
+      icon: Icons.directions_walk_outlined,
+    ),
+    (
+      title: 'Konsultasi ke ahli',
+      desc: 'Pertimbangkan bicara dengan ahli gizi.',
+      icon: Icons.medical_services_outlined,
+    ),
   ],
 };
