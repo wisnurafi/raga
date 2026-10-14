@@ -32,7 +32,7 @@ class ResultScreen extends StatefulWidget {
 }
 
 // Tips per category, exactly like the mockup: icon circle + title + desc.
-const Map<BmiCategory, List<({String title, String desc, IconData icon})>>
+final Map<BmiCategory, List<({String title, String desc, IconData icon})>>
     _tips = {
   BmiCategory.underweight: [
     (
@@ -89,7 +89,7 @@ const Map<BmiCategory, List<({String title, String desc, IconData icon})>>
     (
       title: 'Start small',
       desc: 'Small steps you can actually stick to.',
-      icon: Icons.footprints,
+      icon: Icons.eco,
     ),
     (
       title: 'Move more',

@@ -684,7 +684,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                 }).toList(),
               ),
               const SizedBox(height: 14),
-              InfoRow('Estimated arrival', _eta()),
+              InfoRow(label: 'Estimated arrival', value: _eta()),
             ],
           ),
         ),
@@ -768,7 +768,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
           ),
         ),
         const SizedBox(height: 14),
-        GlassCard(child: InfoRow('Summary', _summary())),
+        GlassCard(child: InfoRow(label: 'Summary', value: _summary())),
         const SizedBox(height: 16),
         Center(
           child: Text(
