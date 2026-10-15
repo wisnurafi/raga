@@ -11,16 +11,26 @@ class BmiRecord {
   final BmiCategory category;
   final DateTime createdAt;
 
-  BmiRecord({
+  // Computes the BMI once and derives the category from it. A factory
+  // because an initializer list can't reuse the field being initialized.
+  factory BmiRecord({
     String? id,
-    required this.profileId,
-    required this.heightCm,
-    required this.weightKg,
+    required String profileId,
+    required double heightCm,
+    required double weightKg,
     DateTime? createdAt,
-  })  : id = id ?? _newId(),
-        bmi = calcBmi(weightKg: weightKg, heightCm: heightCm),
-        category = categoryOf(calcBmi(weightKg: weightKg, heightCm: heightCm)),
-        createdAt = createdAt ?? DateTime.now();
+  }) {
+    final bmi = calcBmi(weightKg: weightKg, heightCm: heightCm);
+    return BmiRecord._raw(
+      id: id ?? _newId(),
+      profileId: profileId,
+      heightCm: heightCm,
+      weightKg: weightKg,
+      bmi: bmi,
+      category: categoryOf(bmi),
+      createdAt: createdAt ?? DateTime.now(),
+    );
+  }
 
   BmiRecord._raw({
     required this.id,
