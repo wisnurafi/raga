@@ -296,7 +296,6 @@ class _ResultScreenState extends State<ResultScreen> {
   // on the Streak tab — no manual retyping.
   Widget _healthyRangeCard(
       BuildContext context, AppState state, RagaColors rc, bool metric) {
-    final locale = state.locale;
     final range = idealWeightRange(widget.heightCm);
     final w = widget.weightKg;
     String fw(double kg) =>

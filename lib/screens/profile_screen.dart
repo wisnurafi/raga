@@ -443,6 +443,7 @@ class ProfileScreen extends StatelessWidget {
         hour: state.reminderHour,
         minute: state.reminderMinute,
       );
+      if (!context.mounted) return;
       final armed = await _armDays(
         context,
         messenger,
@@ -552,6 +553,7 @@ class ProfileScreen extends StatelessWidget {
                           minute: time.minute,
                         );
                         if (state.weeklyReminder) {
+                          if (!ctx2.mounted) return;
                           await _armDays(
                             ctx2,
                             messenger,
