@@ -933,21 +933,87 @@ class ProfileScreen extends StatelessWidget {
   // per line. Long-press a row to copy just that line; the actions
   // copy everything or wipe the session log.
   void _logsDialog(BuildContext context) {
+    final rc = context.rc;
+    final lines = CloudSync.logText.split('\n');
+    const mono = TextStyle(fontFamily: 'monospace', fontSize: 11.5);
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
         title: Text(tx(ctx, 'profile_log')),
         content: SizedBox(
           width: double.maxFinite,
-          child: SingleChildScrollView(
-            child: SelectableText(
-              CloudSync.logText,
-              style:
-                  const TextStyle(fontFamily: 'monospace', fontSize: 11),
-            ),
+          height: 340,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                tx(ctx, 'log_hint'),
+                style: RagaType.caption(rc.onCardMuted),
+              ),
+              const SizedBox(height: 8),
+              Expanded(
+                child: ListView.builder(
+                  itemCount: lines.length,
+                  itemBuilder: (_, i) => GestureDetector(
+                    behavior: HitTestBehavior.opaque,
+                    onLongPress: () async {
+                      await Clipboard.setData(
+                          ClipboardData(text: lines[i]));
+                      if (ctx.mounted) {
+                        ScaffoldMessenger.of(ctx).showSnackBar(
+                          SnackBar(
+                              content: Text(
+                                  tx(ctx, 'log_copied_line'))),
+                        );
+                      }
+                    },
+                    child: Padding(
+                      padding:
+                          const EdgeInsets.symmetric(vertical: 3),
+                      child: Row(
+                        crossAxisAlignment:
+                            CrossAxisAlignment.start,
+                        children: [
+                          SizedBox(
+                            width: 34,
+                            child: Text(
+                              '${i + 1}',
+                              textAlign: TextAlign.right,
+                              style: mono.copyWith(
+                                  color: rc.onCardMuted),
+                            ),
+                          ),
+                          const SizedBox(width: 10),
+                          Expanded(
+                            child: Text(
+                              lines[i].isEmpty ? ' ' : lines[i],
+                              style: mono.copyWith(color: rc.onCard),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ],
           ),
         ),
         actions: [
+          TextButton(
+            onPressed: () async {
+              await Clipboard.setData(
+                  ClipboardData(text: CloudSync.logText));
+              if (ctx.mounted) {
+                ScaffoldMessenger.of(ctx).showSnackBar(
+                  SnackBar(
+                      content:
+                          Text(tx(ctx, 'log_copied_all'))),
+                );
+              }
+            },
+            child: Text(tx(ctx, 'log_copy_all')),
+          ),
           TextButton(
             onPressed: () {
               CloudSync.clearLog();
