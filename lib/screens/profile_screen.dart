@@ -19,16 +19,7 @@ import '../widgets/headers.dart';
 class ProfileScreen extends StatelessWidget {
   const ProfileScreen({super.key});
 
-  static const _days = [
-    'Sen',
-    'Sel',
-    'Rab',
-    'Kam',
-    'Jum',
-    'Sab',
-    'Min'
-  ];
-  static String _dayName(int d) => _days[d - 1];
+  static String _dayName(int d) => idShortDays[d - 1];
   static String _hdot(int h, int m) =>
       '${h.toString().padLeft(2, '0')}.${m.toString().padLeft(2, '0')}';
 
