@@ -1,4 +1,4 @@
-import 'dart:math';
+import '../core/ids.dart';
 
 // A user profile. One device can hold several (family members, etc.)
 // — picked via the chips on the main screen.
@@ -17,10 +17,7 @@ class Profile {
     this.age = 21,
     this.heightCm = 170,
     this.weightKg = 65,
-  }) : id = id ?? _newId();
-
-  static String _newId() =>
-      '${DateTime.now().microsecondsSinceEpoch}${Random().nextInt(9999)}';
+  }) : id = id ?? newId();
 
   // First letter of the trimmed name, for avatar chips.
   String get initial {

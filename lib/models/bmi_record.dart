@@ -1,5 +1,5 @@
-import 'dart:math';
 import '../core/bmi.dart';
+import '../core/ids.dart';
 
 // One BMI result saved to history.
 class BmiRecord {
@@ -22,7 +22,7 @@ class BmiRecord {
   }) {
     final bmi = calcBmi(weightKg: weightKg, heightCm: heightCm);
     return BmiRecord._raw(
-      id: id ?? _newId(),
+      id: id ?? newId(),
       profileId: profileId,
       heightCm: heightCm,
       weightKg: weightKg,
@@ -41,9 +41,6 @@ class BmiRecord {
     required this.category,
     required this.createdAt,
   });
-
-  static String _newId() =>
-      '${DateTime.now().microsecondsSinceEpoch}${Random().nextInt(9999)}';
 
   factory BmiRecord.fromJson(Map<String, dynamic> j) {
     final bmi = (j['bmi'] as num).toDouble();
