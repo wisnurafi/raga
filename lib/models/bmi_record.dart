@@ -61,7 +61,15 @@ class BmiRecord {
   // The backup code ties rows to a restorable identity: anonymous sign-ins
   // get a fresh user_id on every install, but the code survives in the
   // user's hands.
+  //
+  // client_id is the stable upsert key: pushRecord upserts with
+  // onConflict: 'client_id', so a retry after a crash between a successful
+  // upsert and the _syncedIds write updates the row instead of inserting a
+  // duplicate. (Supabase migration 20261015_client_id_bmi_records.sql adds
+  // the UNIQUE column — apply it in the dashboard before installing a
+  // build with this code, otherwise pushes fail until the column exists.)
   Map<String, dynamic> toCloudJson(String userId, String? backupCode) => {
+        'client_id': id,
         'user_id': userId,
         'profile_id': profileId,
         'height_cm': heightCm,

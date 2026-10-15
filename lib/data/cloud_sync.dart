@@ -166,9 +166,13 @@ class CloudSync {
       return false;
     }
     try {
-      await Supabase.instance.client
-          .from('bmi_records')
-          .upsert(record.toCloudJson(uid, backupCode));
+      // onConflict: 'client_id' makes the upsert idempotent: a retry after
+      // a crash between a successful upsert and the _syncedIds write
+      // updates the existing row instead of inserting a duplicate.
+      // Requires migration 20261015_client_id_bmi_records.sql applied.
+      await Supabase.instance.client.from('bmi_records').upsert(
+          record.toCloudJson(uid, backupCode),
+          onConflict: 'client_id');
       _syncedIds.add(record.id);
       await _prefs?.setStringList(_kSyncedIds, _syncedIds.toList());
       // A success clears any earlier transient failure: without this the
