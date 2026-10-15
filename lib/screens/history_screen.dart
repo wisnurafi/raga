@@ -117,8 +117,9 @@ class _HistoryScreenState extends State<HistoryScreen> {
     final rc = context.rc;
     // Plot individual records (oldest-first, capped at 30 points) so
     // sparse histories still draw a line instead of "no data".
-    // records arrive newest-first.
-    final recs = records.reversed.take(30).toList();
+    // records arrive newest-first: take the 30 newest first, then
+    // reverse to oldest-first for plotting.
+    final recs = records.take(30).toList().reversed.toList();
     final values = [
       for (final r in recs) _plotValue(r, metric),
     ];
