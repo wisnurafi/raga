@@ -227,7 +227,7 @@ class HealthScreen extends StatelessWidget {
     final unit = metric ? 'kg' : 'lb';
     final scaleLo = metric ? 40.0 : 40 * kgToLb;
     final scaleHi = metric ? 90.0 : 90 * kgToLb;
-    final curTxt = formatNum(cur).replaceAll(RegExp(r'\.0$'), '');
+    final curTxt = formatNumTrimmed(cur);
 
     return GlassCard(
       child: Column(

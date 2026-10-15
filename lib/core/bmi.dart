@@ -62,6 +62,10 @@ String formatNum(double value, [int decimals = 1]) {
   return value.toStringAsFixed(decimals);
 }
 
+/// formatNum, but with a trailing ".0" dropped ("62" instead of "62.0").
+String formatNumTrimmed(double value, [int decimals = 1]) =>
+    formatNum(value, decimals).replaceAll(RegExp(r'\.0$'), '');
+
 String _groupInt(int value, String sep) {
   final s = value.toString();
   final buf = StringBuffer();

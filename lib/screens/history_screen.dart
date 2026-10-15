@@ -81,7 +81,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
 
   String _stripWeight(double kg, bool metric) {
     final v = metric ? kg : kg * kgToLb;
-    return formatNum(v).replaceAll(RegExp(r'\.0$'), '');
+    return formatNumTrimmed(v);
   }
 
   Widget _monthStrip(List<BmiRecord> records, bool metric) {

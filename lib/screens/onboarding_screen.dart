@@ -71,11 +71,6 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   double _dispH() => _metric ? _heightCm : _heightCm / cmToIn;
   double _dispW(double kg) => _metric ? kg : kg * kgToLb;
 
-  /// Whole numbers print clean ("62"), fractional keep one decimal.
-  String _trimNum(double v) => v == v.roundToDouble()
-      ? v.toStringAsFixed(0)
-      : v.toStringAsFixed(1);
-
   Future<void> _setUnits(bool metric) async {
     if (metric == _metric) return;
     setState(() => _metric = metric);
@@ -112,7 +107,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
       (_direction == 2 ? _goalKg - _weightKg : _weightKg - _goalKg).abs();
 
   String _goalHint() {
-    final w = '${_trimNum(_dispW(_weightKg))} $_weightUnit';
+    final w = '${formatNumTrimmed(_dispW(_weightKg))} $_weightUnit';
     if (_direction == 1) return 'Tetap di $w';
     final sign = _direction == 2 ? '+' : '−';
     return 'Sekarang $w · selisih $sign${formatNum(_goalDiffKg)} $_weightUnit';
@@ -488,7 +483,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
         GlassCard(
           child: MeasureSlider(
             label: 'Tinggi badan',
-            value: _trimNum(_dispH()),
+            value: formatNumTrimmed(_dispH()),
             unit: _heightUnit,
             sliderValue: _dispH(),
             min: _metric ? 130 : 51,
@@ -501,7 +496,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
         GlassCard(
           child: MeasureSlider(
             label: 'Berat badan',
-            value: _trimNum(_dispW(_weightKg)),
+            value: formatNumTrimmed(_dispW(_weightKg)),
             unit: _weightUnit,
             sliderValue: _dispW(_weightKg),
             min: _metric ? 30 : 66,
@@ -553,7 +548,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
               ),
               const SizedBox(height: 8),
               StepperRow(
-                value: _trimNum(_dispW(_goalKg)),
+                value: formatNumTrimmed(_dispW(_goalKg)),
                 unit: _weightUnit,
                 valueSize: 56,
                 onMinus: () => setState(() => _goalKg =
