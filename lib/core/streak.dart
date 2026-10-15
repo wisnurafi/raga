@@ -17,7 +17,9 @@ class StreakInfo {
 
 const streakMilestones = [4, 8, 12, 26, 52];
 
-DateTime _monday(DateTime d) {
+/// The Monday (date-only) of the week containing [d]. Shared with the
+/// streak screen so both compute week boundaries the same way.
+DateTime mondayOf(DateTime d) {
   final date = DateTime(d.year, d.month, d.day);
   return date.subtract(Duration(days: (date.weekday - 1) % 7));
 }
@@ -29,9 +31,9 @@ StreakInfo computeStreak(List<DateTime> weighIns) {
   }
   final weeksWithData = <DateTime>{};
   for (final w in weighIns) {
-    weeksWithData.add(_monday(w));
+    weeksWithData.add(mondayOf(w));
   }
-  final thisMonday = _monday(DateTime.now());
+  final thisMonday = mondayOf(DateTime.now());
   final thisWeekDone = weeksWithData.contains(thisMonday);
 
   // Walk back from this week (or last, if this one is still empty).

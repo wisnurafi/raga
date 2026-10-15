@@ -164,18 +164,9 @@ class _StreakScreenState extends State<StreakScreen> {
   // Whether the week [weeksAgo] calendar weeks back (0 = this week,
   // Monday start) has at least one weigh-in.
   bool _weekHasData(Iterable<DateTime> dates, int weeksAgo) {
-    final now = DateTime.now();
-    final thisMonday =
-        DateTime(now.year, now.month, now.day).subtract(
-      Duration(days: (now.weekday - 1) % 7),
-    );
+    final thisMonday = mondayOf(DateTime.now());
     final target = thisMonday.subtract(Duration(days: weeksAgo * 7));
-    return dates.any((d) {
-      final day = DateTime(d.year, d.month, d.day);
-      return day
-              .subtract(Duration(days: (day.weekday - 1) % 7))
-              .isAtSameMomentAs(target);
-    });
+    return dates.any((d) => mondayOf(d).isAtSameMomentAs(target));
   }
 
   Widget _weekDot(bool lit) {
