@@ -314,7 +314,7 @@ class ProfileScreen extends StatelessWidget {
                   ),
                   const Spacer(),
                   Text(
-                    'Raga 1.0.0',
+                    'Raga 2.0.0',
                     style: RagaType.label(rc.onCard),
                   ),
                 ],
