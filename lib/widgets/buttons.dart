@@ -2,6 +2,41 @@ import 'package:flutter/material.dart';
 
 import '../core/theme.dart';
 
+/// Top-down light sheen clipped to the pill shape, so the "lighting"
+/// reads on the button itself. [peakAlpha] is the white alpha at the top
+/// edge, fading to transparent by [fadeEnd] (fraction of the height).
+class _Sheen extends StatelessWidget {
+  final BorderRadius radius;
+  final double peakAlpha;
+  final double fadeEnd;
+
+  const _Sheen({
+    required this.radius,
+    this.peakAlpha = 0.35,
+    this.fadeEnd = 0.55,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Positioned.fill(
+      child: DecoratedBox(
+        decoration: BoxDecoration(
+          borderRadius: radius,
+          gradient: LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [
+              Colors.white.withValues(alpha: peakAlpha),
+              Colors.white.withValues(alpha: 0.0),
+            ],
+            stops: [0.0, fadeEnd],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
 /// Primary action: full-width lavender pill, DARK navy label —
 /// exactly like the mockup ("Lanjut", "Hitung BMI", ...).
 ///
@@ -49,22 +84,7 @@ class RagaButton extends StatelessWidget {
           child: Stack(
             children: [
               // Sheen: light falling on the top half of the pill.
-              Positioned.fill(
-                child: DecoratedBox(
-                  decoration: BoxDecoration(
-                    borderRadius: radius,
-                    gradient: LinearGradient(
-                      begin: Alignment.topCenter,
-                      end: Alignment.bottomCenter,
-                      colors: [
-                        Colors.white.withValues(alpha: 0.35),
-                        Colors.white.withValues(alpha: 0.0),
-                      ],
-                      stops: const [0.0, 0.55],
-                    ),
-                  ),
-                ),
-              ),
+              _Sheen(radius: radius),
               Positioned.fill(
                 child: InkWell(
                   borderRadius: radius,
@@ -126,22 +146,7 @@ class RagaOutlineButton extends StatelessWidget {
           ),
           child: Stack(
             children: [
-              Positioned.fill(
-                child: DecoratedBox(
-                  decoration: BoxDecoration(
-                    borderRadius: radius,
-                    gradient: LinearGradient(
-                      begin: Alignment.topCenter,
-                      end: Alignment.bottomCenter,
-                      colors: [
-                        Colors.white.withValues(alpha: 0.22),
-                        Colors.white.withValues(alpha: 0.0),
-                      ],
-                      stops: const [0.0, 0.5],
-                    ),
-                  ),
-                ),
-              ),
+              _Sheen(radius: radius, peakAlpha: 0.22, fadeEnd: 0.5),
               Positioned.fill(
                 child: InkWell(
                   borderRadius: radius,
