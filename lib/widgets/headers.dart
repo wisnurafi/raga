@@ -3,8 +3,8 @@ import 'package:flutter/material.dart';
 import '../core/theme.dart';
 import '../state/app_state.dart';
 
-/// Main screen header: avatar circle left, centered title, moon toggle
-/// right — the mockup's header on home/history/health.
+/// Main screen header: avatar circle left, centered title, language +
+/// theme toggles right — the mockup's header on home/history/health.
 class RagaHeader extends StatelessWidget {
   final String title;
   final String? subtitle;
@@ -50,7 +50,16 @@ class RagaHeader extends StatelessWidget {
           ),
         ),
         trailing ??
-            (showThemeToggle ? const _MoonButton() : const SizedBox(width: 44)),
+            (showThemeToggle
+                ? const Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      _LocaleButton(),
+                      SizedBox(width: 10),
+                      _MoonButton(),
+                    ],
+                  )
+                : const SizedBox(width: 44)),
       ],
     );
   }
@@ -92,6 +101,43 @@ class _MoonButton extends StatelessWidget {
           ? Icons.dark_mode_outlined
           : Icons.light_mode_outlined,
       onTap: () => state.setDarkMode(!state.darkMode),
+    );
+  }
+}
+
+/// Language toggle: a 44px circle like the moon button. Shows the
+/// language you switch TO ("EN" while Indonesian, "ID" while English),
+/// and flips every string instantly via AppState.notifyListeners.
+class _LocaleButton extends StatelessWidget {
+  const _LocaleButton();
+
+  @override
+  Widget build(BuildContext context) {
+    final rc = context.rc;
+    final state = AppState.of(context);
+    final label = state.locale == 'id' ? 'EN' : 'ID';
+    return Material(
+      color: Colors.transparent,
+      child: Ink(
+        width: 44,
+        height: 44,
+        decoration: BoxDecoration(
+          shape: BoxShape.circle,
+          color: rc.iconBtnBg,
+          border: Border.all(color: rc.cardBorder, width: 1),
+        ),
+        child: InkWell(
+          customBorder: const CircleBorder(),
+          onTap: () =>
+              state.setLocale(state.locale == 'id' ? 'en' : 'id'),
+          child: Center(
+            child: Text(
+              label,
+              style: RagaType.chip(rc.iconBtnFg).copyWith(fontSize: 13),
+            ),
+          ),
+        ),
+      ),
     );
   }
 }

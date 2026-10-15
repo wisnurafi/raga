@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../core/bmi.dart';
+import '../core/strings.dart';
 import '../core/theme.dart';
 import '../models/profile.dart';
 import 'buttons.dart';
@@ -44,7 +45,7 @@ Future<Profile?> showProfileSheet(
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(isEdit ? 'Edit profil' : 'Profil baru',
+                Text(tx(ctx2, isEdit ? 'sheet_edit' : 'sheet_new'),
                     style: RagaType.cardTitle(rc.onCard)),
                 const SizedBox(height: 14),
                 TextField(
@@ -53,7 +54,7 @@ Future<Profile?> showProfileSheet(
                   textCapitalization: TextCapitalization.words,
                   style: RagaType.body(rc.onCard),
                   decoration: InputDecoration(
-                    hintText: 'Nama',
+                    hintText: tx(ctx2, 'sheet_name_hint'),
                     hintStyle: RagaType.body(rc.onCardMuted),
                     filled: true,
                     fillColor: rc.chipInactive,
@@ -77,20 +78,21 @@ Future<Profile?> showProfileSheet(
                       ctx2, nameCtrl, existing, isMale, age, heightCm),
                 ),
                 const SizedBox(height: 16),
-                Text('Jenis kelamin',
+                Text(tx(ctx2, 'sheet_gender'),
                     style: RagaType.label(rc.onCardMuted)),
                 const SizedBox(height: 8),
                 RagaSegmented(
-                  options: const ['Pria', 'Wanita'],
+                  options: [tx(ctx2, 'male'), tx(ctx2, 'female')],
                   selected: isMale ? 0 : 1,
                   onChanged: (i) => setLocal(() => isMale = i == 0),
                 ),
                 const SizedBox(height: 16),
-                Text('Umur', style: RagaType.label(rc.onCardMuted)),
+                Text(tx(ctx2, 'sheet_age'),
+                    style: RagaType.label(rc.onCardMuted)),
                 const SizedBox(height: 4),
                 StepperRow(
                   value: '$age',
-                  unit: 'tahun',
+                  unit: tx(ctx2, 'sheet_years'),
                   onMinus: () => setLocal(
                       () => age = (age - 1).clamp(5, 120).toInt()),
                   onPlus: () => setLocal(
@@ -98,7 +100,7 @@ Future<Profile?> showProfileSheet(
                 ),
                 const SizedBox(height: 8),
                 MeasureSlider(
-                  label: 'Tinggi badan',
+                  label: tx(ctx2, 'sheet_height'),
                   value: dispH().toStringAsFixed(0),
                   unit: metric ? 'cm' : 'in',
                   sliderValue: dispH(),
@@ -108,7 +110,7 @@ Future<Profile?> showProfileSheet(
                 ),
                 const SizedBox(height: 20),
                 RagaButton(
-                  label: isEdit ? 'Simpan' : 'Tambah',
+                  label: tx(ctx2, isEdit ? 'save' : 'add'),
                   onPressed: () => _submit(
                       ctx2, nameCtrl, existing, isMale, age, heightCm),
                 ),

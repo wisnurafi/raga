@@ -3,7 +3,9 @@ import 'dart:math';
 import 'package:flutter/material.dart';
 import 'bmi.dart';
 
-// Health tips in Indonesian — written like advice from a friend.
+// Health tips — written like advice from a friend. [healthTips] is the
+// Indonesian original; [healthTipsEn] is the English twin (same order,
+// same tags). Selection helpers take a locale and default to Indonesian.
 // Tags drive the contextual rules in tipsForResult:
 // 'dasar'    = the 3 basics per category, shown when history has < 2 records
 // 'comeback' = slotted in when the weight trend moves away from the goal
@@ -443,7 +445,445 @@ const Map<BmiCategory, List<TipItem>> healthTips = {
   ],
 };
 
+// English twin of [healthTips] — same order, same tags, friend-tone v2
+// like the Indonesian originals. The selection helpers pick the pool
+// by locale; tests pin the Indonesian map and keep passing untouched.
+const Map<BmiCategory, List<TipItem>> healthTipsEn = {
+  BmiCategory.underweight: [
+    (
+      title: 'Eat more often',
+      desc: 'Little but often, 5–6 times a day.',
+      icon: Icons.restaurant_outlined,
+      tags: {'dasar'},
+    ),
+    (
+      title: 'Snack smart',
+      desc: 'Nuts, avocado, milk. Not just fried stuff.',
+      icon: Icons.cookie_outlined,
+      tags: {'dasar'},
+    ),
+    (
+      title: "Don't skip breakfast",
+      desc: 'Rice + eggs is enough. Just get something in.',
+      icon: Icons.free_breakfast_outlined,
+      tags: {'dasar'},
+    ),
+    (
+      title: 'Add protein',
+      desc: 'Every meal needs its protein: eggs, chicken, tempeh, fish.',
+      icon: Icons.egg_outlined,
+      tags: <String>{},
+    ),
+    (
+      title: 'Calories from drinks',
+      desc: 'Avocado juice + milk. Easy, tasty, hits hard.',
+      icon: Icons.local_cafe_outlined,
+      tags: <String>{},
+    ),
+    (
+      title: 'Lift weights',
+      desc: 'Push-ups, squats, lift the water jug. Muscle up, weight follows.',
+      icon: Icons.fitness_center_outlined,
+      tags: {'streak'},
+    ),
+    (
+      title: "Don't fear fat",
+      desc: 'Avocado and nuts are great for gaining weight.',
+      icon: Icons.eco_outlined,
+      tags: <String>{},
+    ),
+    (
+      title: 'Sleep enough',
+      desc: 'Muscle is built while you sleep. Late nights = wasted.',
+      icon: Icons.bedtime_outlined,
+      tags: <String>{},
+    ),
+    (
+      title: 'Log what you eat',
+      desc:
+          "Write down 3 days of meals. You'll see where you're short.",
+      icon: Icons.edit_note_outlined,
+      tags: {'comeback'},
+    ),
+    (
+      title: 'Not just instant noodles',
+      desc: "Fills you up, but the weight doesn't really go up.",
+      icon: Icons.warning_amber_outlined,
+      tags: <String>{},
+    ),
+    (
+      title: 'Snack before bed',
+      desc: 'Bread + milk 1–2 hours before sleep.',
+      icon: Icons.nightlight_outlined,
+      tags: <String>{},
+    ),
+    (
+      title: "Don't drink before meals",
+      desc: 'Drinking first = full first. Drink after you eat.',
+      icon: Icons.water_drop_outlined,
+      tags: <String>{},
+    ),
+    (
+      title: 'Consistency first',
+      desc: "Gaining 0.5 kg a week is already good. Don't rush.",
+      icon: Icons.trending_up_outlined,
+      tags: <String>{},
+    ),
+    (
+      title: 'Rotate the menu',
+      desc: 'Boredom is the enemy. Mix it up so your appetite comes back.',
+      icon: Icons.restaurant_menu_outlined,
+      tags: <String>{},
+    ),
+    (
+      title: 'Eat with friends',
+      desc: 'Eating together somehow adds a serving. Really.',
+      icon: Icons.group_outlined,
+      tags: <String>{},
+    ),
+    (
+      title: 'Eating a lot but not gaining?',
+      desc: 'Better see a doctor, just to be sure.',
+      icon: Icons.medical_services_outlined,
+      tags: {'comeback'},
+    ),
+  ],
+  BmiCategory.normal: [
+    (
+      title: 'Stay active',
+      desc: 'Walk 30 minutes, 5 days a week. That’s enough.',
+      icon: Icons.bolt_outlined,
+      tags: {'dasar'},
+    ),
+    (
+      title: 'Drink enough',
+      desc: '2 liters of water a day. Not sweet tea.',
+      icon: Icons.water_drop_outlined,
+      tags: {'dasar'},
+    ),
+    (
+      title: 'Sleep regularly',
+      desc: 'Aim for 7–8 hours. Late nights can shift your weight.',
+      icon: Icons.bedtime_outlined,
+      tags: {'dasar'},
+    ),
+    (
+      title: 'Switch it up',
+      desc: 'Bored of running? Try swimming or cycling.',
+      icon: Icons.pool_outlined,
+      tags: <String>{},
+    ),
+    (
+      title: "Don't stress too much",
+      desc: 'Stress wrecks your eating. Find a healthy outlet.',
+      icon: Icons.spa_outlined,
+      tags: <String>{},
+    ),
+    (
+      title: 'Weigh in weekly',
+      desc: 'Daily just makes you dizzy.',
+      icon: Icons.monitor_weight_outlined,
+      tags: <String>{},
+    ),
+    (
+      title: 'Protein every meal',
+      desc: 'Some protein each meal keeps you full longer.',
+      icon: Icons.egg_outlined,
+      tags: <String>{},
+    ),
+    (
+      title: "Don't sit all day",
+      desc: 'Every hour, stand up and walk a bit.',
+      icon: Icons.timer_outlined,
+      tags: <String>{},
+    ),
+    (
+      title: 'Cook your own',
+      desc: 'You control the oil, salt, and sugar.',
+      icon: Icons.soup_kitchen_outlined,
+      tags: <String>{},
+    ),
+    (
+      title: 'Half a plate of veggies',
+      desc: 'Easy, right? Every meal, half the plate veggies.',
+      icon: Icons.eco_outlined,
+      tags: <String>{},
+    ),
+    (
+      title: 'Less sleep = hungrier',
+      desc: 'Hunger hormones rise when you stay up late.',
+      icon: Icons.nightlight_outlined,
+      tags: {'comeback'},
+    ),
+    (
+      title: 'Walk after meals',
+      desc: 'Just 10 minutes, your stomach will thank you.',
+      icon: Icons.hiking_outlined,
+      tags: <String>{},
+    ),
+    (
+      title: 'Cut back on alcohol',
+      desc: "Beer packs big calories, you just don't feel it.",
+      icon: Icons.no_drinks_outlined,
+      tags: <String>{},
+    ),
+    (
+      title: "Streak's going — don't break it",
+      desc: 'Keep it.',
+      icon: Icons.emoji_events_outlined,
+      tags: {'streak'},
+    ),
+    (
+      title: 'Check monthly',
+      desc: 'Look at the History tab, not every day.',
+      icon: Icons.insights_outlined,
+      tags: <String>{},
+    ),
+    (
+      title: 'Keep hanging out',
+      desc: "Don't let watching your figure stop you from seeing friends.",
+      icon: Icons.group_outlined,
+      tags: <String>{},
+    ),
+  ],
+  BmiCategory.overweight: [
+    (
+      title: 'Cut the sweet drinks',
+      desc: 'Daily sweet iced tea is the culprit. Switch to water.',
+      icon: Icons.local_drink_outlined,
+      tags: {'dasar'},
+    ),
+    (
+      title: 'Easy walk every day',
+      desc: '30 minutes. No need to run.',
+      icon: Icons.directions_walk_outlined,
+      tags: {'dasar'},
+    ),
+    (
+      title: 'Eat slowly',
+      desc: "Chew slowly, stop when you're full.",
+      icon: Icons.restaurant_outlined,
+      tags: {'dasar'},
+    ),
+    (
+      title: 'Smaller plate',
+      desc: 'A small plate looks full. Stomach stays safe.',
+      icon: Icons.restaurant_menu_outlined,
+      tags: <String>{},
+    ),
+    (
+      title: 'Kitchen closes at 8',
+      desc: 'Give your digestion a break.',
+      icon: Icons.nightlight_outlined,
+      tags: {'comeback'},
+    ),
+    (
+      title: 'Sides first, rice later',
+      desc: 'Eating order affects how full you feel.',
+      icon: Icons.egg_outlined,
+      tags: <String>{},
+    ),
+    (
+      title: 'Hungry? Eat fruit',
+      desc: 'Banana or apple. Not fried snacks.',
+      icon: Icons.apple_outlined,
+      tags: <String>{},
+    ),
+    (
+      title: 'Photograph your food for 3 days',
+      desc: "You'll be shocked at the pattern.",
+      icon: Icons.edit_note_outlined,
+      tags: {'comeback'},
+    ),
+    (
+      title: 'See stairs, take them',
+      desc: "Don't wait for the elevator.",
+      icon: Icons.stairs_outlined,
+      tags: <String>{},
+    ),
+    (
+      title: 'Sleep properly',
+      desc: 'Less sleep = craving sweets tomorrow.',
+      icon: Icons.bedtime_outlined,
+      tags: <String>{},
+    ),
+    (
+      title: 'One slip-up? Move on',
+      desc: "Just continue. It's not the end of the world.",
+      icon: Icons.favorite_outlined,
+      tags: <String>{},
+    ),
+    (
+      title: 'Drink before meals',
+      desc: 'A glass of water 30 minutes before eating.',
+      icon: Icons.water_drop_outlined,
+      tags: <String>{},
+    ),
+    (
+      title: 'Cut the fried food',
+      desc: 'Fried chicken daily? Try grilled or steamed.',
+      icon: Icons.soup_kitchen_outlined,
+      tags: <String>{},
+    ),
+    (
+      title: 'On a call? Walk',
+      desc: "15 minutes around the block, you won't notice.",
+      icon: Icons.directions_walk_outlined,
+      tags: <String>{},
+    ),
+    (
+      title: 'Small targets first',
+      desc: '0.5 kg a week. Slow but it gets there.',
+      icon: Icons.trending_down_outlined,
+      tags: <String>{},
+    ),
+    (
+      title: "Don't skip meals",
+      desc: 'Skipping lunch = binging at night. Guaranteed.',
+      icon: Icons.schedule_outlined,
+      tags: <String>{},
+    ),
+    (
+      title: 'Read the labels',
+      desc: 'Check the sugar, not just the calories.',
+      icon: Icons.label_outlined,
+      tags: <String>{},
+    ),
+    (
+      title: 'Right 5 days > perfect 2 days',
+      desc: 'Consistency beats perfection.',
+      icon: Icons.check_circle_outlined,
+      tags: {'streak'},
+    ),
+    (
+      title: 'Eat with slow eaters',
+      desc: 'Your pace follows your tablemates.',
+      icon: Icons.group_outlined,
+      tags: <String>{},
+    ),
+  ],
+  BmiCategory.obese: [
+    (
+      title: 'Start small',
+      desc: 'No need for a marathon. Walk 15 minutes first.',
+      icon: Icons.eco_outlined,
+      tags: {'dasar'},
+    ),
+    (
+      title: 'Move more',
+      desc: '15 minutes a day. Ramp up slowly.',
+      icon: Icons.directions_walk_outlined,
+      tags: {'dasar'},
+    ),
+    (
+      title: 'Talk to an expert',
+      desc: 'See a nutritionist once, get a plan.',
+      icon: Icons.medical_services_outlined,
+      tags: {'dasar'},
+    ),
+    (
+      title: 'Change one thing first',
+      desc: 'Like cutting sweet drinks. That first, the rest later.',
+      icon: Icons.flag_outlined,
+      tags: {'comeback'},
+    ),
+    (
+      title: '5-minute walk after meals',
+      desc: 'Just 5 minutes, but it adds up.',
+      icon: Icons.timer_outlined,
+      tags: <String>{},
+    ),
+    (
+      title: 'Sleep 7–8 hours',
+      desc: 'Late nights make weight harder to lose. Really.',
+      icon: Icons.bedtime_outlined,
+      tags: <String>{},
+    ),
+    (
+      title: "Don't crash diet",
+      desc: 'Losing 5 kg a week usually gains back 7.',
+      icon: Icons.warning_amber_outlined,
+      tags: <String>{},
+    ),
+    (
+      title: 'Bring a walking buddy',
+      desc: "Alone is heavy. Together it's easier to stay consistent.",
+      icon: Icons.group_outlined,
+      tags: <String>{},
+    ),
+    (
+      title: 'Down a kilo is an achievement',
+      desc: "Don't brush it off.",
+      icon: Icons.celebration_outlined,
+      tags: {'streak'},
+    ),
+    (
+      title: 'Photo every month',
+      desc: "That's where the change shows.",
+      icon: Icons.photo_camera_outlined,
+      tags: <String>{},
+    ),
+    (
+      title: 'Stock healthy snacks',
+      desc: 'Put fruit in the fridge. Hungry? Just grab.',
+      icon: Icons.shopping_basket_outlined,
+      tags: <String>{},
+    ),
+    (
+      title: 'Drink more water',
+      desc: "Often it's thirst, mistaken for hunger.",
+      icon: Icons.water_drop_outlined,
+      tags: <String>{},
+    ),
+    (
+      title: 'Stand every 30 minutes',
+      desc: 'Set an alarm if you need to.',
+      icon: Icons.self_improvement_outlined,
+      tags: <String>{},
+    ),
+    (
+      title: 'Weigh in weekly',
+      desc: 'The number going up and down is normal.',
+      icon: Icons.monitor_weight_outlined,
+      tags: <String>{},
+    ),
+    (
+      title: 'Tell your family',
+      desc: "Tell them you're watching your food, so they stop offering.",
+      icon: Icons.family_restroom_outlined,
+      tags: <String>{},
+    ),
+    (
+      title: 'Pick what you like',
+      desc: "Hate running? Then don't run. Swim, cycle, whatever.",
+      icon: Icons.favorite_outlined,
+      tags: <String>{},
+    ),
+    (
+      title: 'Tired? Rest',
+      desc: 'Forcing it leads to quitting. Rest is part of the plan.',
+      icon: Icons.weekend_outlined,
+      tags: <String>{},
+    ),
+    (
+      title: 'Eating when upset?',
+      desc: 'Write down mood + what you ate. See the pattern.',
+      icon: Icons.mood_outlined,
+      tags: {'comeback'},
+    ),
+    (
+      title: 'Take it slow',
+      desc: "What matters is you don't stop.",
+      icon: Icons.volunteer_activism_outlined,
+      tags: {'streak'},
+    ),
+  ],
+};
+
 // --- selection ------------------------------------------------------------
+
+Map<BmiCategory, List<TipItem>> _poolFor(String locale) =>
+    locale == 'en' ? healthTipsEn : healthTips;
 
 int _daySeed(DateTime day, int salt) =>
     day.year * 10000 + day.month * 100 + day.day + salt;
@@ -455,8 +895,8 @@ List<TipItem> _seededTake(List<TipItem> pool, int seed, int count) {
   return [for (var i = 0; i < count && i < idx.length; i++) pool[idx[i]]];
 }
 
-List<TipItem> _tagged(BmiCategory cat, String tag) =>
-    healthTips[cat]!.where((t) => t.tags.contains(tag)).toList();
+List<TipItem> _tagged(BmiCategory cat, String tag, String locale) =>
+    _poolFor(locale)[cat]!.where((t) => t.tags.contains(tag)).toList();
 
 /// One deterministic pick from [pool], avoiding [exclude] when possible.
 TipItem _seededOneExcept(List<TipItem> pool, List<TipItem> exclude, int seed) {
@@ -467,13 +907,14 @@ TipItem _seededOneExcept(List<TipItem> pool, List<TipItem> exclude, int seed) {
 
 /// 3 tips for the day: same set all day, a new set tomorrow.
 /// Seeded by date, so it never reshuffles on rebuild.
-List<TipItem> tipsForDay(BmiCategory cat, DateTime day, {int salt = 0}) =>
-    _seededTake(healthTips[cat]!, _daySeed(day, salt), 3);
+List<TipItem> tipsForDay(BmiCategory cat, DateTime day,
+        {int salt = 0, String locale = 'id'}) =>
+    _seededTake(_poolFor(locale)[cat]!, _daySeed(day, salt), 3);
 
 /// The single "tips hari ini" for the Home screen.
 /// Different salt from the Result screen so they rarely overlap.
-TipItem dailyTip(BmiCategory cat, DateTime day) =>
-    _seededTake(healthTips[cat]!, _daySeed(day, 7919), 1).first;
+TipItem dailyTip(BmiCategory cat, DateTime day, {String locale = 'id'}) =>
+    _seededTake(_poolFor(locale)[cat]!, _daySeed(day, 7919), 1).first;
 
 /// Context-aware tips for the Result screen:
 /// daily rotation, plus a 'comeback' tip when the trend moves away from
@@ -484,25 +925,26 @@ List<TipItem> tipsForResult({
   required double? goalKg,
   required int streakWeeks,
   required DateTime day,
+  String locale = 'id',
 }) {
   // Not enough history yet: the 3 basics, like before.
-  if (weightsKg.length < 2) return _tagged(cat, 'dasar');
+  if (weightsKg.length < 2) return _tagged(cat, 'dasar', locale);
 
-  final tips = tipsForDay(cat, day);
+  final tips = tipsForDay(cat, day, locale: locale);
   if (goalKg != null) {
     final last = weightsKg.last;
     final d = last - weightsKg.first;
     final away = (goalKg - last).abs() >= 0.5 &&
         ((goalKg < last && d > 0.05) || (goalKg > last && d < -0.05));
     if (away) {
-      final pool = _tagged(cat, 'comeback');
+      final pool = _tagged(cat, 'comeback', locale);
       if (pool.isNotEmpty) {
         tips[0] = _seededOneExcept(pool, tips, _daySeed(day, 104729));
       }
     }
   }
   if (streakWeeks >= 4) {
-    final pool = _tagged(cat, 'streak');
+    final pool = _tagged(cat, 'streak', locale);
     if (pool.isNotEmpty) {
       tips[tips.length - 1] =
           _seededOneExcept(pool, tips, _daySeed(day, 1299709));

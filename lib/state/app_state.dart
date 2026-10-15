@@ -27,6 +27,7 @@ class AppState extends ChangeNotifier {
   bool devMode = false;
   bool onboardingDone = false;
   List<int> milestonesSeen = [];
+  String locale = 'id';
 
   AppState(this._store);
 
@@ -46,6 +47,7 @@ class AppState extends ChangeNotifier {
     state.devMode = store.devMode;
     state.onboardingDone = store.onboardingDone;
     state.milestonesSeen = store.milestonesSeen;
+    state.locale = store.locale;
     if (state.profiles.isEmpty) {
       final p = Profile(name: 'You');
       state.profiles = [p];
@@ -70,12 +72,14 @@ class AppState extends ChangeNotifier {
   Future<void> setActiveProfile(String id) async {
     activeProfileId = id;
     await _store.saveActiveProfileId(id);
+    CloudSync.logEvent('profile: active -> $id');
     notifyListeners();
   }
 
   Future<void> addProfile(Profile profile) async {
     profiles = [...profiles, profile];
     await _store.saveProfiles(profiles);
+    CloudSync.logEvent('profile: added "${profile.name}"');
     await setActiveProfile(profile.id);
     await _saveBackupBlob();
   }
@@ -88,6 +92,7 @@ class AppState extends ChangeNotifier {
     // Profile edits (name, age, gender, height) must reach the cloud
     // backup too — previously only addProfile saved the blob.
     await _saveBackupBlob();
+    CloudSync.logEvent('profile: edited');
     notifyListeners();
   }
 
@@ -97,6 +102,7 @@ class AppState extends ChangeNotifier {
     records = records.where((r) => r.profileId != id).toList();
     await _store.saveProfiles(profiles);
     await _store.saveRecords(records);
+    CloudSync.logEvent('profile: removed $id');
     if (activeProfileId == id) {
       await setActiveProfile(profiles.first.id);
     } else {
@@ -117,6 +123,8 @@ class AppState extends ChangeNotifier {
     );
     records = [r, ...records];
     await _store.saveRecords(records);
+    CloudSync.logEvent('record: saved ${r.weightKg.toStringAsFixed(1)} kg '
+        '(bmi ${r.bmi.toStringAsFixed(1)})');
     notifyListeners();
     // Cloud backup runs in the background; check its status in Profile.
     // (No second notify: the push and the blob RPC don't change any
@@ -128,6 +136,7 @@ class AppState extends ChangeNotifier {
   Future<void> setMetricUnits(bool v) async {
     metricUnits = v;
     await _store.saveMetricUnits(v);
+    CloudSync.logEvent('settings: units -> ${v ? 'metric' : 'imperial'}');
     notifyListeners();
   }
 
@@ -155,6 +164,9 @@ class AppState extends ChangeNotifier {
     }
     await _store.saveGoalWeight(profileId, kg);
     await _saveBackupBlob();
+    CloudSync.logEvent(kg == null
+        ? 'goal: cleared for $profileId'
+        : 'goal: set ${kg.toStringAsFixed(1)} kg for $profileId');
     notifyListeners();
   }
 
@@ -182,6 +194,15 @@ class AppState extends ChangeNotifier {
   Future<void> setDarkMode(bool v) async {
     darkMode = v;
     await _store.saveDarkMode(v);
+    CloudSync.logEvent('settings: theme -> ${v ? 'dark' : 'light'}');
+    notifyListeners();
+  }
+
+  Future<void> setLocale(String v) async {
+    if (v != 'en' && v != 'id') return;
+    locale = v;
+    await _store.saveLocale(v);
+    CloudSync.logEvent('settings: locale -> $v');
     notifyListeners();
   }
 
@@ -245,6 +266,7 @@ class AppState extends ChangeNotifier {
         'reminderMinute': reminderMinute,
         'darkMode': darkMode,
         'milestonesSeen': milestonesSeen,
+        'locale': locale,
       },
     );
   }
@@ -285,6 +307,9 @@ class AppState extends ChangeNotifier {
     milestonesSeen = ((s['milestonesSeen'] as List?) ?? [])
         .map((e) => (e as num).toInt())
         .toList();
+    final loc = s['locale'] as String?;
+    locale = (loc == 'en' || loc == 'id') ? loc! : 'id';
+    await _store.saveLocale(locale);
     await _store.saveProfiles(profiles);
     await _store.saveRecords(records);
     await _store.saveGoalWeights(goalWeights);
@@ -315,6 +340,7 @@ class AppState extends ChangeNotifier {
           weekdays: reminderWeekdays,
           hour: reminderHour,
           minute: reminderMinute,
+          locale: locale,
         );
       } catch (_) {
         // The toggle flow will re-arm it on next launch.

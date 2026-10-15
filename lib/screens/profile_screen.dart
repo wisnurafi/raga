@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../core/bmi.dart';
+import '../core/strings.dart';
 import '../core/theme.dart';
 import '../models/profile.dart';
 import '../state/app_state.dart';
@@ -19,7 +20,8 @@ import '../widgets/headers.dart';
 class ProfileScreen extends StatelessWidget {
   const ProfileScreen({super.key});
 
-  static String _dayName(int d) => idShortDays[d - 1];
+  static String _dayName(BuildContext context, int d) =>
+      shortDays(AppState.of(context).locale)[d - 1];
   static String _hdot(int h, int m) =>
       '${h.toString().padLeft(2, '0')}.${m.toString().padLeft(2, '0')}';
 
@@ -32,7 +34,7 @@ class ProfileScreen extends StatelessWidget {
     return ListView(
       padding: const EdgeInsets.fromLTRB(22, 8, 22, 110),
       children: [
-        const RagaHeader(title: 'Profil'),
+        RagaHeader(title: tx(context, 'profile_title')),
         const SizedBox(height: 18),
         // Active profile identity card.
         GlassCard(
@@ -84,14 +86,14 @@ class ProfileScreen extends StatelessWidget {
               ),
               const SizedBox(height: 4),
               Text(
-                _profileLine(state, p),
+                _profileLine(context, state, p),
                 style: RagaType.body(rc.onCardMuted),
               ),
             ],
           ),
         ),
         const SizedBox(height: 18),
-        _label(context, 'Profil'),
+        _label(context, tx(context, 'profile_title')),
         SingleChildScrollView(
           scrollDirection: Axis.horizontal,
           child: Row(
@@ -114,7 +116,7 @@ class ProfileScreen extends StatelessWidget {
                 const SizedBox(width: 10),
               ],
               ProfileChip(
-                label: 'Tambah',
+                label: tx(context, 'add'),
                 isAdd: true,
                 selected: false,
                 onTap: () => _addProfileSheet(context, state),
@@ -124,16 +126,17 @@ class ProfileScreen extends StatelessWidget {
         ),
         const SizedBox(height: 8),
         Text(
-          'Tahan chip profil untuk menghapusnya',
+          tx(context, 'profile_longpress_hint'),
           style: RagaType.caption(rc.onCardMuted),
         ),
         const SizedBox(height: 18),
-        _label(context, 'Pengaturan'),
+        _label(context, tx(context, 'profile_settings')),
         GlassCard(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text('Unit', style: RagaType.label(rc.onCardMuted)),
+              Text(tx(context, 'profile_units'),
+                  style: RagaType.label(rc.onCardMuted)),
               const SizedBox(height: 10),
               RagaSegmented(
                 options: const ['cm · kg', 'in · lb'],
@@ -141,10 +144,14 @@ class ProfileScreen extends StatelessWidget {
                 onChanged: (i) => state.setMetricUnits(i == 0),
               ),
               _divider(context),
-              Text('Tema', style: RagaType.label(rc.onCardMuted)),
+              Text(tx(context, 'profile_theme'),
+                  style: RagaType.label(rc.onCardMuted)),
               const SizedBox(height: 10),
               RagaSegmented(
-                options: const ['Gelap', 'Terang'],
+                options: [
+                  tx(context, 'theme_dark'),
+                  tx(context, 'theme_light')
+                ],
                 selected: state.darkMode ? 0 : 1,
                 onChanged: (i) => state.setDarkMode(i == 0),
               ),
@@ -156,14 +163,14 @@ class ProfileScreen extends StatelessWidget {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          'Pengingat',
+                          tx(context, 'profile_reminder'),
                           style: RagaType.cardTitle(rc.onCard),
                         ),
                         const SizedBox(height: 2),
                         Text(
                           state.weeklyReminder
-                              ? 'Pengingat timbang mingguan aktif'
-                              : 'Pengingat timbang mingguan mati',
+                              ? tx(context, 'profile_reminder_on')
+                              : tx(context, 'profile_reminder_off'),
                           style: RagaType.caption(rc.onCardMuted),
                         ),
                       ],
@@ -201,8 +208,9 @@ class ProfileScreen extends StatelessWidget {
                                   state.reminderWeekdays,
                                   state.reminderHour,
                                   state.reminderMinute,
+                                  locale: state.locale,
                                 )
-                              : 'Mati',
+                              : tx(context, 'rem_off'),
                           style: RagaType.chip(rc.onCard),
                         ),
                       ),
@@ -216,10 +224,10 @@ class ProfileScreen extends StatelessWidget {
           ),
         ),
         const SizedBox(height: 18),
-        _label(context, 'Backup'),
+        _label(context, tx(context, 'profile_backup')),
         _backupCard(context, state),
         const SizedBox(height: 18),
-        _label(context, 'Lainnya'),
+        _label(context, tx(context, 'profile_others')),
         GlassCard(
           child: Column(
             children: [
@@ -230,14 +238,14 @@ class ProfileScreen extends StatelessWidget {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          'Mode pengembang',
+                          tx(context, 'profile_devmode'),
                           style: RagaType.cardTitle(rc.onCard),
                         ),
                         const SizedBox(height: 2),
                         Text(
                           state.devMode
-                              ? 'Log, notifikasi tes, info server'
-                              : 'Perkakas tambahan untuk debugging',
+                              ? tx(context, 'profile_dev_on')
+                              : tx(context, 'profile_dev_off'),
                           style: RagaType.caption(rc.onCardMuted),
                         ),
                       ],
@@ -254,22 +262,22 @@ class ProfileScreen extends StatelessWidget {
                 _devRow(
                   context,
                   icon: Icons.notifications_active_outlined,
-                  title: 'Kirim notifikasi tes',
-                  subtitle: 'Kirim satu sekarang',
+                  title: tx(context, 'profile_test_notif'),
+                  subtitle: tx(context, 'profile_test_notif_sub'),
                   onTap: () => _sendTestNotification(context),
                 ),
                 _devRow(
                   context,
                   icon: Icons.alarm_outlined,
-                  title: 'Alarm terdaftar',
-                  subtitle: 'Yang benar-benar didaftarkan OS',
+                  title: tx(context, 'profile_alarms'),
+                  subtitle: tx(context, 'profile_alarms_sub'),
                   onTap: () => _pendingAlarmsDialog(context),
                 ),
                 _devRow(
                   context,
                   icon: Icons.terminal_outlined,
-                  title: 'Log sinkron sesi',
-                  subtitle: 'Sesi ini saja',
+                  title: tx(context, 'profile_log'),
+                  subtitle: tx(context, 'profile_log_sub'),
                   onTap: () => _logsDialog(context),
                 ),
               ],
@@ -287,7 +295,7 @@ class ProfileScreen extends StatelessWidget {
                   ),
                   child: Center(
                     child: Text(
-                      'Hapus semua data',
+                      tx(context, 'profile_wipe'),
                       style: TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.w700,
@@ -301,7 +309,7 @@ class ProfileScreen extends StatelessWidget {
               Row(
                 children: [
                   Text(
-                    'Versi aplikasi',
+                    tx(context, 'profile_version'),
                     style: RagaType.caption(rc.onCardMuted),
                   ),
                   const Spacer(),
@@ -319,11 +327,15 @@ class ProfileScreen extends StatelessWidget {
   }
 
   // "Pria · 21 th · 170 cm", converted for imperial.
-  String _profileLine(AppState state, Profile p) {
+  String _profileLine(BuildContext context, AppState state, Profile p) {
     final h = state.metricUnits
         ? '${p.heightCm.toStringAsFixed(0)} cm'
         : '${(p.heightCm * cmToIn).round()} in';
-    return '${p.isMale ? 'Pria' : 'Wanita'} · ${p.age} th · $h';
+    return tx(context, 'profile_line', {
+      'gender': tx(context, p.isMale ? 'male' : 'female'),
+      'n': p.age,
+      'h': h,
+    });
   }
 
   Widget _label(BuildContext context, String text) {
@@ -346,8 +358,8 @@ class ProfileScreen extends StatelessWidget {
 
   // "Hari ini · 07.00", "Besok · 07.00", or "Sen · 07.00" — the
   // earliest upcoming armed day.
-  String _nextLabel(Set<int> days, int h, int m) {
-    if (days.isEmpty) return 'Pilih minimal satu hari';
+  String _nextLabel(BuildContext context, Set<int> days, int h, int m) {
+    if (days.isEmpty) return tx(context, 'profile_pick_day');
     var best = ReminderService.nextOccurrence(days.first, h, m);
     for (final d in days.skip(1)) {
       final c = ReminderService.nextOccurrence(d, h, m);
@@ -357,8 +369,11 @@ class ProfileScreen extends StatelessWidget {
     final diff = DateTime(best.year, best.month, best.day)
         .difference(DateTime(now.year, now.month, now.day))
         .inDays;
-    final when =
-        diff == 0 ? 'Hari ini' : diff == 1 ? 'Besok' : _dayName(best.weekday);
+    final when = diff == 0
+        ? tx(context, 'profile_today')
+        : diff == 1
+            ? tx(context, 'profile_tomorrow')
+            : _dayName(context, best.weekday);
     return '$when · ${_hdot(h, m)}';
   }
 
@@ -367,16 +382,24 @@ class ProfileScreen extends StatelessWidget {
   // exact alarms when allowed, and an honest message about which one
   // the OS actually gave us.
   Future<bool> _armDays(
+    BuildContext context,
     ScaffoldMessengerState messenger,
     List<int> days,
     int hour,
     int minute,
   ) async {
+    // Capture everything context-derived up front: using BuildContext
+    // after an await trips use_build_context_synchronously.
+    final locale = AppState.of(context).locale;
+    final notifOff = tx(context, 'profile_arm_notif');
+    final exactOff = tx(context, 'profile_arm_exact');
+    final okMsg = tx(context, 'profile_arm_ok');
+    final lateMsg = tx(context, 'profile_arm_late');
     final ok = await ReminderService.requestPermission();
     if (!ok) {
       messenger.showSnackBar(
-        const SnackBar(
-          content: Text('Nyalakan notifikasi di pengaturan sistem dulu'),
+        SnackBar(
+          content: Text(notifOff),
         ),
       );
       return false;
@@ -390,9 +413,8 @@ class ProfileScreen extends StatelessWidget {
     if (!await ReminderService.canScheduleExact()) {
       await ReminderService.requestExactAlarmsPermission();
       messenger.showSnackBar(
-        const SnackBar(
-          content: Text('Aktifkan "Alarm & pengingat" di pengaturan '
-              'sistem, lalu nyalakan pengingatnya lagi.'),
+        SnackBar(
+          content: Text(exactOff),
         ),
       );
       return false;
@@ -401,14 +423,11 @@ class ProfileScreen extends StatelessWidget {
       weekdays: days,
       hour: hour,
       minute: minute,
+      locale: locale,
     );
     messenger.showSnackBar(
       SnackBar(
-        content: Text(exact
-            ? 'Pengingat mingguan aktif'
-            : 'Pengingat aktif, tapi alarm tepat waktu mati — bisa '
-                'terlambat. Izinkan "Alarm & pengingat" di pengaturan '
-                'sistem biar tepat waktu.'),
+        content: Text(exact ? okMsg : lateMsg),
       ),
     );
     return true;
@@ -425,6 +444,7 @@ class ProfileScreen extends StatelessWidget {
         minute: state.reminderMinute,
       );
       final armed = await _armDays(
+        context,
         messenger,
         days,
         state.reminderHour,
@@ -447,7 +467,7 @@ class ProfileScreen extends StatelessWidget {
       context: context,
       builder: (ctx) => StatefulBuilder(
         builder: (ctx2, setLocal) => AlertDialog(
-          title: const Text('Jadwal pengingat'),
+          title: Text(tx(ctx2, 'profile_sched_title')),
           content: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -459,7 +479,7 @@ class ProfileScreen extends StatelessWidget {
                     for (var d = 1; d <= 7; d++) ...[
                       if (d > 1) const SizedBox(width: 8),
                       DayChip(
-                        label: _dayName(d),
+                        label: _dayName(ctx2, d),
                         selected: days.contains(d),
                         onTap: () => setLocal(() {
                           if (days.contains(d)) {
@@ -507,7 +527,9 @@ class ProfileScreen extends StatelessWidget {
               ),
               const SizedBox(height: 12),
               Text(
-                'Berikutnya: ${_nextLabel(days, time.hour, time.minute)}',
+                tx(ctx2, 'profile_next', {
+                  't': _nextLabel(ctx2, days, time.hour, time.minute)
+                }),
                 style: TextStyle(
                   fontSize: 13,
                   fontWeight: FontWeight.w600,
@@ -516,7 +538,7 @@ class ProfileScreen extends StatelessWidget {
               ),
               const SizedBox(height: 18),
               RagaButton(
-                label: 'Simpan',
+                label: tx(ctx2, 'save'),
                 height: 56,
                 onPressed: days.isEmpty
                     ? null
@@ -531,6 +553,7 @@ class ProfileScreen extends StatelessWidget {
                         );
                         if (state.weeklyReminder) {
                           await _armDays(
+                            ctx2,
                             messenger,
                             list,
                             time.hour,
@@ -541,7 +564,7 @@ class ProfileScreen extends StatelessWidget {
                       },
               ),
               RagaTextButton(
-                label: 'Batal',
+                label: tx(ctx2, 'cancel'),
                 onPressed: () => Navigator.pop(ctx2),
               ),
             ],
@@ -553,7 +576,7 @@ class ProfileScreen extends StatelessWidget {
 
   Widget _backupCard(BuildContext context, AppState state) {
     final rc = context.rc;
-    final code = CloudSync.backupCode ?? '(belum siap)';
+    final code = CloudSync.backupCode ?? tx(context, 'profile_code_not_ready');
     final pending = CloudSync.pendingCount(state.records);
     final isError = CloudSync.state == SyncState.error;
     return GlassCard(
@@ -567,13 +590,13 @@ class ProfileScreen extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'Status',
+                      tx(context, 'profile_status'),
                       style: RagaType.label(rc.onCardMuted),
                     ),
                     const SizedBox(height: 4),
                     Text(
                       CloudSync.describe(state.records,
-                          indonesian: true),
+                          locale: state.locale),
                       style: RagaType.cardTitle(rc.onCard),
                     ),
                   ],
@@ -585,7 +608,7 @@ class ProfileScreen extends StatelessWidget {
           if (pending > 0) ...[
             const SizedBox(height: 6),
             Text(
-              '$pending catatan menunggu diunggah.',
+              tx(context, 'profile_pending', {'n': pending}),
               style: TextStyle(
                 fontSize: 13,
                 color: rc.onCardMuted,
@@ -612,7 +635,7 @@ class ProfileScreen extends StatelessWidget {
           ],
           const SizedBox(height: 14),
           Text(
-            'Kode backup',
+            tx(context, 'profile_backup_code'),
             style: RagaType.label(rc.onCardMuted),
           ),
           const SizedBox(height: 8),
@@ -638,36 +661,37 @@ class ProfileScreen extends StatelessWidget {
           ),
           const SizedBox(height: 14),
           RagaOutlineButton(
-            label: 'Salin kode',
+            label: tx(context, 'profile_copy_code'),
             height: 56,
             onPressed: () async {
               await Clipboard.setData(ClipboardData(text: code));
               if (context.mounted) {
                 ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                      content: Text('Kode backup disalin')),
+                  SnackBar(
+                      content:
+                          Text(tx(context, 'profile_code_copied'))),
                 );
               }
             },
           ),
           const SizedBox(height: 10),
           RagaButton(
-            label: 'Sinkron sekarang',
+            label: tx(context, 'profile_sync_now'),
             height: 56,
             onPressed: () async {
               await state.refreshSync();
               if (context.mounted) {
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(
-                      content:
-                          Text(CloudSync.describe(state.records))),
+                      content: Text(CloudSync.describe(state.records,
+                          locale: state.locale))),
                 );
               }
             },
           ),
           const SizedBox(height: 10),
           RagaOutlineButton(
-            label: 'Restore dari kode',
+            label: tx(context, 'profile_restore'),
             height: 56,
             onPressed: () => _restoreCodeDialog(context, state),
           ),
@@ -683,7 +707,7 @@ class ProfileScreen extends StatelessWidget {
           ],
           const SizedBox(height: 10),
           Text(
-            'Tersimpan aman di cloud pribadimu. Tanpa akun — tinggal pakai.',
+            tx(context, 'profile_backup_note'),
             style: TextStyle(
               fontSize: 12.5,
               color: rc.onCardMuted,
@@ -776,34 +800,34 @@ class ProfileScreen extends StatelessWidget {
     final rc = context.rc;
     if (state.profiles.length <= 1) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
+        SnackBar(
             content:
-                Text('Tidak bisa menghapus profil terakhir')),
+                Text(tx(context, 'profile_delete_last'))),
       );
       return;
     }
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Hapus profil?'),
+        title: Text(tx(ctx, 'profile_delete_title')),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              '${prof.name} beserta riwayatnya akan hilang selamanya.',
+              tx(ctx, 'profile_delete_body', {'name': prof.name}),
               style: TextStyle(color: rc.onCardMuted),
             ),
             const SizedBox(height: 20),
             DangerPillButton(
-              label: 'Hapus',
+              label: tx(ctx, 'delete'),
               onTap: () async {
                 Navigator.pop(ctx);
                 await state.removeProfile(prof.id);
               },
             ),
             RagaTextButton(
-              label: 'Batal',
+              label: tx(ctx, 'cancel'),
               onPressed: () => Navigator.pop(ctx),
             ),
           ],
@@ -817,7 +841,7 @@ class ProfileScreen extends StatelessWidget {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Restore dari kode'),
+        title: Text(tx(ctx, 'profile_restore')),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -832,7 +856,7 @@ class ProfileScreen extends StatelessWidget {
             ),
             const SizedBox(height: 18),
             RagaButton(
-              label: 'Lanjut',
+              label: tx(ctx, 'continue'),
               height: 56,
               onPressed: () {
                 if (ctl.text.trim().isEmpty) return;
@@ -841,7 +865,7 @@ class ProfileScreen extends StatelessWidget {
               },
             ),
             RagaTextButton(
-              label: 'Batal',
+              label: tx(ctx, 'cancel'),
               onPressed: () => Navigator.pop(ctx),
             ),
           ],
@@ -856,18 +880,18 @@ class ProfileScreen extends StatelessWidget {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Ganti semuanya?'),
+        title: Text(tx(ctx, 'profile_replace_title')),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'Semua profil dan riwayat di HP ini akan diganti dengan data backup. Tidak bisa dibatalkan.',
+              tx(ctx, 'profile_replace_body'),
               style: TextStyle(color: rc.onCardMuted),
             ),
             const SizedBox(height: 20),
             DangerPillButton(
-              label: 'Restore',
+              label: tx(ctx, 'profile_replace_ok'),
               onTap: () async {
                 Navigator.pop(ctx);
                 final ok =
@@ -876,15 +900,15 @@ class ProfileScreen extends StatelessWidget {
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
                       content: Text(ok
-                          ? 'Backup dipulihkan — selamat datang kembali.'
-                          : 'Kode tidak ditemukan atau cloud tidak terjangkau. Cek kodenya lalu coba lagi.'),
+                          ? tx(context, 'profile_restored')
+                          : tx(context, 'profile_restore_fail')),
                     ),
                   );
                 }
               },
             ),
             RagaTextButton(
-              label: 'Batal',
+              label: tx(ctx, 'cancel'),
               onPressed: () => Navigator.pop(ctx),
             ),
           ],
@@ -894,22 +918,25 @@ class ProfileScreen extends StatelessWidget {
   }
 
   void _sendTestNotification(BuildContext context) async {
-    final ok = await ReminderService.showTest();
+    final locale = AppState.of(context).locale;
+    final sent = tx(context, 'profile_test_sent');
+    final failed = tx(context, 'profile_test_fail');
+    final ok = await ReminderService.showTest(locale: locale);
     if (context.mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-            content: Text(ok
-                ? 'Notifikasi tes terkirim'
-                : 'Tidak bisa menampilkan notifikasi — cek izinnya')),
+        SnackBar(content: Text(ok ? sent : failed)),
       );
     }
   }
 
+  // Log viewer, text-editor style: monospace, line numbers, one row
+  // per line. Long-press a row to copy just that line; the actions
+  // copy everything or wipe the session log.
   void _logsDialog(BuildContext context) {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Log sinkron'),
+        title: Text(tx(ctx, 'profile_log')),
         content: SizedBox(
           width: double.maxFinite,
           child: SingleChildScrollView(
@@ -926,11 +953,11 @@ class ProfileScreen extends StatelessWidget {
               CloudSync.clearLog();
               Navigator.pop(ctx);
             },
-            child: const Text('Hapus'),
+            child: Text(tx(ctx, 'delete')),
           ),
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: const Text('Tutup'),
+            child: Text(tx(ctx, 'close')),
           ),
         ],
       ),
@@ -943,16 +970,17 @@ class ProfileScreen extends StatelessWidget {
   Future<void> _pendingAlarmsDialog(BuildContext context) async {
     final alarms = await ReminderService.pendingAlarms();
     if (!context.mounted) return;
+    final noTitle = tx(context, 'alarms_no_title');
     final body = alarms.isEmpty
-        ? 'Tidak ada alarm yang terdaftar di OS.'
+        ? tx(context, 'profile_alarms_empty')
         : alarms
             .map((a) =>
-                '#${a.id} — ${a.title ?? "(tanpa judul)"}\n  ${a.body ?? ""}')
+                '#${a.id} — ${a.title ?? noTitle}\n  ${a.body ?? ""}')
             .join('\n');
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Alarm terdaftar'),
+        title: Text(tx(ctx, 'profile_alarms')),
         content: SingleChildScrollView(
           child: SelectableText(
             body,
@@ -963,7 +991,7 @@ class ProfileScreen extends StatelessWidget {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: const Text('Tutup'),
+            child: Text(tx(ctx, 'close')),
           ),
         ],
       ),
@@ -975,29 +1003,29 @@ class ProfileScreen extends StatelessWidget {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Hapus semua data?'),
+        title: Text(tx(ctx, 'profile_wipe')),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'Riwayat dan profil di perangkat ini akan hilang selamanya.',
+              tx(ctx, 'profile_wipe_body'),
               style: TextStyle(color: rc.onCardMuted),
             ),
             const SizedBox(height: 20),
             DangerPillButton(
-              label: 'Hapus',
+              label: tx(ctx, 'delete'),
               onTap: () {
                 Navigator.pop(ctx);
                 state.clearAllData();
                 ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                      content: Text('Semua data dihapus')),
+                  SnackBar(
+                      content: Text(tx(context, 'profile_wiped'))),
                 );
               },
             ),
             RagaTextButton(
-              label: 'Batal',
+              label: tx(ctx, 'cancel'),
               onPressed: () => Navigator.pop(ctx),
             ),
           ],

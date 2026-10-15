@@ -27,6 +27,8 @@ Future<void> main() async {
     return true;
   };
   final state = await AppState.load();
+  CloudSync.logEvent('app: start (locale=${state.locale}, '
+      'profiles=${state.profiles.length}, records=${state.records.length})');
   // Every service init is guarded: a failing subsystem (notifications,
   // cloud) must never stop the app itself from starting.
   try {
@@ -48,6 +50,7 @@ Future<void> main() async {
         weekdays: state.reminderWeekdays,
         hour: state.reminderHour,
         minute: state.reminderMinute,
+        locale: state.locale,
       );
     } catch (_) {}
   }

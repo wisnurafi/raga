@@ -1,6 +1,7 @@
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 
+import '../core/strings.dart';
 import '../core/theme.dart';
 
 /// Weight/BMI trend line from the history screen: curved lavender line,
@@ -29,7 +30,7 @@ class HistoryChart extends StatelessWidget {
         height: height,
         child: Center(
           child: Text(
-            'Belum ada data grafik.',
+            tx(context, 'chart_empty'),
             style: RagaType.body(rc.onCardMuted),
           ),
         ),

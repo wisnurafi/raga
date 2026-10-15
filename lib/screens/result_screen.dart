@@ -8,6 +8,7 @@ import 'package:share_plus/share_plus.dart';
 
 import '../core/bmi.dart';
 import '../core/streak.dart';
+import '../core/strings.dart';
 import '../core/theme.dart';
 import '../core/tips.dart';
 import '../state/app_state.dart';
@@ -60,7 +61,7 @@ class _ResultScreenState extends State<ResultScreen> {
               ListView(
                 padding: const EdgeInsets.fromLTRB(22, 8, 22, 32),
                 children: [
-                  _topRow(rc, name, cat),
+                  _topRow(context, rc, name, cat, state.locale),
                   const SizedBox(height: 18),
                   GlassCard(
                     child: Column(
@@ -76,17 +77,17 @@ class _ResultScreenState extends State<ResultScreen> {
                           style: RagaType.label(rc.onCardMuted),
                         ),
                         const SizedBox(height: 12),
-                        _categoryPill(rc, cat),
+                        _categoryPill(rc, cat, state.locale),
                         const SizedBox(height: 16),
                         _legend(rc),
                       ],
                     ),
                   ),
                   const SizedBox(height: 18),
-                  _healthyRangeCard(state, rc, metric),
+                  _healthyRangeCard(context, state, rc, metric),
                   const SizedBox(height: 22),
                   Text(
-                    'Tips untukmu',
+                    tx(context, 'result_tips'),
                     style: RagaType.section(rc.onBg),
                   ),
                   const SizedBox(height: 12),
@@ -146,8 +147,8 @@ class _ResultScreenState extends State<ResultScreen> {
                         flex: 3,
                         child: RagaButton(
                           label: _saving
-                              ? 'Menyimpan…'
-                              : 'Simpan ke riwayat',
+                              ? tx(context, 'result_saving')
+                              : tx(context, 'result_save'),
                           onPressed: _saving ? null : () => _save(),
                         ),
                       ),
@@ -156,8 +157,8 @@ class _ResultScreenState extends State<ResultScreen> {
                         flex: 2,
                         child: RagaOutlineButton(
                           label: _sharing
-                              ? 'Membagikan…'
-                              : 'Bagikan',
+                              ? tx(context, 'result_sharing')
+                              : tx(context, 'result_share'),
                           onPressed: _sharing
                               ? null
                               : () => _share(bmi, cat),
@@ -181,6 +182,7 @@ class _ResultScreenState extends State<ResultScreen> {
                     bmi: bmi,
                     cat: cat,
                     name: name,
+                    locale: state.locale,
                   ),
                 ),
               ),
@@ -191,7 +193,8 @@ class _ResultScreenState extends State<ResultScreen> {
     );
   }
 
-  Widget _topRow(RagaColors rc, String name, BmiCategory cat) {
+  Widget _topRow(BuildContext context, RagaColors rc, String name,
+      BmiCategory cat, String locale) {
     return Row(
       children: [
         CircleBtn(
@@ -202,13 +205,13 @@ class _ResultScreenState extends State<ResultScreen> {
           child: Column(
             children: [
               Text(
-                'Hasil BMI',
+                tx(context, 'result_title'),
                 textAlign: TextAlign.center,
                 style: RagaType.title(rc.onBg),
               ),
               const SizedBox(height: 2),
               Text(
-                '$name · ${formatDateId(DateTime.now())}',
+                '$name · ${formatDateId(DateTime.now(), locale: locale)}',
                 textAlign: TextAlign.center,
                 style: RagaType.label(rc.onBgMuted),
               ),
@@ -223,7 +226,7 @@ class _ResultScreenState extends State<ResultScreen> {
     );
   }
 
-  Widget _categoryPill(RagaColors rc, BmiCategory cat) {
+  Widget _categoryPill(RagaColors rc, BmiCategory cat, String locale) {
     return Container(
       padding:
           const EdgeInsets.symmetric(horizontal: 22, vertical: 10),
@@ -232,7 +235,7 @@ class _ResultScreenState extends State<ResultScreen> {
         borderRadius: BorderRadius.circular(20),
       ),
       child: Text(
-        cat.label,
+        cat.labelFor(locale),
         style: RagaType.chip(rc.onBadge),
       ),
     );
@@ -284,13 +287,16 @@ class _ResultScreenState extends State<ResultScreen> {
       goalKg: state.goalFor(pid),
       streakWeeks: streakWeeks,
       day: DateTime.now(),
+      locale: state.locale,
     );
   }
 
   // Healthy weight range for the user's height (BMI 18.5–24.99),
   // with a one-tap "Jadikan target" that fills the Goals section
   // on the Streak tab — no manual retyping.
-  Widget _healthyRangeCard(AppState state, RagaColors rc, bool metric) {
+  Widget _healthyRangeCard(
+      BuildContext context, AppState state, RagaColors rc, bool metric) {
+    final locale = state.locale;
     final range = idealWeightRange(widget.heightCm);
     final w = widget.weightKg;
     String fw(double kg) =>
@@ -302,31 +308,40 @@ class _ResultScreenState extends State<ResultScreen> {
     final String status;
     if (w < range.min - 0.05) {
       target = range.min;
-      status = 'Kamu ${fw(w)} — ${fw(range.min - w)} di bawah rentang sehat.';
+      status = tx(context, 'result_below',
+          {'w': fw(w), 'd': fw(range.min - w)});
     } else if (w > range.max + 0.05) {
       target = range.max;
-      status = 'Kamu ${fw(w)} — ${fw(w - range.max)} di atas rentang sehat.';
+      status = tx(context, 'result_above',
+          {'w': fw(w), 'd': fw(w - range.max)});
     } else {
       target = w;
-      status = 'Kamu ${fw(w)} — di dalam rentang sehat ✓';
+      status = tx(context, 'result_inside', {'w': fw(w)});
     }
 
     final pid = state.activeProfile.id;
     final existing = state.goalFor(pid);
     final already = existing != null && (existing - target).abs() < 0.05;
 
+    final heightTxt = metric
+        ? '${formatNum(widget.heightCm)} cm'
+        : '${(widget.heightCm * cmToIn).round()} in';
+
     return GlassCard(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'Rentang berat sehat',
+            tx(context, 'result_healthy_range'),
             style: RagaType.cardTitle(rc.onCard),
           ),
           const SizedBox(height: 6),
           Text(
-            'Untuk tinggi ${metric ? '${formatNum(widget.heightCm)} cm' : '${(widget.heightCm * cmToIn).round()} in'}: '
-            '${fw(range.min)} – ${fw(range.max)}',
+            tx(context, 'result_for_height', {
+              'h': heightTxt,
+              'lo': fw(range.min),
+              'hi': fw(range.max),
+            }),
             style: RagaType.body(rc.onCard),
           ),
           const SizedBox(height: 6),
@@ -336,7 +351,9 @@ class _ResultScreenState extends State<ResultScreen> {
           ),
           const SizedBox(height: 14),
           RagaButton(
-            label: already ? 'Sudah jadi target' : 'Jadikan target',
+            label: already
+                ? tx(context, 'result_already_target')
+                : tx(context, 'result_set_target'),
             onPressed:
                 already ? null : () => _setAsGoal(state, pid, target, metric),
           ),
@@ -353,7 +370,8 @@ class _ResultScreenState extends State<ResultScreen> {
         ? '${formatNum(targetKg)} kg'
         : '${(targetKg * kgToLb).round()} lb';
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('Target $t tersimpan — cek tab Streak.')),
+      SnackBar(
+          content: Text(tx(context, 'result_target_saved', {'t': t}))),
     );
   }
 
@@ -368,7 +386,7 @@ class _ResultScreenState extends State<ResultScreen> {
       );
       if (!mounted) return;
       messenger.showSnackBar(
-        const SnackBar(content: Text('Tersimpan di riwayat.')),
+        SnackBar(content: Text(tx(context, 'result_saved'))),
       );
       Navigator.pop(context);
     } finally {
@@ -380,6 +398,14 @@ class _ResultScreenState extends State<ResultScreen> {
 
   Future<void> _share(double bmi, BmiCategory cat) async {
     final messenger = ScaffoldMessenger.of(context);
+    final locale = AppState.of(context).locale;
+    // Captured up front: using BuildContext after an await trips
+    // use_build_context_synchronously.
+    final shareText = tx(context, 'result_share_text', {
+      'bmi': formatNum(bmi),
+      'cat': cat.labelFor(locale),
+    });
+    final failText = tx(context, 'result_share_fail');
     setState(() => _sharing = true);
     try {
       final bytes = await _shot.capture();
@@ -390,13 +416,12 @@ class _ResultScreenState extends State<ResultScreen> {
       await file.writeAsBytes(bytes);
       await Share.shareXFiles(
         [XFile(file.path)],
-        text:
-            'BMI saya ${formatNum(bmi)} (${cat.label}) — dihitung dengan Raga',
+        text: shareText,
       );
     } catch (_) {
       if (mounted) {
         messenger.showSnackBar(
-          const SnackBar(content: Text('Gagal membuat gambar.')),
+          SnackBar(content: Text(failText)),
         );
       }
     } finally {
@@ -411,11 +436,13 @@ class _ShareCard extends StatelessWidget {
   final double bmi;
   final BmiCategory cat;
   final String name;
+  final String locale;
 
   const _ShareCard({
     required this.bmi,
     required this.cat,
     required this.name,
+    required this.locale,
   });
 
   @override
@@ -479,7 +506,7 @@ class _ShareCard extends StatelessWidget {
                       borderRadius: BorderRadius.circular(18),
                     ),
                     child: Text(
-                      cat.label,
+                      cat.labelFor(locale),
                       style: st(14, FontWeight.w700, navy),
                     ),
                   ),

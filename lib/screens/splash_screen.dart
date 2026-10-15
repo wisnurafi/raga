@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../core/strings.dart';
 import '../core/theme.dart';
 import '../widgets/glass.dart';
 import '../widgets/raga_bg.dart';
@@ -128,7 +129,7 @@ class _SplashScreenState extends State<SplashScreen>
                   child: Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 32),
                     child: Text(
-                      'Kenali tubuhmu, jaga kesehatanmu.',
+                      tx(context, 'splash_tagline'),
                       textAlign: TextAlign.center,
                       style: RagaType.body(rc.onBgMuted)
                           .copyWith(fontSize: 16),
@@ -162,7 +163,7 @@ class _SplashScreenState extends State<SplashScreen>
                 ),
                 const SizedBox(height: 12),
                 Text(
-                  'Memuat...',
+                  tx(context, 'splash_loading'),
                   style: RagaType.body(rc.onBgMuted),
                 ),
                 const SizedBox(height: 64),

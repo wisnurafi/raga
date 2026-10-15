@@ -3,6 +3,7 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 
 import '../core/bmi.dart';
+import '../core/strings.dart';
 import '../core/theme.dart';
 import '../models/bmi_record.dart';
 import '../state/app_state.dart';
@@ -30,7 +31,13 @@ class _HistoryScreenState extends State<HistoryScreen> {
   bool _showAll = false;
 
   // Range filter labels and matching day counts (null = no limit).
-  static const _rangeLabels = ['7 hari', '30 hari', '3 bulan', '6 bulan', 'Semua'];
+  List<String> _rangeLabels(BuildContext context) => [
+        tx(context, 'range_7d'),
+        tx(context, 'range_30d'),
+        tx(context, 'range_3m'),
+        tx(context, 'range_6m'),
+        tx(context, 'range_all'),
+      ];
   static const List<int?> _rangeDays = [7, 30, 90, 180, null];
 
   @override
@@ -44,30 +51,31 @@ class _HistoryScreenState extends State<HistoryScreen> {
     return ListView(
       padding: const EdgeInsets.fromLTRB(22, 8, 22, 110),
       children: [
-        const RagaHeader(title: 'Riwayat'),
+        RagaHeader(title: tx(context, 'history_title')),
         if (records.isEmpty) ...[
           const SizedBox(height: 72),
           Center(
             child: Text(
-              'Belum ada catatan.',
+              tx(context, 'history_empty'),
               textAlign: TextAlign.center,
               style: RagaType.body(rc.onBgMuted),
             ),
           ),
         ] else ...[
           const SizedBox(height: 18),
-          _rangeChips(),
+          _rangeChips(context),
           const SizedBox(height: 18),
-          _monthStrip(records, metric),
+          _monthStrip(context, records, metric),
           const SizedBox(height: 18),
-          _chartCard(ranged, metric),
+          _chartCard(context, ranged, metric),
           const SizedBox(height: 18),
-          _insightCard(ranged, state, metric),
+          _insightCard(context, ranged, state, metric),
           const SizedBox(height: 22),
-          Text('Catatan terakhir', style: RagaType.section(rc.onBg)),
+          Text(tx(context, 'history_recent'),
+              style: RagaType.section(rc.onBg)),
           const SizedBox(height: 14),
-          ..._entryRows(ranged, metric),
-          _showAllToggle(ranged.length),
+          ..._entryRows(context, ranged, metric),
+          _showAllToggle(context, ranged.length),
         ],
       ],
     );
@@ -81,15 +89,16 @@ class _HistoryScreenState extends State<HistoryScreen> {
     return records.where((r) => r.createdAt.isAfter(cutoff)).toList();
   }
 
-  Widget _rangeChips() {
+  Widget _rangeChips(BuildContext context) {
+    final labels = _rangeLabels(context);
     return SingleChildScrollView(
       scrollDirection: Axis.horizontal,
       child: Row(
         children: [
-          for (var i = 0; i < _rangeLabels.length; i++) ...[
+          for (var i = 0; i < labels.length; i++) ...[
             if (i > 0) const SizedBox(width: 10),
             SelectChip(
-              label: _rangeLabels[i],
+              label: labels[i],
               selected: i == _rangeIdx,
               onTap: () => setState(() {
                 _rangeIdx = i;
@@ -128,8 +137,11 @@ class _HistoryScreenState extends State<HistoryScreen> {
     return formatNumTrimmed(v);
   }
 
-  Widget _monthStrip(List<BmiRecord> records, bool metric) {
+  Widget _monthStrip(
+      BuildContext context, List<BmiRecord> records, bool metric) {
+    final locale = AppState.of(context).locale;
     final months = _lastSixMonths();
+    final monthNames = locale == 'en' ? enShortMonths : idShortMonths;
     final recs = [for (final m in months) _latestInMonth(records, m)];
     return SingleChildScrollView(
       scrollDirection: Axis.horizontal,
@@ -138,7 +150,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
           for (var i = 0; i < months.length; i++) ...[
             if (i > 0) const SizedBox(width: 10),
             _MonthCard(
-              month: idShortMonths[months[i].month - 1],
+              month: monthNames[months[i].month - 1],
               value: recs[i] == null
                   ? '-'
                   : _stripWeight(recs[i]!.weightKg, metric),
@@ -156,8 +168,10 @@ class _HistoryScreenState extends State<HistoryScreen> {
       ? (metric ? r.weightKg : r.weightKg * kgToLb)
       : r.bmi;
 
-  Widget _chartCard(List<BmiRecord> records, bool metric) {
+  Widget _chartCard(
+      BuildContext context, List<BmiRecord> records, bool metric) {
     final rc = context.rc;
+    final locale = AppState.of(context).locale;
     // Plot individual records (oldest-first, capped at 60 points) so
     // sparse histories still draw a line instead of "no data".
     // records arrive newest-first: take the 60 newest first, then
@@ -183,9 +197,9 @@ class _HistoryScreenState extends State<HistoryScreen> {
               : (b.weightKg - a.weightKg) * kgToLb)
           : b.bmi - a.bmi;
       final unit = _showWeight ? (metric ? ' kg' : ' lb') : '';
-      final span = idSpanLabel(a.createdAt, b.createdAt);
+      final span = spanLabel(a.createdAt, b.createdAt, locale: locale);
       if (d.abs() < 0.0001) {
-        deltaPill = _pill('stabil · $span',
+        deltaPill = _pill(tx(context, 'history_stable', {'span': span}),
             rc.onCardMuted.withValues(alpha: 0.16), rc.onCardMuted);
       } else {
         // Solid fill + dark label, like the mockup's pills.
@@ -206,7 +220,8 @@ class _HistoryScreenState extends State<HistoryScreen> {
               Expanded(
                 child: Text(
                   _showWeight
-                      ? (metric ? 'Berat badan (kg)' : 'Berat badan (lb)')
+                      ? tx(context,
+                          metric ? 'history_weight_kg' : 'history_weight_lb')
                       : 'BMI',
                   style: RagaType.cardTitle(rc.onCard),
                 ),
@@ -214,7 +229,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
               SizedBox(
                 width: 168,
                 child: RagaSegmented(
-                  options: const ['Berat', 'BMI'],
+                  options: [tx(context, 'history_weight'), 'BMI'],
                   selected: _showWeight ? 0 : 1,
                   onChanged: (i) => setState(() => _showWeight = i == 0),
                 ),
@@ -239,7 +254,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
           if (recs.isNotEmpty) ...[
             const SizedBox(height: 8),
             Text(
-              _statsLine(recs, metric),
+              _statsLine(context, recs, metric),
               style: RagaType.caption(rc.onCardMuted),
             ),
           ],
@@ -256,20 +271,23 @@ class _HistoryScreenState extends State<HistoryScreen> {
 
   // "Rata-rata 62,4 kg · Terendah 61,0 · Tertinggi 64,2" for the
   // selected range, following the Berat/BMI toggle.
-  String _statsLine(List<BmiRecord> recs, bool metric) {
+  String _statsLine(BuildContext context, List<BmiRecord> recs, bool metric) {
     final vals = [for (final r in recs) _plotValue(r, metric)];
     final avg = vals.reduce((a, b) => a + b) / vals.length;
     final lo = vals.reduce((a, b) => a < b ? a : b);
     final hi = vals.reduce((a, b) => a > b ? a : b);
     final unit = _showWeight ? (metric ? ' kg' : ' lb') : '';
-    return 'Rata-rata ${formatNum(avg)}$unit · '
-        'Terendah ${formatNum(lo)}$unit · '
-        'Tertinggi ${formatNum(hi)}$unit';
+    return tx(context, 'history_stats', {
+      'a': formatNum(avg),
+      'l': formatNum(lo),
+      'h': formatNum(hi),
+      'u': unit,
+    });
   }
 
-  // Auto-generated Indonesian insight for the selected range.
-  Widget _insightCard(
-      List<BmiRecord> records, AppState state, bool metric) {
+  // Auto-generated insight for the selected range, in the app locale.
+  Widget _insightCard(BuildContext context, List<BmiRecord> records,
+      AppState state, bool metric) {
     final rc = context.rc;
     // buildWeightInsight wants oldest-first; records are newest-first.
     final ordered = records.reversed.toList();
@@ -278,6 +296,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
       [for (final r in ordered) r.createdAt],
       goalKg: state.goalFor(state.activeProfileId),
       metric: metric,
+      locale: state.locale,
     );
     return GlassCard(
       child: Row(
@@ -289,7 +308,8 @@ class _HistoryScreenState extends State<HistoryScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('Insight', style: RagaType.cardTitle(rc.onCard)),
+                Text(tx(context, 'history_insight'),
+                    style: RagaType.cardTitle(rc.onCard)),
                 const SizedBox(height: 6),
                 Text(text, style: RagaType.body(rc.onCardMuted)),
               ],
@@ -313,7 +333,8 @@ class _HistoryScreenState extends State<HistoryScreen> {
 
   // --- recent entries -------------------------------------------------------
 
-  List<Widget> _entryRows(List<BmiRecord> records, bool metric) {
+  List<Widget> _entryRows(
+      BuildContext context, List<BmiRecord> records, bool metric) {
     // 10 newest by default; the rest behind "Tampilkan semua".
     // No real pagination: a personal tracker holds dozens of rows, not
     // thousands — and every row is a blurred GlassCard, so an unbounded
@@ -323,28 +344,30 @@ class _HistoryScreenState extends State<HistoryScreen> {
     for (var i = 0; i < shown.length; i++) {
       if (i > 0) rows.add(const SizedBox(height: 10));
       final older = i + 1 < records.length ? records[i + 1] : null;
-      rows.add(_entryRow(shown[i], older, metric));
+      rows.add(_entryRow(context, shown[i], older, metric));
     }
     return rows;
   }
 
-  Widget _showAllToggle(int total) {
+  Widget _showAllToggle(BuildContext context, int total) {
     if (total <= 10) return const SizedBox.shrink();
     return Padding(
       padding: const EdgeInsets.only(top: 14),
       child: Center(
         child: RagaTextButton(
           label: _showAll
-              ? 'Tampilkan lebih sedikit'
-              : 'Tampilkan semua ($total)',
+              ? tx(context, 'history_show_less')
+              : tx(context, 'history_show_all', {'n': total}),
           onPressed: () => setState(() => _showAll = !_showAll),
         ),
       ),
     );
   }
 
-  Widget _entryRow(BmiRecord r, BmiRecord? older, bool metric) {
+  Widget _entryRow(
+      BuildContext context, BmiRecord r, BmiRecord? older, bool metric) {
     final rc = context.rc;
+    final locale = AppState.of(context).locale;
 
     String deltaTxt = '';
     var deltaColor = rc.onCardMuted;
@@ -378,12 +401,12 @@ class _HistoryScreenState extends State<HistoryScreen> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                formatDateId(r.createdAt),
+                formatDateId(r.createdAt, locale: locale),
                 style: RagaType.label(rc.onCard),
               ),
               const SizedBox(height: 3),
               Text(
-                '$weightTxt · ${categoryOf(r.bmi).label}',
+                '$weightTxt · ${categoryOf(r.bmi).labelFor(locale)}',
                 style: RagaType.caption(rc.onCardMuted),
               ),
             ],

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../core/bmi.dart';
+import '../core/strings.dart';
 import '../core/theme.dart';
 import '../data/reminder_service.dart';
 import '../state/app_state.dart';
@@ -82,7 +83,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   void _continueFromStep1() {
     if (_name.text.trim().isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Isi nama panggilan dulu')),
+        SnackBar(content: Text(tx(context, 'ob_need_name'))),
       );
       return;
     }
@@ -106,18 +107,22 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   double get _goalDiffKg =>
       (_direction == 2 ? _goalKg - _weightKg : _weightKg - _goalKg).abs();
 
-  String _goalHint() {
+  String _goalHint(BuildContext context) {
     final w = '${formatNumTrimmed(_dispW(_weightKg))} $_weightUnit';
-    if (_direction == 1) return 'Tetap di $w';
+    if (_direction == 1) return tx(context, 'ob3_hint_stay', {'w': w});
     final sign = _direction == 2 ? '+' : '−';
-    return 'Sekarang $w · selisih $sign${formatNum(_goalDiffKg)} $_weightUnit';
+    return tx(context, 'ob3_hint_diff',
+        {'w': w, 's': sign, 'd': formatNum(_goalDiffKg), 'u': _weightUnit});
   }
 
-  String _eta() {
+  String _eta(BuildContext context) {
     if (_direction == 1) return '—';
     final weeks = (_goalDiffKg / _pace).ceil();
     final date = DateTime.now().add(Duration(days: weeks * 7));
-    return '±$weeks minggu · ${formatDateId(date)}';
+    return tx(context, 'ob3_eta_weeks', {
+      'w': weeksN(AppState.of(context).locale, weeks),
+      'date': formatDateId(date, locale: AppState.of(context).locale),
+    });
   }
 
   void _saveGoal() {
@@ -186,9 +191,8 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     if (!ok) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text(
-                'Nyalakan notifikasi di pengaturan sistem dulu'),
+          SnackBar(
+            content: Text(tx(context, 'ob_notif_off')),
           ),
         );
       }
@@ -204,9 +208,8 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
       await ReminderService.requestExactAlarmsPermission();
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Aktifkan "Alarm & pengingat" di pengaturan '
-                'sistem, lalu atur pengingatnya dari Profil.'),
+          SnackBar(
+            content: Text(tx(context, 'ob_exact_off')),
           ),
         );
       }
@@ -218,7 +221,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     await state.setReminderSchedule(
         weekdays: days, hour: _hour, minute: _minute);
     await ReminderService.scheduleBestEffortDays(
-        weekdays: days, hour: _hour, minute: _minute);
+        weekdays: days, hour: _hour, minute: _minute, locale: state.locale);
   }
 
   // ---------- build ----------
@@ -251,27 +254,29 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
               const SizedBox(height: 20),
               switch (_step) {
                 1 => RagaButton(
-                    label: 'Lanjut', onPressed: _continueFromStep1),
+                    label: tx(context, 'continue'),
+                    onPressed: _continueFromStep1),
                 2 => RagaButton(
-                    label: 'Lanjut',
+                    label: tx(context, 'continue'),
                     onPressed: () => setState(() => _step = 3)),
                 3 => Column(
                     children: [
                       RagaButton(
-                          label: 'Simpan target', onPressed: _saveGoal),
+                          label: tx(context, 'streak_save_goal'),
+                          onPressed: _saveGoal),
                       RagaTextButton(
-                          label: 'Lewati dulu', onPressed: _skipGoal),
+                          label: tx(context, 'ob_skip'), onPressed: _skipGoal),
                     ],
                   ),
                 _ => Column(
                     children: [
                       RagaButton(
-                        label: 'Selesai',
+                        label: tx(context, 'ob_done'),
                         onPressed:
                             _saving ? null : () => _finish(arm: true),
                       ),
                       RagaTextButton(
-                        label: 'Lewati dulu',
+                        label: tx(context, 'ob_skip'),
                         onPressed:
                             _saving ? null : () => _finish(arm: false),
                       ),
@@ -307,13 +312,15 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
         borderRadius: BorderRadius.circular(20),
         border: Border.all(color: rc.success, width: 1.5),
       ),
-      child: Text('OPSIONAL', style: RagaType.badge(rc.success)),
+      child: Text(tx(context, 'ob_optional'),
+          style: RagaType.badge(rc.success)),
     );
   }
 
   /// Green category pill ("Normal"), dark label — like the mockup.
   Widget _categoryPill(double bmi) {
     final rc = context.rc;
+    final locale = AppState.of(context).locale;
     return Container(
       padding:
           const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
@@ -322,7 +329,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
         color: rc.badgeOk,
       ),
       child: Text(
-        categoryOf(bmi).label,
+        categoryOf(bmi).labelFor(locale),
         style: RagaType.chip(rc.onBadgeOk).copyWith(fontSize: 14),
       ),
     );
@@ -336,14 +343,14 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         _title(
-          'Kenalan dulu, yuk',
-          'Biar Raga bisa menyapamu dan menghitung dengan tepat.',
+          tx(context, 'ob1_title'),
+          tx(context, 'ob1_sub'),
         ),
         GlassCard(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text('Nama panggilan',
+              Text(tx(context, 'ob1_name'),
                   style: RagaType.label(rc.onCardMuted)),
               TextField(
                 controller: _name,
@@ -363,7 +370,8 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
         GlassCard(
           child: Row(
             children: [
-              Text('Umur', style: RagaType.cardTitle(rc.onCardMuted)),
+              Text(tx(context, 'ob1_age'),
+                  style: RagaType.cardTitle(rc.onCardMuted)),
               Expanded(
                 child: StepperRow(
                   value: '$_age',
@@ -377,7 +385,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
           ),
         ),
         const SizedBox(height: 20),
-        Text('Jenis kelamin',
+        Text(tx(context, 'ob1_gender'),
             style: RagaType.label(rc.onBgMuted)),
         const SizedBox(height: 10),
         Row(
@@ -429,7 +437,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
               ),
               const SizedBox(height: 10),
               Text(
-                male ? 'Pria' : 'Wanita',
+                male ? tx(context, 'male') : tx(context, 'female'),
                 style: RagaType.chip(
                   selected ? rc.onChipActive : rc.onChipInactive,
                 ).copyWith(fontSize: 16),
@@ -450,8 +458,8 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         _title(
-          'Ukuran tubuhmu',
-          'Dipakai untuk menghitung BMI awalmu.',
+          tx(context, 'ob2_title'),
+          tx(context, 'ob2_sub'),
         ),
         Row(
           mainAxisAlignment: MainAxisAlignment.end,
@@ -469,7 +477,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
         const SizedBox(height: 14),
         GlassCard(
           child: MeasureSlider(
-            label: 'Tinggi badan',
+            label: tx(context, 'home_height'),
             value: formatNumTrimmed(_dispH()),
             unit: _heightUnit,
             sliderValue: _dispH(),
@@ -482,7 +490,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
         const SizedBox(height: 14),
         GlassCard(
           child: MeasureSlider(
-            label: 'Berat badan',
+            label: tx(context, 'home_weight'),
             value: formatNumTrimmed(_dispW(_weightKg)),
             unit: _weightUnit,
             sliderValue: _dispW(_weightKg),
@@ -496,7 +504,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
         GlassCard(
           child: Row(
             children: [
-              Text('BMI awalmu',
+              Text(tx(context, 'ob2_bmi'),
                   style: RagaType.cardTitle(rc.onCard)),
               const Spacer(),
               Text(formatNum(bmi),
@@ -514,6 +522,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
 
   Widget _step3() {
     final rc = context.rc;
+    final locale = AppState.of(context).locale;
     final targetKg = _direction == 1 ? _weightKg : _goalKg;
     final targetBmi = calcBmi(weightKg: targetKg, heightCm: _heightCm);
     return Column(
@@ -522,14 +531,18 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
         _optionalBadge(),
         const SizedBox(height: 14),
         _title(
-          'Punya target berat?',
-          'Atur sekarang atau nanti di Profil. Boleh dilewati.',
+          tx(context, 'ob3_title'),
+          tx(context, 'ob3_sub'),
         ),
         GlassCard(
           child: Column(
             children: [
               RagaSegmented(
-                options: const ['Turun', 'Jaga', 'Naik'],
+                options: [
+                  tx(context, 'goal_lose'),
+                  tx(context, 'goal_maintain'),
+                  tx(context, 'goal_gain'),
+                ],
                 selected: _direction,
                 onChanged: _setDirection,
               ),
@@ -546,7 +559,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
               const SizedBox(height: 10),
               Center(
                 child: Text(
-                  _goalHint(),
+                  _goalHint(context),
                   textAlign: TextAlign.center,
                   style: RagaType.body(rc.onCardMuted),
                 ),
@@ -562,7 +575,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                   ),
                   child: Text(
                     'BMI target ${formatNum(targetBmi)} · '
-                    '${categoryOf(targetBmi).label}',
+                    '${categoryOf(targetBmi).labelFor(locale)}',
                     style: RagaType.chip(rc.onBadgeOk)
                         .copyWith(fontSize: 15),
                   ),
@@ -576,7 +589,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text('Laju per minggu',
+              Text(tx(context, 'ob3_pace'),
                   style: RagaType.label(rc.onCardMuted)),
               const SizedBox(height: 12),
               Row(
@@ -598,9 +611,9 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Text('Perkiraan tercapai',
+                  Text(tx(context, 'ob3_eta'),
                       style: RagaType.body(rc.onCardMuted)),
-                  Text(_eta(), style: RagaType.chip(rc.onCard)),
+                  Text(_eta(context), style: RagaType.chip(rc.onCard)),
                 ],
               ),
             ],
@@ -614,15 +627,16 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
 
   Widget _step4() {
     final rc = context.rc;
+    final locale = AppState.of(context).locale;
+    final dayNames = shortDays(locale);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         _optionalBadge(),
         const SizedBox(height: 14),
         _title(
-          'Jadwal menimbang',
-          'Pilih hari dan jam, Raga akan mengingatkanmu. '
-          'Boleh dilewati.',
+          tx(context, 'ob4_title'),
+          tx(context, 'ob4_sub'),
         ),
         Row(
           children: [
@@ -630,7 +644,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
               Expanded(
                 child: Center(
                   child: DayChip(
-                    label: idShortDays[i],
+                    label: dayNames[i],
                     selected: _days.contains(i + 1),
                     onTap: () => setState(() {
                       final day = i + 1;
@@ -650,7 +664,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text('Jam pengingat',
+              Text(tx(context, 'ob4_time'),
                   style: RagaType.label(rc.onCardMuted)),
               const SizedBox(height: 4),
               Row(
@@ -679,9 +693,10 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text('Ringkasan',
+              Text(tx(context, 'ob4_summary'),
                   style: RagaType.cardTitle(rc.onCard)),
-              Text(reminderSummary(_days.toList(), _hour, _minute),
+              Text(reminderSummary(_days.toList(), _hour, _minute,
+                      locale: locale),
                   style: RagaType.chip(rc.onCardMuted)),
             ],
           ),
@@ -689,7 +704,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
         const SizedBox(height: 16),
         Center(
           child: Text(
-            'Bisa diubah kapan saja di Profil.',
+            tx(context, 'ob4_note'),
             style: RagaType.caption(rc.onBgMuted),
           ),
         ),

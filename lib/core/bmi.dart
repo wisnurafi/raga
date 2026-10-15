@@ -1,3 +1,5 @@
+import 'strings.dart';
+
 // Standard WHO BMI categories.
 enum BmiCategory { underweight, normal, overweight, obese }
 
@@ -16,6 +18,18 @@ extension BmiCategoryLabel on BmiCategory {
         BmiCategory.overweight => 'Overweight',
         BmiCategory.obese => 'Obese',
       };
+
+  /// Localized label for UI chrome. The result screen's gauge legend
+  /// keeps [label] (English, per the mockup) — everything else goes
+  /// through here.
+  String labelFor(String locale) => locale == 'en'
+      ? label
+      : switch (this) {
+          BmiCategory.underweight => 'Kurus',
+          BmiCategory.normal => 'Normal',
+          BmiCategory.overweight => 'Gemuk',
+          BmiCategory.obese => 'Obesitas',
+        };
 }
 
 // BMI = weight (kg) / height (m)^2
@@ -95,86 +109,128 @@ const idShortMonths = [
   'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des',
 ];
 
+const enShortMonths = [
+  'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+  'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec',
+];
+
 /// Monday-first short day names: Sen..Min.
 const idShortDays = ['Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab', 'Min'];
 
+/// Monday-first short day names, English.
+const enShortDays = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+
+List<String> shortDays(String locale) =>
+    locale == 'en' ? enShortDays : idShortDays;
+
 /// One-line reminder schedule summary, e.g.
 /// "2× seminggu · Sen & Kam · 07.00" / "Setiap hari · 07.00" / "Mati".
-String reminderSummary(List<int> days, int h, int m) {
-  if (days.isEmpty) return 'Mati';
+String reminderSummary(List<int> days, int h, int m,
+    {String locale = 'id'}) {
+  if (days.isEmpty) return txl(locale, 'rem_off');
   final t =
       '${h.toString().padLeft(2, '0')}.${m.toString().padLeft(2, '0')}';
   final sorted = [...days]..sort();
-  if (sorted.length == 7) return 'Setiap hari · $t';
-  final names = sorted.map((d) => idShortDays[d - 1]).toList();
+  if (sorted.length == 7) {
+    return txl(locale, 'rem_every_day', {'t': t});
+  }
+  final names = sorted.map((d) => shortDays(locale)[d - 1]).toList();
   final joined = names.length == 1
       ? names.first
       : names.length == 2
           ? '${names[0]} & ${names[1]}'
           : '${names.sublist(0, names.length - 1).join(', ')} & ${names.last}';
-  return '${names.length}× seminggu · $joined · $t';
+  return txl(locale, 'rem_per_week',
+      {'n': names.length, 'days': joined, 't': t});
 }
 
-String formatDateId(DateTime d) => '${d.day} ${idShortMonths[d.month - 1]}';
+String formatDateId(DateTime d, {String locale = 'id'}) {
+  final months = locale == 'en' ? enShortMonths : idShortMonths;
+  return '${d.day} ${months[d.month - 1]}';
+}
 
 /// Human span between two dates, Indonesian:
 /// "hari ini", "3 hari", "2 minggu", "6 bulan".
-String idSpanLabel(DateTime a, DateTime b) {
+String idSpanLabel(DateTime a, DateTime b) => _spanLabel(a, b, locale: 'id');
+
+/// English twin of [idSpanLabel]: "today", "3 days", "2 weeks", "6 months".
+String enSpanLabel(DateTime a, DateTime b) => _spanLabel(a, b, locale: 'en');
+
+String spanLabel(DateTime a, DateTime b, {String locale = 'id'}) =>
+    _spanLabel(a, b, locale: locale);
+
+String _spanLabel(DateTime a, DateTime b, {required String locale}) {
   final days = b.difference(a).inDays.abs();
-  if (days < 1) return 'hari ini';
-  if (days < 14) return '$days hari';
-  if (days < 60) return '${(days / 7).round()} minggu';
-  return '${(days / 30).round()} bulan';
+  if (days < 1) return txl(locale, 'span_today');
+  String plural(String key, int n) {
+    // Indonesian has no plural; English needs "1 day" vs "3 days".
+    if (locale == 'id') return txl(locale, key, {'n': n});
+    final one = {
+      'span_days': '1 day',
+      'span_weeks': '1 week',
+      'span_months': '1 month',
+    }[key]!;
+    return n == 1 ? one : txl(locale, key, {'n': n});
+  }
+
+  if (days < 14) return plural('span_days', days);
+  if (days < 60) return plural('span_weeks', (days / 7).round());
+  return plural('span_months', (days / 30).round());
 }
 
-/// One-or-two-sentence Indonesian insight for the history analytics card.
+/// One-or-two-sentence insight for the history analytics card.
 ///
 /// [weightsKg] oldest-first, already filtered to the selected range;
 /// [dates] the matching timestamps, oldest-first. [goalKg] the profile's
 /// goal weight in kg, if set. Set [metric] false to render in lb.
+/// [locale] picks the sentence language ('id' default keeps the pinned
+/// unit-test output).
 String buildWeightInsight(
   List<double> weightsKg,
   List<DateTime> dates, {
   double? goalKg,
   bool metric = true,
+  String locale = 'id',
 }) {
   assert(weightsKg.length == dates.length);
   String w(double kg) =>
       metric ? '${formatNum(kg)} kg' : '${(kg * kgToLb).round()} lb';
   if (weightsKg.length < 2) {
-    return 'Belum cukup data di rentang ini — timbang minimal 2× biar trennya kebaca.';
+    return txl(locale, 'insight_empty');
   }
   final first = weightsKg.first;
   final last = weightsKg.last;
-  final span = idSpanLabel(dates.first, dates.last);
+  final span = spanLabel(dates.first, dates.last, locale: locale);
   final d = last - first; // negative = lost weight
   final buf = StringBuffer();
   if (d.abs() < 0.05) {
-    buf.write('Stabil di ${w(last)} selama $span — pertahankan.');
+    buf.write(txl(locale, 'insight_stable', {'w': w(last), 'span': span}));
   } else {
-    buf.write('${d < 0 ? 'Turun' : 'Naik'} ${w(d.abs())} dalam $span.');
+    buf.write(txl(locale, d < 0 ? 'insight_down' : 'insight_up',
+        {'w': w(d.abs()), 'span': span}));
     final days = dates.last.difference(dates.first).inDays;
     if (days >= 7) {
       final rate = d.abs() / (days / 7);
       if (d < 0) {
         buf.write(rate <= 1.0
-            ? ' Laju ±${w(rate)}/minggu — masih dalam batas sehat.'
-            : ' Laju ±${w(rate)}/minggu — di atas anjuran umum '
-                '(${metric ? '0,5–1 kg' : '1–2 lb'}/minggu), '
-                'pertimbangkan konsultasi ahli gizi.');
+            ? txl(locale, 'insight_rate_ok', {'r': w(rate)})
+            : txl(locale, 'insight_rate_fast', {
+                'r': w(rate),
+                'lim': metric ? '0,5–1 kg' : '1–2 lb'
+              }));
       } else {
-        buf.write(' Laju ±${w(rate)}/minggu.');
+        buf.write(txl(locale, 'insight_rate', {'r': w(rate)}));
       }
     }
   }
   if (goalKg != null) {
     final rem = goalKg - last;
     if (rem.abs() < 0.5) {
-      buf.write(' Target ${w(goalKg)} tercapai — pertahankan!');
+      buf.write(txl(locale, 'insight_goal_done', {'w': w(goalKg)}));
     } else if (rem > 0) {
-      buf.write(' Kurang ${w(rem)} lagi ke target.');
+      buf.write(txl(locale, 'insight_goal_left', {'w': w(rem)}));
     } else {
-      buf.write(' ${w(rem.abs())} di bawah target.');
+      buf.write(txl(locale, 'insight_goal_over', {'w': w(rem.abs())}));
     }
   }
   return buf.toString();

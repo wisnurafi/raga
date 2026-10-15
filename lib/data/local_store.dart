@@ -22,6 +22,7 @@ class LocalStore {
   static const _kDevMode = 'raga.dev_mode';
   static const _kOnboardingDone = 'raga.onboarding_done';
   static const _kMilestonesSeen = 'raga.milestones_seen';
+  static const _kLocale = 'raga.locale';
 
   final SharedPreferences _prefs;
   LocalStore(this._prefs);
@@ -159,6 +160,15 @@ class LocalStore {
 
   Future<void> saveMilestonesSeen(List<int> v) =>
       _prefs.setString(_kMilestonesSeen, jsonEncode(v));
+
+  // UI locale: 'id' (default) or 'en'. Anything else falls back to 'id'
+  // so a corrupt value can't leave the app stringless.
+  String get locale {
+    final v = _prefs.getString(_kLocale);
+    return v == 'en' ? 'en' : 'id';
+  }
+
+  Future<void> saveLocale(String v) => _prefs.setString(_kLocale, v);
 
   // Factory reset for user DATA: profiles, history, goals, milestones,
   // and the onboarding flag (so a wiped phone onboards again like new).

@@ -4,6 +4,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../models/bmi_record.dart';
 import '../models/profile.dart';
 import 'secure_store.dart';
+import '../core/strings.dart';
 
 // Cloud backup state, shown in the UI so it's never a mystery.
 enum SyncState {
@@ -303,26 +304,24 @@ class CloudSync {
     return null;
   }
 
-  // One-line status for the UI. English by default; the Profil screen
-  // asks for Indonesian.
-  static String describe(List<BmiRecord> records,
-      {bool indonesian = false}) {
+  // One-line status for the UI, in the app locale.
+  static String describe(List<BmiRecord> records, {String locale = 'en'}) {
     switch (state) {
       case SyncState.notConfigured:
-        return indonesian ? 'Belum disiapkan' : 'Not set up';
+        return txl(locale, 'sync_not_configured');
       case SyncState.error:
         if (lastError.isNotEmpty) return lastError;
-        return indonesian ? 'Tidak bisa terhubung' : "Couldn't connect";
+        return txl(locale, 'sync_no_connect');
       case SyncState.ready:
         final n = pendingCount(records);
         if (n == 0) {
-          return indonesian
-              ? 'Terhubung — semua sudah tersinkron'
-              : 'Connected — everything is synced';
+          return txl(locale, 'sync_ok');
         }
-        return indonesian
-            ? '$n catatan menunggu diunggah'
-            : '$n ${n == 1 ? 'entry' : 'entries'} waiting to upload';
+        // Indonesian has no plural; English needs "1 entry" vs "2 entries".
+        if (locale == 'en') {
+          return '$n ${n == 1 ? 'entry' : 'entries'} waiting to upload';
+        }
+        return txl(locale, 'sync_pending', {'n': n});
     }
   }
 }

@@ -148,14 +148,22 @@ class ReminderService {
     required int id,
     required tz.TZDateTime when,
     required AndroidScheduleMode mode,
+    String locale = 'id',
   }) async {
     onLog('reminder: schedule #$id -> $when '
         '(tz=${tz.local.name}, mode=$mode)');
+    // The nudge text follows the app locale; the channel name stays
+    // English (it's registered once with the OS).
+    final title =
+        locale == 'en' ? 'Weigh-in time' : 'Saatnya menimbang';
+    final body = locale == 'en'
+        ? 'Hop on the scale and log your weight in Raga.'
+        : 'Naik ke timbangan dan catat berat badanmu di Raga.';
     await _withIconFallback(
       (d) => _plugin.zonedSchedule(
         id,
-        'Weigh-in time',
-        'Hop on the scale and log your weight in Raga.',
+        title,
+        body,
         when,
         d,
         // One-time exact alarm. NOTE: no matchDateTimeComponents here.
@@ -188,6 +196,7 @@ class ReminderService {
     required int weekday,
     required int hour,
     required int minute,
+    String locale = 'id',
   }) async {
     var mode = AndroidScheduleMode.inexactAllowWhileIdle;
     try {
@@ -199,14 +208,15 @@ class ReminderService {
       final when = occurrenceInWeeks(weekday, hour, minute, w);
       final id = _idForDay(weekday, w);
       try {
-        await _schedule(id: id, when: when, mode: mode);
+        await _schedule(id: id, when: when, mode: mode, locale: locale);
       } catch (_) {
         // Permission lost between check and schedule — fall back to
         // inexact for this and remaining weeks.
         if (mode == AndroidScheduleMode.exactAllowWhileIdle) {
           mode = AndroidScheduleMode.inexactAllowWhileIdle;
           try {
-            await _schedule(id: id, when: when, mode: mode);
+            await _schedule(
+                id: id, when: when, mode: mode, locale: locale);
           } catch (_) {}
         }
       }
@@ -221,6 +231,7 @@ class ReminderService {
     required List<int> weekdays,
     required int hour,
     required int minute,
+    String locale = 'id',
   }) async {
     await cancelAll();
     if (weekdays.isEmpty) return false;
@@ -230,6 +241,7 @@ class ReminderService {
         weekday: d,
         hour: hour,
         minute: minute,
+        locale: locale,
       );
       if (!exact) allExact = false;
     }
@@ -262,13 +274,17 @@ class ReminderService {
   // Immediate test notification (developer mode). Proves the channel,
   // permission, and icon all work without waiting a week.
   // Returns false when nothing could be shown.
-  static Future<bool> showTest() async {
+  static Future<bool> showTest({String locale = 'id'}) async {
+    final title = locale == 'en' ? 'Test notification' : 'Notifikasi tes';
+    final body = locale == 'en'
+        ? 'Reminders are working — your weekly nudge will arrive on schedule.'
+        : 'Pengingat berfungsi — pengingat mingguanmu akan tiba sesuai jadwal.';
     try {
       await _withIconFallback(
         (d) => _plugin.show(
           _testId,
-          'Test notification',
-          'Reminders are working — your weekly nudge will arrive on schedule.',
+          title,
+          body,
           d,
         ),
       );

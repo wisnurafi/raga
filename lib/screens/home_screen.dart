@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../core/bmi.dart';
+import '../core/strings.dart';
 import '../core/theme.dart';
 import '../core/tips.dart';
 import '../state/app_state.dart';
@@ -74,20 +75,20 @@ class _HomeScreenState extends State<HomeScreen> {
     return ListView(
       padding: const EdgeInsets.fromLTRB(22, 8, 22, 110),
       children: [
-        const RagaHeader(title: 'Hitung BMI'),
+        RagaHeader(title: tx(context, 'home_title')),
         const SizedBox(height: 18),
         _profileChips(state),
         const SizedBox(height: 18),
-        _bodyDataCard(state, rc, metric, hDisp, wDisp),
+        _bodyDataCard(context, state, rc, metric, hDisp, wDisp),
         const SizedBox(height: 14),
-        _genderAgeRow(state, rc),
+        _genderAgeRow(context, state, rc),
         const SizedBox(height: 22),
         RagaButton(
-          label: 'Hitung BMI',
+          label: tx(context, 'home_calc'),
           onPressed: () => _calculate(state),
         ),
         const SizedBox(height: 18),
-        _dailyTipCard(rc),
+        _dailyTipCard(context, state, rc),
       ],
     );
   }
@@ -95,9 +96,9 @@ class _HomeScreenState extends State<HomeScreen> {
   // "Tips hari ini": one tip from the pool of the BMI category the
   // current inputs fall into, rotated daily (different seed from the
   // Result screen so they rarely overlap).
-  Widget _dailyTipCard(RagaColors rc) {
+  Widget _dailyTipCard(BuildContext context, AppState state, RagaColors rc) {
     final cat = categoryOf(calcBmi(weightKg: _w, heightCm: _h));
-    final tip = dailyTip(cat, DateTime.now());
+    final tip = dailyTip(cat, DateTime.now(), locale: state.locale);
     return GlassCard(
       radius: 20,
       padding: const EdgeInsets.all(16),
@@ -111,7 +112,7 @@ class _HomeScreenState extends State<HomeScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'Tips hari ini',
+                  tx(context, 'home_tip_today'),
                   style: RagaType.cardTitle(rc.onCard),
                 ),
                 const SizedBox(height: 4),
@@ -138,7 +139,7 @@ class _HomeScreenState extends State<HomeScreen> {
         itemBuilder: (context, i) {
           if (i == profiles.length) {
             return ProfileChip(
-              label: 'Tambah',
+              label: tx(context, 'add'),
               selected: false,
               isAdd: true,
               onTap: () => _addProfileSheet(state),
@@ -163,15 +164,16 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Widget _bodyDataCard(AppState state, RagaColors rc, bool metric,
-      double hDisp, double wDisp) {
+  Widget _bodyDataCard(BuildContext context, AppState state, RagaColors rc,
+      bool metric, double hDisp, double wDisp) {
     return GlassCard(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
-              Text('Data tubuh', style: RagaType.cardTitle(rc.onCard)),
+              Text(tx(context, 'home_body_data'),
+                  style: RagaType.cardTitle(rc.onCard)),
               const Spacer(),
               SizedBox(
                 width: 170,
@@ -185,7 +187,7 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
           const SizedBox(height: 10),
           MeasureSlider(
-            label: 'Tinggi badan',
+            label: tx(context, 'home_height'),
             value: hDisp.toStringAsFixed(0),
             unit: metric ? 'cm' : 'in',
             sliderValue: hDisp,
@@ -201,7 +203,7 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
           const SizedBox(height: 6),
           MeasureSlider(
-            label: 'Berat badan',
+            label: tx(context, 'home_weight'),
             value: wDisp.toStringAsFixed(0),
             unit: metric ? 'kg' : 'lb',
             sliderValue: wDisp,
@@ -220,7 +222,7 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Widget _genderAgeRow(AppState state, RagaColors rc) {
+  Widget _genderAgeRow(BuildContext context, AppState state, RagaColors rc) {
     return GlassCard(
       radius: 28,
       padding: const EdgeInsets.all(8),
@@ -228,7 +230,7 @@ class _HomeScreenState extends State<HomeScreen> {
         children: [
           Expanded(
             child: RagaSegmented(
-              options: const ['Pria', 'Wanita'],
+              options: [tx(context, 'male'), tx(context, 'female')],
               selected: _isMale ? 0 : 1,
               onChanged: (i) {
                 final male = i == 0;
@@ -248,7 +250,7 @@ class _HomeScreenState extends State<HomeScreen> {
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 4),
                 child: Text(
-                  '$_age thn',
+                  tx(context, 'age_years', {'n': _age}),
                   style: RagaType.chip(rc.onCard),
                 ),
               ),

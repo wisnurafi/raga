@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../core/bmi.dart';
+import '../core/strings.dart';
 import '../core/theme.dart';
 import '../core/streak.dart';
 import '../state/app_state.dart';
@@ -50,7 +51,7 @@ class _StreakScreenState extends State<StreakScreen> {
     return ListView(
       padding: const EdgeInsets.fromLTRB(22, 8, 22, 110),
       children: [
-        const RagaHeader(title: 'Streak'),
+        RagaHeader(title: tx(context, 'streak_title')),
         const SizedBox(height: 18),
         // Hero: big flame, week count, this-week status.
         GlassCard(
@@ -76,14 +77,14 @@ class _StreakScreenState extends State<StreakScreen> {
               ),
               const SizedBox(height: 16),
               Text(
-                '${streak.weeks} minggu',
+                weeksN(state.locale, streak.weeks),
                 style: RagaType.hero(52, rc.onCard),
               ),
               const SizedBox(height: 6),
               Text(
                 streak.thisWeekDone
-                    ? 'Minggu ini sudah timbang ✓'
-                    : 'Timbang minggu ini biar streak lanjut',
+                    ? tx(context, 'streak_done')
+                    : tx(context, 'streak_todo'),
                 textAlign: TextAlign.center,
                 style: RagaType.body(rc.onCardMuted),
               ),
@@ -98,7 +99,7 @@ class _StreakScreenState extends State<StreakScreen> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                'Goals',
+                tx(context, 'streak_goals'),
                 style: RagaType.cardTitle(rc.onCard),
               ),
               const SizedBox(height: 12),
@@ -112,15 +113,15 @@ class _StreakScreenState extends State<StreakScreen> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            'Target berat',
+                            tx(context, 'streak_goal_weight'),
                             style: RagaType.body(rc.onCard),
                           ),
                           const SizedBox(height: 2),
                           Text(
                             goal == null
-                                ? 'Belum ada target — ketuk untuk atur'
+                                ? tx(context, 'streak_no_goal')
                                 : _goalText(
-                                    state.metricUnits, p.weightKg, goal),
+                                    context, state.metricUnits, p.weightKg, goal),
                             style: RagaType.caption(rc.onCardMuted),
                           ),
                         ],
@@ -140,7 +141,7 @@ class _StreakScreenState extends State<StreakScreen> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                '8 minggu terakhir',
+                tx(context, 'streak_last8'),
                 style: RagaType.cardTitle(rc.onCard),
               ),
               const SizedBox(height: 14),
@@ -172,8 +173,9 @@ class _StreakScreenState extends State<StreakScreen> {
                   Expanded(
                     child: Text(
                       next == null
-                          ? 'Semua milestone tercapai!'
-                          : 'Target berikutnya: $next minggu',
+                          ? tx(context, 'streak_all_done')
+                          : tx(context, 'streak_next',
+                              {'w': weeksN(state.locale, next)}),
                       style: RagaType.cardTitle(rc.onCard),
                     ),
                   ),
@@ -192,13 +194,15 @@ class _StreakScreenState extends State<StreakScreen> {
                 ),
                 const SizedBox(height: 10),
                 Text(
-                  '${streak.weeksToMilestone} minggu lagi',
+                  tx(context, 'streak_togo', {
+                    'w': weeksN(state.locale, streak.weeksToMilestone)
+                  }),
                   style: RagaType.body(rc.onCardMuted),
                 ),
               ] else ...[
                 const SizedBox(height: 10),
                 Text(
-                  'Konsisten banget — pertahankan!',
+                  tx(context, 'streak_keep'),
                   style: RagaType.body(rc.onCardMuted),
                 ),
               ],
@@ -240,11 +244,14 @@ class _StreakScreenState extends State<StreakScreen> {
       ? '${kg.toStringAsFixed(1)} kg'
       : '${(kg * kgToLb).round()} lb';
 
-  String _goalText(bool metric, double curKg, double goalKg) {
+  String _goalText(
+      BuildContext context, bool metric, double curKg, double goalKg) {
     final d = goalKg - curKg;
     final g = _fmtW(goalKg, metric);
-    if (d.abs() < 0.5) return 'Jaga di $g';
-    return d < 0 ? 'Turun ke $g' : 'Naik ke $g';
+    if (d.abs() < 0.5) return tx(context, 'streak_goal_maintain', {'g': g});
+    return d < 0
+        ? tx(context, 'streak_goal_down', {'g': g})
+        : tx(context, 'streak_goal_up', {'g': g});
   }
 
   // Goal dialog: direction segmented + weight stepper + a live
@@ -260,15 +267,19 @@ class _StreakScreenState extends State<StreakScreen> {
     final step = metric ? 0.5 : 1.0;
     double toDisplay(double kg) => metric ? kg : kg * kgToLb;
     double toKg(double v) => metric ? v : v / kgToLb;
+    final dirs = [
+      tx(context, 'goal_lose'),
+      tx(context, 'goal_maintain'),
+      tx(context, 'goal_gain'),
+    ];
     String dirOf(double v) {
       final d = toKg(v) - cur;
-      if (d.abs() < 0.5) return 'Jaga';
-      return d < 0 ? 'Turun' : 'Naik';
+      if (d.abs() < 0.5) return dirs[1];
+      return d < 0 ? dirs[0] : dirs[2];
     }
 
     var value = toDisplay(state.goalFor(p.id) ?? cur).clamp(min, max);
     var dir = dirOf(value);
-    const dirs = ['Turun', 'Jaga', 'Naik'];
     final hasGoal = state.goalFor(p.id) != null;
 
     showDialog(
@@ -277,12 +288,13 @@ class _StreakScreenState extends State<StreakScreen> {
         builder: (ctx2, setLocal) {
           final d = toKg(value) - cur;
           final diffText = d.abs() < 0.5
-              ? 'Tetap di ${_fmtW(cur, metric)}'
-              : d < 0
-                  ? '−${_fmtW(d.abs(), metric)} lagi'
-                  : '+${_fmtW(d, metric)} lagi';
+              ? tx(ctx2, 'streak_dialog_stay', {'w': _fmtW(cur, metric)})
+              : tx(ctx2, 'streak_dialog_togo', {
+                  's': d < 0 ? '−' : '+',
+                  'w': _fmtW(d.abs(), metric),
+                });
           return AlertDialog(
-            title: const Text('Target berat'),
+            title: Text(tx(ctx2, 'streak_goal_weight')),
             content: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
@@ -292,11 +304,11 @@ class _StreakScreenState extends State<StreakScreen> {
                   onChanged: (i) => setLocal(() {
                     dir = dirs[i];
                     final kgNow = toKg(value);
-                    if (dir == 'Jaga') {
+                    if (dir == dirs[1]) {
                       value = toDisplay(cur);
-                    } else if (dir == 'Turun' && kgNow >= cur) {
+                    } else if (dir == dirs[0] && kgNow >= cur) {
                       value = toDisplay(cur - 3).clamp(min, max);
-                    } else if (dir == 'Naik' && kgNow <= cur) {
+                    } else if (dir == dirs[2] && kgNow <= cur) {
                       value = toDisplay(cur + 3).clamp(min, max);
                     }
                   }),
@@ -326,7 +338,7 @@ class _StreakScreenState extends State<StreakScreen> {
                 ),
                 const SizedBox(height: 18),
                 RagaButton(
-                  label: 'Simpan target',
+                  label: tx(ctx2, 'streak_save_goal'),
                   height: 56,
                   onPressed: () async {
                     await state.setGoalWeight(p.id, toKg(value));
@@ -335,7 +347,7 @@ class _StreakScreenState extends State<StreakScreen> {
                 ),
                 if (hasGoal)
                   RagaTextButton(
-                    label: 'Hapus target',
+                    label: tx(ctx2, 'streak_delete_goal'),
                     onPressed: () async {
                       await state.setGoalWeight(p.id, null);
                       if (ctx2.mounted) Navigator.pop(ctx2);
@@ -343,7 +355,7 @@ class _StreakScreenState extends State<StreakScreen> {
                   )
                 else
                   RagaTextButton(
-                    label: 'Batal',
+                    label: tx(ctx2, 'cancel'),
                     onPressed: () => Navigator.pop(ctx2),
                   ),
               ],

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../core/bmi.dart';
+import '../core/strings.dart';
 import '../core/theme.dart';
 import '../models/profile.dart';
 import '../state/app_state.dart';
@@ -10,9 +11,14 @@ import '../widgets/headers.dart';
 import '../widgets/ring.dart';
 
 
-// Display labels (Indonesian) -> stored activity keys (English, unchanged
+// Display labels -> stored activity keys (English, unchanged
 // in storage so old installs keep their value).
-const _activityLabels = ['Minim', 'Ringan', 'Sedang', 'Berat'];
+List<String> _activityLabels(BuildContext context) => [
+      tx(context, 'activity_minimal'),
+      tx(context, 'activity_light'),
+      tx(context, 'activity_moderate'),
+      tx(context, 'activity_active'),
+    ];
 const _activityKeys = ['Minimal', 'Light', 'Moderate', 'Active'];
 
 // Health: activity level, daily calorie needs + BMR donut,
@@ -46,9 +52,9 @@ class HealthScreen extends StatelessWidget {
     return ListView(
       padding: const EdgeInsets.fromLTRB(22, 8, 22, 110),
       children: [
-        const RagaHeader(title: 'Kesehatan'),
+        RagaHeader(title: tx(context, 'health_title')),
         const SizedBox(height: 16),
-        _activityChips(state, activityKey),
+        _activityChips(context, state, activityKey),
         const SizedBox(height: 16),
         _calorieCard(context, p, metric, tdeeVal, pct),
         const SizedBox(height: 14),
@@ -58,7 +64,8 @@ class HealthScreen extends StatelessWidget {
         const SizedBox(height: 16),
         Center(
           child: Text(
-            'BMR ${formatIntId(bmr.round())} kcal/hari · rumus Mifflin-St Jeor',
+            tx(context, 'health_bmr_line',
+                {'bmr': formatIntId(bmr.round())}),
             textAlign: TextAlign.center,
             style: RagaType.caption(rc.onCardMuted),
           ),
@@ -67,15 +74,17 @@ class HealthScreen extends StatelessWidget {
     );
   }
 
-  Widget _activityChips(AppState state, String activityKey) {
+  Widget _activityChips(
+      BuildContext context, AppState state, String activityKey) {
+    final labels = _activityLabels(context);
     return SingleChildScrollView(
       scrollDirection: Axis.horizontal,
       child: Row(
         children: [
-          for (var i = 0; i < _activityLabels.length; i++) ...[
+          for (var i = 0; i < labels.length; i++) ...[
             if (i > 0) const SizedBox(width: 10),
             SelectChip(
-              label: _activityLabels[i],
+              label: labels[i],
               selected: _activityKeys[i] == activityKey,
               onTap: () => state.setActivity(_activityKeys[i]),
             ),
@@ -102,7 +111,7 @@ class HealthScreen extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'Kebutuhan kalori harian',
+                  tx(context, 'health_calorie_need'),
                   style: RagaType.cardTitle(rc.onCard),
                 ),
                 const SizedBox(height: 6),
@@ -126,7 +135,12 @@ class HealthScreen extends StatelessWidget {
                 ),
                 const SizedBox(height: 6),
                 Text(
-                  '${p.isMale ? 'Pria' : 'Wanita'} · ${p.age} th · $heightTxt · $weightTxt',
+                  tx(context, 'profile_line', {
+                    'gender': tx(
+                        context, p.isMale ? 'male' : 'female'),
+                    'n': p.age,
+                    'h': '$heightTxt · $weightTxt',
+                  }),
                   style: RagaType.body(rc.onCardMuted)
                       .copyWith(fontSize: 13.5),
                 ),
@@ -147,9 +161,9 @@ class HealthScreen extends StatelessWidget {
     final rc = context.rc;
     final maxV = tdeeVal + 500;
     final items = [
-      ('Turun', (tdeeVal - 500).round(), rc.catUnder),
-      ('Jaga', tdeeVal.round(), rc.catNormal),
-      ('Naik', (tdeeVal + 500).round(), rc.catOver),
+      (tx(context, 'goal_lose'), (tdeeVal - 500).round(), rc.catUnder),
+      (tx(context, 'goal_maintain'), tdeeVal.round(), rc.catNormal),
+      (tx(context, 'goal_gain'), (tdeeVal + 500).round(), rc.catOver),
     ];
     return Row(
       children: [
@@ -234,7 +248,7 @@ class HealthScreen extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'Berat badan ideal',
+            tx(context, 'health_ideal'),
             style: RagaType.cardTitle(rc.onCard),
           ),
           const SizedBox(height: 6),
@@ -322,7 +336,7 @@ class HealthScreen extends StatelessWidget {
                 style: RagaType.label(rc.onCardMuted),
               ),
               Text(
-                'Kamu: $curTxt $unit',
+                tx(context, 'health_you', {'v': curTxt, 'u': unit}),
                 style: RagaType.label(rc.onCard)
                     .copyWith(fontWeight: FontWeight.w800),
               ),
