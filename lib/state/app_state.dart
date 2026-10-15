@@ -316,6 +316,13 @@ class AppState extends ChangeNotifier {
       } catch (_) {
         // The toggle flow will re-arm it on next launch.
       }
+    } else {
+      // The backup had the reminder off, but this phone may still have
+      // alarms armed from before the restore — cancel them so a
+      // "disabled" reminder can't keep firing.
+      try {
+        await ReminderService.cancelAll();
+      } catch (_) {}
     }
     return true;
   }
