@@ -6,10 +6,13 @@
     <!-- Exact alarms so the weekly reminder fires on time -->
     <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM"/>
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED"/>
+    <!-- Health data lives in plaintext SharedPreferences; the app has its
+         own Supabase backup, so OS-level auto backup stays off. -->
     <application
         android:label="Raga"
         android:name="${applicationName}"
-        android:icon="@mipmap/ic_launcher">
+        android:icon="@mipmap/ic_launcher"
+        android:allowBackup="false">
         <activity
             android:name=".MainActivity"
             android:exported="true"
