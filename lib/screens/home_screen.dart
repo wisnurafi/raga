@@ -240,7 +240,7 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   void _setAge(AppState state, int v) {
-    final nv = v.clamp(5, 120);
+    final nv = v.clamp(5, 120).toInt();
     setState(() => _age = nv);
     state.updateActiveProfile((p) => p.copyWith(age: nv));
   }

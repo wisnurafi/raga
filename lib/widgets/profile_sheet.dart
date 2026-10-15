@@ -91,10 +91,10 @@ Future<Profile?> showProfileSheet(
                 StepperRow(
                   value: '$age',
                   unit: 'tahun',
-                  onMinus: () =>
-                      setLocal(() => age = (age - 1).clamp(5, 120)),
-                  onPlus: () =>
-                      setLocal(() => age = (age + 1).clamp(5, 120)),
+                  onMinus: () => setLocal(
+                      () => age = (age - 1).clamp(5, 120).toInt()),
+                  onPlus: () => setLocal(
+                      () => age = (age + 1).clamp(5, 120).toInt()),
                 ),
                 const SizedBox(height: 8),
                 MeasureSlider(
