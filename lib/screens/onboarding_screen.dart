@@ -137,19 +137,6 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   String _timeColon() =>
       '${_hour.toString().padLeft(2, '0')}:${_minute.toString().padLeft(2, '0')}';
 
-  String _summary() {
-    final t =
-        '${_hour.toString().padLeft(2, '0')}.${_minute.toString().padLeft(2, '0')}';
-    final days = _days.toList()..sort();
-    if (days.length == 7) return 'Setiap hari · $t';
-    final names = days.map((d) => idShortDays[d - 1]).toList();
-    if (names.length == 1) return '1× seminggu · ${names.first} · $t';
-    final joined = names.length == 2
-        ? names.join(' & ')
-        : '${names.sublist(0, names.length - 1).join(', ')} & ${names.last}';
-    return '${names.length}× seminggu · $joined · $t';
-  }
-
   Future<void> _pickTime() async {
     final picked = await showTimePicker(
       context: context,
@@ -694,7 +681,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
             children: [
               Text('Ringkasan',
                   style: RagaType.cardTitle(rc.onCard)),
-              Text(_summary(),
+              Text(reminderSummary(_days.toList(), _hour, _minute),
                   style: RagaType.chip(rc.onCardMuted)),
             ],
           ),

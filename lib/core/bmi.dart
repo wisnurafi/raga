@@ -91,4 +91,21 @@ const idShortMonths = [
 /// Monday-first short day names: Sen..Min.
 const idShortDays = ['Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab', 'Min'];
 
+/// One-line reminder schedule summary, e.g.
+/// "2× seminggu · Sen & Kam · 07.00" / "Setiap hari · 07.00" / "Mati".
+String reminderSummary(List<int> days, int h, int m) {
+  if (days.isEmpty) return 'Mati';
+  final t =
+      '${h.toString().padLeft(2, '0')}.${m.toString().padLeft(2, '0')}';
+  final sorted = [...days]..sort();
+  if (sorted.length == 7) return 'Setiap hari · $t';
+  final names = sorted.map((d) => idShortDays[d - 1]).toList();
+  final joined = names.length == 1
+      ? names.first
+      : names.length == 2
+          ? '${names[0]} & ${names[1]}'
+          : '${names.sublist(0, names.length - 1).join(', ')} & ${names.last}';
+  return '${names.length}× seminggu · $joined · $t';
+}
+
 String formatDateId(DateTime d) => '${d.day} ${idShortMonths[d.month - 1]}';

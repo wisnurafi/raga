@@ -193,7 +193,7 @@ class ProfileScreen extends StatelessWidget {
                       Expanded(
                         child: Text(
                           state.weeklyReminder
-                              ? _summary(
+                              ? reminderSummary(
                                   state.reminderWeekdays,
                                   state.reminderHour,
                                   state.reminderMinute,
@@ -378,21 +378,6 @@ class ProfileScreen extends StatelessWidget {
       thickness: 1,
       color: context.rc.cardBorder,
     );
-  }
-
-  // "2× seminggu · Sen & Kam · 07.00" / "1× seminggu · Sen · 07.00" /
-  // "Setiap hari · 07.00".
-  String _summary(List<int> days, int h, int m) {
-    if (days.isEmpty) return 'Mati';
-    final t = _hdot(h, m);
-    if (days.length == 7) return 'Setiap hari · $t';
-    final names = days.map(_dayName).toList();
-    final joined = names.length == 1
-        ? names.first
-        : names.length == 2
-            ? '${names[0]} & ${names[1]}'
-            : '${names.sublist(0, names.length - 1).join(', ')} & ${names.last}';
-    return '${names.length}× seminggu · $joined · $t';
   }
 
   // "Hari ini · 07.00", "Besok · 07.00", or "Sen · 07.00" — the
