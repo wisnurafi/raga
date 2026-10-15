@@ -265,10 +265,14 @@ class AppState extends ChangeNotifier {
     metricUnits = s['metricUnits'] as bool? ?? true;
     activity = s['activity'] as String? ?? 'Light';
     weeklyReminder = s['weeklyReminder'] as bool? ?? false;
+    // Sort: the normal path always stores sorted days, but a backup blob
+    // can arrive in any order — without this the summary shows "Kam & Sen"
+    // and .first (used as the legacy single-day) isn't the earliest day.
     final days = (s['reminderWeekdays'] as List?)
         ?.map((e) => (e as num).toInt())
         .where((d) => d >= 1 && d <= 7)
-        .toList();
+        .toList()
+      ?..sort();
     reminderWeekdays = (days != null && days.isNotEmpty)
         ? days
         : [(s['reminderWeekday'] as num?)?.toInt() ?? 7];
