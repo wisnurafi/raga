@@ -46,3 +46,8 @@ app.*.map.json
 
 # Widget Preview related
 .widget_preview/
+
+# Release signing keystore - never commit; lives in GitHub Secrets.
+*.keystore
+*.jks
+*.p12

@@ -31,11 +31,27 @@ android {
         versionName = flutter.versionName
     }
 
+    signingConfigs {
+        create("release") {
+            // Release keystore comes from CI env vars (GitHub Secrets).
+            // The file is decoded from RAGA_KEYSTORE_BASE64 in the workflow
+            // and is gitignored — it must never be committed.
+            storeFile = file(System.getenv("RAGA_KEYSTORE_PATH") ?: "raga-release.keystore")
+            storePassword = System.getenv("RAGA_KEYSTORE_PASSWORD")
+            keyAlias = System.getenv("RAGA_KEY_ALIAS")
+            keyPassword = System.getenv("RAGA_KEY_PASSWORD")
+        }
+    }
+
     buildTypes {
         release {
-            // TODO: Add your own signing config for the release build.
-            // Signing with the debug keys for now, so `flutter run --release` works.
-            signingConfig = signingConfigs.getByName("debug")
+            // CI sets RAGA_KEYSTORE_PASSWORD; a local `flutter run --release`
+            // without it keeps working on debug keys.
+            signingConfig = if (System.getenv("RAGA_KEYSTORE_PASSWORD") != null) {
+                signingConfigs.getByName("release")
+            } else {
+                signingConfigs.getByName("debug")
+            }
         }
     }
 }

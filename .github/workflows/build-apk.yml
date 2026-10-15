@@ -36,7 +36,20 @@ jobs:
       - name: Analyze
         run: flutter analyze
 
+      - name: Decode release keystore
+        run: |
+          if [ -z "${{ secrets.RAGA_KEYSTORE_BASE64 }}" ]; then
+            echo "RAGA_KEYSTORE_BASE64 secret is not set - add it in repo Settings > Secrets and variables > Actions."
+            exit 1
+          fi
+          echo "${{ secrets.RAGA_KEYSTORE_BASE64 }}" | base64 -d > android/app/raga-release.keystore
+
       - name: Build APK (release)
+        env:
+          RAGA_KEYSTORE_PATH: ${{ github.workspace }}/android/app/raga-release.keystore
+          RAGA_KEYSTORE_PASSWORD: ${{ secrets.RAGA_KEYSTORE_PASSWORD }}
+          RAGA_KEY_ALIAS: ${{ secrets.RAGA_KEY_ALIAS }}
+          RAGA_KEY_PASSWORD: ${{ secrets.RAGA_KEY_PASSWORD }}
         run: >
           flutter build apk --release
           --dart-define=SUPABASE_URL=${{ secrets.SUPABASE_URL }}
