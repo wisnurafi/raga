@@ -68,7 +68,7 @@ class BmiRecord {
         'weight_kg': weightKg,
         'bmi': bmi,
         'category': category.name,
-        'created_at': createdAt.toIso8601String(),
+        'created_at': createdAt.toUtc().toIso8601String(), // timestamptz reads offset-less literals as UTC
         'backup_code': backupCode,
       };
 
@@ -83,7 +83,7 @@ class BmiRecord {
       weightKg: (j['weight_kg'] as num).toDouble(),
       bmi: bmi,
       category: categoryOf(bmi),
-      createdAt: DateTime.parse(j['created_at'] as String),
+      createdAt: DateTime.parse(j['created_at'] as String).toLocal(), // wall-clock for streak/history grouping
     );
   }
 }
