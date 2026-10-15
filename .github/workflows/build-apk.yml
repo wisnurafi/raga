@@ -17,6 +17,14 @@ jobs:
       - name: Checkout
         uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
 
+      - name: Stamp build number
+        # Keeps pubspec's version name (e.g. 1.0.0), stamps the build
+        # number from the run number so every "latest" release APK is
+        # distinguishable. Fails loudly if the version line format changes.
+        run: |
+          sed -i -E "s/^version: ([0-9]+\.[0-9]+\.[0-9]+)\+[0-9]+$/version: \1+${{ github.run_number }}/" pubspec.yaml
+          grep -E "^version: [0-9]+\.[0-9]+\.[0-9]+\+${{ github.run_number }}$" pubspec.yaml
+
       - name: Setup Java
         uses: actions/setup-java@cf277c60eb25467037889841efdb72551f06f6c3 # v4
         with:
@@ -75,5 +83,6 @@ jobs:
           body: |
             Automated build from the `main` branch.
             Download `Raga.apk`, install it on Android, and try it out.
+            Build #${{ github.run_number }}.
           files: build/app/outputs/flutter-apk/Raga.apk
           generate_release_notes: true
