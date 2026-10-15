@@ -31,6 +31,12 @@ class BackupData {
     required this.settings,
   });
 
+  BackupData.empty()
+      : records = const [],
+        profiles = const [],
+        goals = const {},
+        settings = const {};
+
   bool get isEmpty => records.isEmpty && profiles.isEmpty;
 }
 
@@ -226,14 +232,13 @@ class CloudSync {
     }
     final code = normalizeCode(rawCode);
     if (code.isEmpty) {
-      return BackupData(records: [], profiles: [], goals: {}, settings: {});
+      return BackupData.empty();
     }
     try {
       final res = await Supabase.instance.client
           .rpc('restore_backup', params: {'p_code': code});
       if (res == null) {
-        return BackupData(
-            records: [], profiles: [], goals: {}, settings: {});
+        return BackupData.empty();
       }
       final map = Map<String, dynamic>.from(res as Map);
       final records = ((map['records'] as List?) ?? [])
