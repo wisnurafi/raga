@@ -57,28 +57,22 @@ String formatNum(double value, [int decimals = 1]) {
   return value.toStringAsFixed(decimals);
 }
 
-String formatIntNum(int value) {
+String _groupInt(int value, String sep) {
   final s = value.toString();
   final buf = StringBuffer();
   for (var i = 0; i < s.length; i++) {
-    if (i > 0 && (s.length - i) % 3 == 0) buf.write(',');
+    if (i > 0 && (s.length - i) % 3 == 0) buf.write(sep);
     buf.write(s[i]);
   }
   return buf.toString();
 }
 
+// US style: 2,217. (Pinned by unit tests — keep the behavior.)
+String formatIntNum(int value) => _groupInt(value, ',');
+
 // --- Indonesian presentation (what the mockup shows) ---
 // Thousands separated by '.', e.g. 2.217 for TDEE.
-// (formatIntNum above keeps the US style; the unit tests pin it.)
-String formatIntId(int value) {
-  final s = value.toString();
-  final buf = StringBuffer();
-  for (var i = 0; i < s.length; i++) {
-    if (i > 0 && (s.length - i) % 3 == 0) buf.write('.');
-    buf.write(s[i]);
-  }
-  return buf.toString();
-}
+String formatIntId(int value) => _groupInt(value, '.');
 
 const idShortMonths = [
   'Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun',
