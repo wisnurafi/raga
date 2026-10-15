@@ -45,6 +45,7 @@ class _ResultScreenState extends State<ResultScreen> {
   Widget build(BuildContext context) {
     final state = AppState.of(context);
     final rc = context.rc;
+    final metric = state.metricUnits;
     final bmi = widget.bmi;
     final cat = categoryOf(bmi);
     final name = state.activeProfile.name;
@@ -80,6 +81,8 @@ class _ResultScreenState extends State<ResultScreen> {
                       ],
                     ),
                   ),
+                  const SizedBox(height: 18),
+                  _healthyRangeCard(state, rc, metric),
                   const SizedBox(height: 22),
                   Text(
                     'Tips untukmu',
@@ -263,6 +266,76 @@ class _ResultScreenState extends State<ResultScreen> {
           ),
         ],
       ],
+    );
+  }
+
+  // Healthy weight range for the user's height (BMI 18.5–24.99),
+  // with a one-tap "Jadikan target" that fills the Goals section
+  // on the Streak tab — no manual retyping.
+  Widget _healthyRangeCard(AppState state, RagaColors rc, bool metric) {
+    final range = idealWeightRange(widget.heightCm);
+    final w = widget.weightKg;
+    String fw(double kg) =>
+        metric ? '${formatNum(kg)} kg' : '${(kg * kgToLb).round()} lb';
+
+    // Snap the suggested target into the healthy range: the nearest
+    // bound when outside, the current weight (maintain) when inside.
+    final double target;
+    final String status;
+    if (w < range.min - 0.05) {
+      target = range.min;
+      status = 'Kamu ${fw(w)} — ${fw(range.min - w)} di bawah rentang sehat.';
+    } else if (w > range.max + 0.05) {
+      target = range.max;
+      status = 'Kamu ${fw(w)} — ${fw(w - range.max)} di atas rentang sehat.';
+    } else {
+      target = w;
+      status = 'Kamu ${fw(w)} — di dalam rentang sehat ✓';
+    }
+
+    final pid = state.activeProfile.id;
+    final existing = state.goalFor(pid);
+    final already = existing != null && (existing - target).abs() < 0.05;
+
+    return GlassCard(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Rentang berat sehat',
+            style: RagaType.cardTitle(rc.onCard),
+          ),
+          const SizedBox(height: 6),
+          Text(
+            'Untuk tinggi ${metric ? '${formatNum(widget.heightCm)} cm' : '${(widget.heightCm * cmToIn).round()} in'}: '
+            '${fw(range.min)} – ${fw(range.max)}',
+            style: RagaType.body(rc.onCard),
+          ),
+          const SizedBox(height: 6),
+          Text(
+            status,
+            style: RagaType.caption(rc.onCardMuted),
+          ),
+          const SizedBox(height: 14),
+          RagaButton(
+            label: already ? 'Sudah jadi target' : 'Jadikan target',
+            onPressed:
+                already ? null : () => _setAsGoal(state, pid, target, metric),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _setAsGoal(
+      AppState state, String pid, double targetKg, bool metric) async {
+    await state.setGoalWeight(pid, targetKg);
+    if (!mounted) return;
+    final t = metric
+        ? '${formatNum(targetKg)} kg'
+        : '${(targetKg * kgToLb).round()} lb';
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('Target $t tersimpan — cek tab Streak.')),
     );
   }
 
