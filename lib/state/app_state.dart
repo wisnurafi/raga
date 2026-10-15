@@ -117,9 +117,10 @@ class AppState extends ChangeNotifier {
     await _store.saveRecords(records);
     notifyListeners();
     // Cloud backup runs in the background; check its status in Profile.
+    // (No second notify: the push and the blob RPC don't change any
+    // AppState field, so there's nothing new to broadcast.)
     await CloudSync.pushRecord(r);
     await _saveBackupBlob();
-    notifyListeners();
   }
 
   Future<void> setMetricUnits(bool v) async {
