@@ -37,6 +37,9 @@ class ResultScreen extends StatefulWidget {
 class _ResultScreenState extends State<ResultScreen> {
   final _shot = ScreenshotController();
   bool _sharing = false;
+  // Guards the save button: saveRecord awaits disk + network, so two fast
+  // taps would create two BmiRecords before the pop.
+  bool _saving = false;
 
   @override
   Widget build(BuildContext context) {
@@ -138,8 +141,10 @@ class _ResultScreenState extends State<ResultScreen> {
                       Expanded(
                         flex: 3,
                         child: RagaButton(
-                          label: 'Simpan ke riwayat',
-                          onPressed: () => _save(),
+                          label: _saving
+                              ? 'Menyimpan…'
+                              : 'Simpan ke riwayat',
+                          onPressed: _saving ? null : () => _save(),
                         ),
                       ),
                       const SizedBox(width: 12),
@@ -264,16 +269,24 @@ class _ResultScreenState extends State<ResultScreen> {
   }
 
   Future<void> _save() async {
+    if (_saving) return;
+    setState(() => _saving = true);
     final messenger = ScaffoldMessenger.of(context);
-    await AppState.of(context).saveRecord(
-      heightCm: widget.heightCm,
-      weightKg: widget.weightKg,
-    );
-    if (!mounted) return;
-    messenger.showSnackBar(
-      const SnackBar(content: Text('Tersimpan di riwayat.')),
-    );
-    Navigator.pop(context);
+    try {
+      await AppState.of(context).saveRecord(
+        heightCm: widget.heightCm,
+        weightKg: widget.weightKg,
+      );
+      if (!mounted) return;
+      messenger.showSnackBar(
+        const SnackBar(content: Text('Tersimpan di riwayat.')),
+      );
+      Navigator.pop(context);
+    } finally {
+      // After the pop this state is gone; the guard also protects the
+      // (impossible but cheap) path where the save outlives the screen.
+      if (mounted) setState(() => _saving = false);
+    }
   }
 
   Future<void> _share(double bmi, BmiCategory cat) async {
