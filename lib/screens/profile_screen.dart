@@ -122,6 +122,11 @@ class ProfileScreen extends StatelessWidget {
             ],
           ),
         ),
+        const SizedBox(height: 8),
+        Text(
+          'Tahan chip profil untuk menghapusnya',
+          style: RagaType.caption(rc.onCardMuted),
+        ),
         const SizedBox(height: 18),
         _label(context, 'Pengaturan'),
         GlassCard(
