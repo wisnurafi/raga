@@ -29,7 +29,10 @@ android {
         // You can force using the value of versionCode by specifying the `-P force-version-code-ignoring-abi=true`
         // flag during build.
         versionCode = flutter.versionCode
-        versionName = flutter.versionName
+        // Append the build number so it's visible (e.g. "1.0.0+123"):
+        // pubspec's "+NNN" otherwise only lands in versionCode, which
+        // Android Settings doesn't display.
+        versionName = "${flutter.versionName}+${flutter.versionCode}"
     }
 
     signingConfigs {
