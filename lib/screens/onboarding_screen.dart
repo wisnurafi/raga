@@ -66,8 +66,8 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   }
 
   // Imperial display conversions (metric stays canonical).
-  String get _wu => _metric ? 'kg' : 'lb';
-  String get _hu => _metric ? 'cm' : 'in';
+  String get _weightUnit => _metric ? 'kg' : 'lb';
+  String get _heightUnit => _metric ? 'cm' : 'in';
   double _dispH() => _metric ? _heightCm : _heightCm / 2.54;
   double _dispW(double kg) => _metric ? kg : kg * 2.20462;
 
@@ -112,10 +112,10 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
       (_direction == 2 ? _goalKg - _weightKg : _weightKg - _goalKg).abs();
 
   String _goalHint() {
-    final w = '${_trimNum(_dispW(_weightKg))} $_wu';
+    final w = '${_trimNum(_dispW(_weightKg))} $_weightUnit';
     if (_direction == 1) return 'Tetap di $w';
     final sign = _direction == 2 ? '+' : '−';
-    return 'Sekarang $w · selisih $sign${formatNum(_goalDiffKg)} $_wu';
+    return 'Sekarang $w · selisih $sign${formatNum(_goalDiffKg)} $_weightUnit';
   }
 
   String _eta() {
@@ -489,7 +489,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
           child: MeasureSlider(
             label: 'Tinggi badan',
             value: _trimNum(_dispH()),
-            unit: _hu,
+            unit: _heightUnit,
             sliderValue: _dispH(),
             min: _metric ? 130 : 51,
             max: _metric ? 220 : 87,
@@ -502,7 +502,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
           child: MeasureSlider(
             label: 'Berat badan',
             value: _trimNum(_dispW(_weightKg)),
-            unit: _wu,
+            unit: _weightUnit,
             sliderValue: _dispW(_weightKg),
             min: _metric ? 30 : 66,
             max: _metric ? 150 : 330,
@@ -554,7 +554,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
               const SizedBox(height: 8),
               StepperRow(
                 value: _trimNum(_dispW(_goalKg)),
-                unit: _wu,
+                unit: _weightUnit,
                 valueSize: 56,
                 onMinus: () => setState(() => _goalKg =
                     (_goalKg - 0.5).clamp(30.0, 150.0).toDouble()),

@@ -28,7 +28,7 @@ class RagaHeader extends StatelessWidget {
     return Row(
       children: [
         leading ??
-            _Avatar(letter: _initial(state.activeProfile.name)),
+            _Avatar(letter: state.activeProfile.initial),
         Expanded(
           child: Column(
             mainAxisSize: MainAxisSize.min,
@@ -54,9 +54,6 @@ class RagaHeader extends StatelessWidget {
       ],
     );
   }
-
-  String _initial(String name) =>
-      name.trim().isEmpty ? 'R' : name.trim()[0].toUpperCase();
 }
 
 class _Avatar extends StatelessWidget {

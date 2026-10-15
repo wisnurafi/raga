@@ -22,7 +22,11 @@ class Profile {
   static String _newId() =>
       '${DateTime.now().microsecondsSinceEpoch}${Random().nextInt(9999)}';
 
-  String get initial => name.isEmpty ? '?' : name[0].toUpperCase();
+  // First letter of the trimmed name, for avatar chips.
+  String get initial {
+    final t = name.trim();
+    return t.isEmpty ? '?' : t[0].toUpperCase();
+  }
 
   Profile copyWith({
     String? name,
