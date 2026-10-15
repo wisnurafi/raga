@@ -10,11 +10,11 @@ import '../widgets/glass.dart';
 import '../widgets/profile_sheet.dart';
 import '../widgets/buttons.dart';
 import '../widgets/chips.dart';
-import '../widgets/controls.dart';
 import '../widgets/headers.dart';
 
-// Profile tab: identity, profiles, goal, reminder, units, appearance,
+// Profile tab: identity, profiles, reminder, units, appearance,
 // cloud backup, developer tools, and the danger zone.
+// (The weight target lives on the Streak tab as "Goals".)
 // New visual language — every feature from the old screen is ported.
 class ProfileScreen extends StatelessWidget {
   const ProfileScreen({super.key});
@@ -28,7 +28,6 @@ class ProfileScreen extends StatelessWidget {
     final rc = context.rc;
     final state = AppState.of(context);
     final p = state.activeProfile;
-    final goal = state.goalFor(p.id);
 
     return ListView(
       padding: const EdgeInsets.fromLTRB(22, 8, 22, 110),
@@ -208,35 +207,6 @@ class ProfileScreen extends StatelessWidget {
                   ),
                 ),
               ),
-              _divider(context),
-              GestureDetector(
-                onTap: () => _goalDialog(context, state),
-                behavior: HitTestBehavior.opaque,
-                child: Row(
-                  children: [
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            'Target berat',
-                            style: RagaType.cardTitle(rc.onCard),
-                          ),
-                          const SizedBox(height: 2),
-                          Text(
-                            goal == null
-                                ? 'Belum ada target — ketuk untuk atur'
-                                : _goalText(
-                                    state.metricUnits, p.weightKg, goal),
-                            style: RagaType.caption(rc.onCardMuted),
-                          ),
-                        ],
-                      ),
-                    ),
-                    Icon(Icons.chevron_right, color: rc.onCardMuted),
-                  ],
-                ),
-              ),
             ],
           ),
         ),
@@ -349,17 +319,6 @@ class ProfileScreen extends StatelessWidget {
         ? '${p.heightCm.toStringAsFixed(0)} cm'
         : '${(p.heightCm / cmToIn).round()} in';
     return '${p.isMale ? 'Pria' : 'Wanita'} · ${p.age} th · $h';
-  }
-
-  String _fmtW(double kg, bool metric) => metric
-      ? '${kg.toStringAsFixed(1)} kg'
-      : '${(kg * kgToLb).round()} lb';
-
-  String _goalText(bool metric, double curKg, double goalKg) {
-    final d = goalKg - curKg;
-    final g = _fmtW(goalKg, metric);
-    if (d.abs() < 0.5) return 'Jaga di $g';
-    return d < 0 ? 'Turun ke $g' : 'Naik ke $g';
   }
 
   Widget _label(BuildContext context, String text) {
@@ -583,113 +542,6 @@ class ProfileScreen extends StatelessWidget {
             ],
           ),
         ),
-      ),
-    );
-  }
-
-  // Goal dialog in the onboarding language: direction segmented +
-  // weight stepper + a live "−3.0 kg lagi" line.
-  void _goalDialog(BuildContext context, AppState state) {
-    final rc = context.rc;
-    final p = state.activeProfile;
-    final metric = state.metricUnits;
-    final cur = p.weightKg;
-    final unit = metric ? 'kg' : 'lb';
-    final min = metric ? 30.0 : 66.0;
-    final max = metric ? 150.0 : 330.0;
-    final step = metric ? 0.5 : 1.0;
-    double toDisplay(double kg) => metric ? kg : kg * kgToLb;
-    double toKg(double v) => metric ? v : v / kgToLb;
-    String dirOf(double v) {
-      final d = toKg(v) - cur;
-      if (d.abs() < 0.5) return 'Jaga';
-      return d < 0 ? 'Turun' : 'Naik';
-    }
-
-    var value = toDisplay(state.goalFor(p.id) ?? cur).clamp(min, max);
-    var dir = dirOf(value);
-    const dirs = ['Turun', 'Jaga', 'Naik'];
-    final hasGoal = state.goalFor(p.id) != null;
-
-    showDialog(
-      context: context,
-      builder: (ctx) => StatefulBuilder(
-        builder: (ctx2, setLocal) {
-          final d = toKg(value) - cur;
-          final diffText = d.abs() < 0.5
-              ? 'Tetap di ${_fmtW(cur, metric)}'
-              : d < 0
-                  ? '−${_fmtW(d.abs(), metric)} lagi'
-                  : '+${_fmtW(d, metric)} lagi';
-          return AlertDialog(
-            title: const Text('Target berat'),
-            content: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                RagaSegmented(
-                  options: dirs,
-                  selected: dirs.indexOf(dir),
-                  onChanged: (i) => setLocal(() {
-                    dir = dirs[i];
-                    final kgNow = toKg(value);
-                    if (dir == 'Jaga') {
-                      value = toDisplay(cur);
-                    } else if (dir == 'Turun' && kgNow >= cur) {
-                      value = toDisplay(cur - 3).clamp(min, max);
-                    } else if (dir == 'Naik' && kgNow <= cur) {
-                      value = toDisplay(cur + 3).clamp(min, max);
-                    }
-                  }),
-                ),
-                const SizedBox(height: 18),
-                StepperRow(
-                  value: value.toStringAsFixed(metric ? 1 : 0),
-                  unit: unit,
-                  valueSize: 48,
-                  onMinus: () => setLocal(() {
-                    value = (value - step).clamp(min, max);
-                    dir = dirOf(value);
-                  }),
-                  onPlus: () => setLocal(() {
-                    value = (value + step).clamp(min, max);
-                    dir = dirOf(value);
-                  }),
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  diffText,
-                  style: TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w600,
-                    color: rc.onCardMuted,
-                  ),
-                ),
-                const SizedBox(height: 18),
-                RagaButton(
-                  label: 'Simpan target',
-                  height: 56,
-                  onPressed: () async {
-                    await state.setGoalWeight(p.id, toKg(value));
-                    if (ctx2.mounted) Navigator.pop(ctx2);
-                  },
-                ),
-                if (hasGoal)
-                  RagaTextButton(
-                    label: 'Hapus target',
-                    onPressed: () async {
-                      await state.setGoalWeight(p.id, null);
-                      if (ctx2.mounted) Navigator.pop(ctx2);
-                    },
-                  )
-                else
-                  RagaTextButton(
-                    label: 'Batal',
-                    onPressed: () => Navigator.pop(ctx2),
-                  ),
-              ],
-            ),
-          );
-        },
       ),
     );
   }
