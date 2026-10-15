@@ -35,6 +35,15 @@ Future<void> main() async {
   // Re-arm the weekly nudge in case the system cleared it.
   if (state.weeklyReminder) {
     try {
+      // Unlike the Profil/onboarding toggle flows, this path runs on every
+      // cold start with no UI to be honest in — so when the exact-alarm
+      // permission is gone we log the downgrade instead of letting the
+      // toggle pretend the nudge still fires on time. (Each alarm's actual
+      // mode is also logged by ReminderService._schedule.)
+      if (!await ReminderService.canScheduleExact()) {
+        CloudSync.logEvent('reminder: launch re-arm without exact-alarm '
+            'permission — inexact fallback, may fire late');
+      }
       await ReminderService.scheduleBestEffortDays(
         weekdays: state.reminderWeekdays,
         hour: state.reminderHour,
