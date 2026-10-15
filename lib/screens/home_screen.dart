@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import '../core/bmi.dart';
 import '../core/theme.dart';
 import '../state/app_state.dart';
-import '../widgets/add_profile_sheet.dart';
+import '../widgets/profile_sheet.dart';
 import '../widgets/buttons.dart';
 import '../widgets/chips.dart';
 import '../widgets/controls.dart';
@@ -178,10 +178,9 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Future<void> _addProfileSheet(AppState state) async {
-    final name = await showAddProfileSheet(context);
-    // Empty name falls back to AppState.addProfile's default.
-    if (name != null) {
-      await state.addProfile(name);
+    final p = await showProfileSheet(context, metric: state.metricUnits);
+    if (p != null) {
+      await state.addProfile(p);
     }
   }
 

@@ -7,7 +7,7 @@ import '../state/app_state.dart';
 import '../data/cloud_sync.dart';
 import '../data/reminder_service.dart';
 import '../widgets/glass.dart';
-import '../widgets/add_profile_sheet.dart';
+import '../widgets/profile_sheet.dart';
 import '../widgets/buttons.dart';
 import '../widgets/chips.dart';
 import '../widgets/controls.dart';
@@ -56,7 +56,16 @@ class ProfileScreen extends StatelessWidget {
               ),
               const SizedBox(height: 12),
               GestureDetector(
-                onTap: () => _renameDialog(context, state, p.name),
+                onTap: () async {
+                  final updated = await showProfileSheet(
+                    context,
+                    existing: p,
+                    metric: state.metricUnits,
+                  );
+                  if (updated != null) {
+                    await state.updateActiveProfile((_) => updated);
+                  }
+                },
                 behavior: HitTestBehavior.opaque,
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
@@ -899,58 +908,9 @@ class ProfileScreen extends StatelessWidget {
 
   Future<void> _addProfileSheet(
       BuildContext context, AppState state) async {
-    final name = await showAddProfileSheet(context);
-    // Empty name falls back to AppState.addProfile's default.
-    if (name != null) {
-      await state.addProfile(name);
-    }
-  }
-
-  void _renameDialog(
-      BuildContext context, AppState state, String current) {
-    final ctrl = TextEditingController(text: current);
-    showDialog(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('Ubah nama'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            TextField(
-              controller: ctrl,
-              autofocus: true,
-              textCapitalization: TextCapitalization.words,
-              decoration: const InputDecoration(
-                border: OutlineInputBorder(),
-              ),
-              onSubmitted: (_) {
-                Navigator.pop(ctx);
-                _applyRename(state, ctrl.text);
-              },
-            ),
-            const SizedBox(height: 18),
-            RagaButton(
-              label: 'Simpan',
-              height: 56,
-              onPressed: () {
-                Navigator.pop(ctx);
-                _applyRename(state, ctrl.text);
-              },
-            ),
-            RagaTextButton(
-              label: 'Batal',
-              onPressed: () => Navigator.pop(ctx),
-            ),
-          ],
-        ),
-      ),
-    ).whenComplete(ctrl.dispose);
-  }
-
-  void _applyRename(AppState state, String name) {
-    final n = name.trim();
-    if (n.isNotEmpty) {
-      state.updateActiveProfile((p) => p.copyWith(name: n));
+    final p = await showProfileSheet(context, metric: state.metricUnits);
+    if (p != null) {
+      await state.addProfile(p);
     }
   }
 

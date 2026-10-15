@@ -73,11 +73,10 @@ class AppState extends ChangeNotifier {
     notifyListeners();
   }
 
-  Future<void> addProfile(String name) async {
-    final p = Profile(name: name.trim().isEmpty ? 'Profile' : name.trim());
-    profiles = [...profiles, p];
+  Future<void> addProfile(Profile profile) async {
+    profiles = [...profiles, profile];
     await _store.saveProfiles(profiles);
-    await setActiveProfile(p.id);
+    await setActiveProfile(profile.id);
     await _saveBackupBlob();
   }
 
@@ -86,6 +85,9 @@ class AppState extends ChangeNotifier {
         .map((p) => p.id == activeProfileId ? fn(p) : p)
         .toList();
     await _store.saveProfiles(profiles);
+    // Profile edits (name, age, gender, height) must reach the cloud
+    // backup too — previously only addProfile saved the blob.
+    await _saveBackupBlob();
     notifyListeners();
   }
 
