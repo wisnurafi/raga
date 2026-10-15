@@ -179,3 +179,48 @@ class RagaTextButton extends StatelessWidget {
     );
   }
 }
+
+/// Destructive action: danger-tinted outline pill ("Hapus", "Restore").
+class DangerPillButton extends StatelessWidget {
+  final String label;
+  final VoidCallback? onTap;
+
+  const DangerPillButton({
+    super.key,
+    required this.label,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final rc = context.rc;
+    return SizedBox(
+      height: 56,
+      width: double.infinity,
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          borderRadius: BorderRadius.circular(28),
+          onTap: onTap,
+          child: Container(
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(28),
+              color: rc.danger.withValues(alpha: 0.12),
+              border: Border.all(color: rc.danger, width: 1.5),
+            ),
+            child: Center(
+              child: Text(
+                label,
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w700,
+                  color: rc.danger,
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}

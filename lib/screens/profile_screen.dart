@@ -1018,37 +1018,12 @@ class ProfileScreen extends StatelessWidget {
               style: TextStyle(color: rc.onCardMuted),
             ),
             const SizedBox(height: 20),
-            SizedBox(
-              height: 56,
-              width: double.infinity,
-              child: Material(
-                color: Colors.transparent,
-                child: InkWell(
-                  borderRadius: BorderRadius.circular(28),
-                  onTap: () async {
-                    Navigator.pop(ctx);
-                    await state.removeProfile(prof.id);
-                  },
-                  child: Container(
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(28),
-                      color: rc.danger.withValues(alpha: 0.12),
-                      border:
-                          Border.all(color: rc.danger, width: 1.5),
-                    ),
-                    child: Center(
-                      child: Text(
-                        'Hapus',
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w700,
-                          color: rc.danger,
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-              ),
+            DangerPillButton(
+              label: 'Hapus',
+              onTap: () async {
+                Navigator.pop(ctx);
+                await state.removeProfile(prof.id);
+              },
             ),
             RagaTextButton(
               label: 'Batal',
@@ -1114,47 +1089,22 @@ class ProfileScreen extends StatelessWidget {
               style: TextStyle(color: rc.onCardMuted),
             ),
             const SizedBox(height: 20),
-            SizedBox(
-              height: 56,
-              width: double.infinity,
-              child: Material(
-                color: Colors.transparent,
-                child: InkWell(
-                  borderRadius: BorderRadius.circular(28),
-                  onTap: () async {
-                    Navigator.pop(ctx);
-                    final ok =
-                        await state.restoreFromBackupCode(code);
-                    if (context.mounted) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: Text(ok
-                              ? 'Backup dipulihkan — selamat datang kembali.'
-                              : 'Kode tidak ditemukan atau cloud tidak terjangkau. Cek kodenya lalu coba lagi.'),
-                        ),
-                      );
-                    }
-                  },
-                  child: Container(
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(28),
-                      color: rc.danger.withValues(alpha: 0.12),
-                      border:
-                          Border.all(color: rc.danger, width: 1.5),
+            DangerPillButton(
+              label: 'Restore',
+              onTap: () async {
+                Navigator.pop(ctx);
+                final ok =
+                    await state.restoreFromBackupCode(code);
+                if (context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text(ok
+                          ? 'Backup dipulihkan — selamat datang kembali.'
+                          : 'Kode tidak ditemukan atau cloud tidak terjangkau. Cek kodenya lalu coba lagi.'),
                     ),
-                    child: Center(
-                      child: Text(
-                        'Restore',
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w700,
-                          color: rc.danger,
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-              ),
+                  );
+                }
+              },
             ),
             RagaTextButton(
               label: 'Batal',
@@ -1258,41 +1208,16 @@ class ProfileScreen extends StatelessWidget {
               style: TextStyle(color: rc.onCardMuted),
             ),
             const SizedBox(height: 20),
-            SizedBox(
-              height: 56,
-              width: double.infinity,
-              child: Material(
-                color: Colors.transparent,
-                child: InkWell(
-                  borderRadius: BorderRadius.circular(28),
-                  onTap: () {
-                    Navigator.pop(ctx);
-                    state.clearAllData();
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                          content: Text('Semua data dihapus')),
-                    );
-                  },
-                  child: Container(
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(28),
-                      color: rc.danger.withValues(alpha: 0.12),
-                      border:
-                          Border.all(color: rc.danger, width: 1.5),
-                    ),
-                    child: Center(
-                      child: Text(
-                        'Hapus',
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w700,
-                          color: rc.danger,
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-              ),
+            DangerPillButton(
+              label: 'Hapus',
+              onTap: () {
+                Navigator.pop(ctx);
+                state.clearAllData();
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                      content: Text('Semua data dihapus')),
+                );
+              },
             ),
             RagaTextButton(
               label: 'Batal',
