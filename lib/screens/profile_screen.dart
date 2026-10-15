@@ -706,7 +706,8 @@ class ProfileScreen extends StatelessWidget {
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      _describeIndonesian(state),
+                      CloudSync.describe(state.records,
+                          indonesian: true),
                       style: RagaType.cardTitle(rc.onCard),
                     ),
                   ],
@@ -825,23 +826,6 @@ class ProfileScreen extends StatelessWidget {
         ],
       ),
     );
-  }
-
-  // CloudSync.describe is English; the screen copy is Indonesian.
-  String _describeIndonesian(AppState state) {
-    switch (CloudSync.state) {
-      case SyncState.notConfigured:
-        return 'Belum disiapkan';
-      case SyncState.error:
-        return CloudSync.lastError.isEmpty
-            ? 'Tidak bisa terhubung'
-            : CloudSync.lastError;
-      case SyncState.ready:
-        final n = CloudSync.pendingCount(state.records);
-        return n == 0
-            ? 'Terhubung — semua sudah tersinkron'
-            : '$n catatan menunggu diunggah';
-    }
   }
 
   Widget _syncDot(BuildContext context) {

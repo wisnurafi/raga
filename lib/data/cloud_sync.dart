@@ -298,17 +298,25 @@ class CloudSync {
     return null;
   }
 
-  // One-line status for the UI.
-  static String describe(List<BmiRecord> records) {
+  // One-line status for the UI. English by default; the Profil screen
+  // asks for Indonesian.
+  static String describe(List<BmiRecord> records,
+      {bool indonesian = false}) {
     switch (state) {
       case SyncState.notConfigured:
-        return 'Not set up';
+        return indonesian ? 'Belum disiapkan' : 'Not set up';
       case SyncState.error:
-        return lastError.isEmpty ? "Couldn't connect" : lastError;
+        if (lastError.isNotEmpty) return lastError;
+        return indonesian ? 'Tidak bisa terhubung' : "Couldn't connect";
       case SyncState.ready:
         final n = pendingCount(records);
-        return n == 0
-            ? 'Connected — everything is synced'
+        if (n == 0) {
+          return indonesian
+              ? 'Terhubung — semua sudah tersinkron'
+              : 'Connected — everything is synced';
+        }
+        return indonesian
+            ? '$n catatan menunggu diunggah'
             : '$n ${n == 1 ? 'entry' : 'entries'} waiting to upload';
     }
   }
