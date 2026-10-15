@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../core/bmi.dart';
 import '../core/theme.dart';
 import '../state/app_state.dart';
+import '../widgets/add_profile_sheet.dart';
 import '../widgets/buttons.dart';
 import '../widgets/chips.dart';
 import '../widgets/controls.dart';
@@ -177,73 +178,7 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Future<void> _addProfileSheet(AppState state) async {
-    final ctrl = TextEditingController();
-    final name = await showModalBottomSheet<String>(
-      context: context,
-      isScrollControlled: true,
-      builder: (ctx) {
-        final rc = ctx.rc;
-        return SafeArea(
-          child: Padding(
-            padding: EdgeInsets.only(
-              left: 22,
-              right: 22,
-              top: 24,
-              bottom:
-                  MediaQuery.of(ctx).viewInsets.bottom + 24,
-            ),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text('Profil baru',
-                    style: RagaType.cardTitle(rc.onCard)),
-                const SizedBox(height: 14),
-                TextField(
-                  controller: ctrl,
-                  autofocus: true,
-                  textCapitalization: TextCapitalization.words,
-                  style: RagaType.body(rc.onCard),
-                  decoration: InputDecoration(
-                    hintText: 'Nama',
-                    hintStyle:
-                        RagaType.body(rc.onCardMuted),
-                    filled: true,
-                    fillColor: rc.chipInactive,
-                    contentPadding: const EdgeInsets.symmetric(
-                        horizontal: 18, vertical: 16),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(18),
-                      borderSide: BorderSide(
-                          color: rc.chipBorder),
-                    ),
-                    enabledBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(18),
-                      borderSide: BorderSide(
-                          color: rc.chipBorder),
-                    ),
-                    focusedBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(18),
-                      borderSide: BorderSide(
-                          color: rc.chipActive, width: 2),
-                    ),
-                  ),
-                  onSubmitted: (_) =>
-                      Navigator.pop(ctx, ctrl.text.trim()),
-                ),
-                const SizedBox(height: 16),
-                RagaButton(
-                  label: 'Tambah',
-                  onPressed: () =>
-                      Navigator.pop(ctx, ctrl.text.trim()),
-                ),
-              ],
-            ),
-          ),
-        );
-      },
-    );
-    ctrl.dispose();
+    final name = await showAddProfileSheet(context);
     // Empty name falls back to AppState.addProfile's default.
     if (name != null) {
       await state.addProfile(name);

@@ -7,6 +7,7 @@ import '../state/app_state.dart';
 import '../data/cloud_sync.dart';
 import '../data/reminder_service.dart';
 import '../widgets/glass.dart';
+import '../widgets/add_profile_sheet.dart';
 import '../widgets/buttons.dart';
 import '../widgets/chips.dart';
 import '../widgets/controls.dart';
@@ -936,56 +937,13 @@ class ProfileScreen extends StatelessWidget {
     );
   }
 
-  void _addProfileSheet(BuildContext context, AppState state) {
-    final rc = context.rc;
-    final ctl = TextEditingController();
-    showModalBottomSheet(
-      context: context,
-      builder: (ctx) => Padding(
-        padding: EdgeInsets.fromLTRB(
-          22,
-          22,
-          22,
-          22 + MediaQuery.of(ctx).viewInsets.bottom,
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text('Profil baru', style: RagaType.cardTitle(rc.onCard)),
-            const SizedBox(height: 16),
-            TextField(
-              controller: ctl,
-              autofocus: true,
-              textCapitalization: TextCapitalization.words,
-              style: RagaType.body(rc.onCard),
-              decoration: InputDecoration(
-                hintText: 'Nama',
-                hintStyle: RagaType.body(rc.onCardMuted),
-                border: const OutlineInputBorder(),
-              ),
-              onSubmitted: (_) {
-                Navigator.pop(ctx);
-                state.addProfile(ctl.text);
-              },
-            ),
-            const SizedBox(height: 18),
-            RagaButton(
-              label: 'Tambah',
-              height: 56,
-              onPressed: () {
-                Navigator.pop(ctx);
-                state.addProfile(ctl.text);
-              },
-            ),
-            RagaTextButton(
-              label: 'Batal',
-              onPressed: () => Navigator.pop(ctx),
-            ),
-          ],
-        ),
-      ),
-    ).whenComplete(ctl.dispose);
+  Future<void> _addProfileSheet(
+      BuildContext context, AppState state) async {
+    final name = await showAddProfileSheet(context);
+    // Empty name falls back to AppState.addProfile's default.
+    if (name != null) {
+      await state.addProfile(name);
+    }
   }
 
   void _renameDialog(
