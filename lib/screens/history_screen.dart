@@ -272,7 +272,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
               ),
               const SizedBox(height: 3),
               Text(
-                '$weightTxt · ${bmiCatLabel(bmiCatOf(r.bmi))}',
+                '$weightTxt · ${categoryOf(r.bmi).label}',
                 style: RagaType.caption(rc.onCardMuted),
               ),
             ],

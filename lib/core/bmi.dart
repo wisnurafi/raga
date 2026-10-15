@@ -1,45 +1,21 @@
-import 'package:flutter/material.dart';
-
 // Standard WHO BMI categories.
 enum BmiCategory { underweight, normal, overweight, obese }
-
-// What each category looks like on screen: its label, a plain-English
-// explanation, and the indicator color.
-class CategoryMeta {
-  final String label;
-  final String explanation;
-  final Color color;
-  const CategoryMeta(this.label, this.explanation, this.color);
-}
-
-const Map<BmiCategory, CategoryMeta> categoryMeta = {
-  BmiCategory.underweight: CategoryMeta(
-    'Underweight',
-    "You're below the healthy range. Let's bring it up slowly, the healthy way.",
-    Color(0xFF5AA9E6),
-  ),
-  BmiCategory.normal: CategoryMeta(
-    'Normal',
-    "You're in the healthy range. Keep it up!",
-    Color(0xFF3ED598),
-  ),
-  BmiCategory.overweight: CategoryMeta(
-    'Overweight',
-    "You're a bit above the healthy range. Totally doable to get back.",
-    Color(0xFFF2B544),
-  ),
-  BmiCategory.obese: CategoryMeta(
-    'Obese',
-    "You're above the healthy range. No worries — start with small steps.",
-    Color(0xFFF2555A),
-  ),
-};
 
 BmiCategory categoryOf(double bmi) {
   if (bmi < 18.5) return BmiCategory.underweight;
   if (bmi < 25) return BmiCategory.normal;
   if (bmi < 30) return BmiCategory.overweight;
   return BmiCategory.obese;
+}
+
+/// English display label per category — the mockup's gauge legend is English.
+extension BmiCategoryLabel on BmiCategory {
+  String get label => switch (this) {
+        BmiCategory.underweight => 'Underweight',
+        BmiCategory.normal => 'Normal',
+        BmiCategory.overweight => 'Overweight',
+        BmiCategory.obese => 'Obese',
+      };
 }
 
 // BMI = weight (kg) / height (m)^2
@@ -75,36 +51,6 @@ const Map<String, double> activityFactors = {
 
 double tdee(double bmr, double activityFactor) => bmr * activityFactor;
 
-// Estimated days until targetKg at the current pace, from weigh-in history.
-// [history] is oldest-first. Returns null days when there isn't enough of
-// a trend to say anything; [away] means the trend is going the wrong way.
-({int? days, bool away}) estimateGoal({
-  required List<({DateTime at, double weightKg})> history,
-  required double targetKg,
-}) {
-  final recent = history
-      .where((h) => DateTime.now().difference(h.at).inDays <= 90)
-      .toList();
-  if (recent.length < 2) return (days: null, away: false);
-  final first = recent.first;
-  final last = recent.last;
-  final spanDays = last.at.difference(first.at).inDays;
-  if (spanDays < 3) return (days: null, away: false);
-  final diff = targetKg - last.weightKg;
-  if (diff.abs() < 0.5) return (days: 0, away: false);
-  final rate = (last.weightKg - first.weightKg) / spanDays; // kg per day
-  if (rate.abs() < 0.005) return (days: null, away: false);
-  if ((diff > 0) != (rate > 0)) return (days: null, away: true);
-  return (days: (diff / rate).round(), away: false);
-}
-
-String greetingFor(DateTime now) {
-  final h = now.hour;
-  if (h < 11) return 'Good morning';
-  if (h < 18) return 'Good afternoon';
-  return 'Good evening';
-}
-
 // Number formatting, US style: decimal point, thousands separator.
 String formatNum(double value, [int decimals = 1]) {
   return value.toStringAsFixed(decimals);
@@ -119,13 +65,6 @@ String formatIntNum(int value) {
   }
   return buf.toString();
 }
-
-const shortMonths = [
-  'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
-  'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec',
-];
-
-String formatDate(DateTime d) => '${d.day} ${shortMonths[d.month - 1]}';
 
 // --- Indonesian presentation (what the mockup shows) ---
 // Thousands separated by '.', e.g. 2.217 for TDEE.
@@ -149,5 +88,3 @@ const idShortMonths = [
 const idShortDays = ['Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab', 'Min'];
 
 String formatDateId(DateTime d) => '${d.day} ${idShortMonths[d.month - 1]}';
-
-String idDayName(DateTime d) => idShortDays[d.weekday - 1];

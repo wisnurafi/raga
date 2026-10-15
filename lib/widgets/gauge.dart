@@ -2,6 +2,7 @@ import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 
+import '../core/bmi.dart';
 import '../core/theme.dart';
 
 /// Half-circle BMI gauge from the mockup: four color segments
@@ -95,7 +96,7 @@ class BmiRing extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final rc = context.rc;
-    final cat = bmiCatOf(bmi);
+    final cat = categoryOf(bmi);
     return Container(
       width: size,
       height: size,

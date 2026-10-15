@@ -75,7 +75,6 @@ class LocalStore {
   Future<void> saveWeeklyReminder(bool v) => _prefs.setBool(_kReminder, v);
 
   // Reminder schedule: weekday 1 (Mon) .. 7 (Sun), 24h time.
-  int get reminderWeekday => _prefs.getInt(_kReminderDay) ?? 7;
   int get reminderHour => _prefs.getInt(_kReminderHour) ?? 9;
   int get reminderMinute => _prefs.getInt(_kReminderMin) ?? 0;
 

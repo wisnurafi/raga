@@ -236,12 +236,6 @@ class ReminderService {
     return allExact;
   }
 
-  static Future<void> cancel() async {
-    try {
-      await _plugin.cancel(_weeklyId);
-    } catch (_) {}
-  }
-
   /// Cancels the legacy id plus every per-day per-week id.
   static Future<void> cancelAll() async {
     try {

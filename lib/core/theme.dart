@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'bmi.dart';
 
 // Raga design language — rebuilt from Wisnu's 21-frame mockup (2026-10-14).
 //
@@ -360,20 +361,20 @@ class RagaColors extends ThemeExtension<RagaColors> {
   }
 
   /// Category color: underweight / normal / overweight / obese.
-  Color catColor(BmiCat c) => switch (c) {
-        BmiCat.under => catUnder,
-        BmiCat.normal => catNormal,
-        BmiCat.over => catOver,
-        BmiCat.obese => catObese,
+  Color catColor(BmiCategory c) => switch (c) {
+        BmiCategory.underweight => catUnder,
+        BmiCategory.normal => catNormal,
+        BmiCategory.overweight => catOver,
+        BmiCategory.obese => catObese,
       };
 
   /// Badge fill per category. The mockup paints "Normal" bright green;
   /// other categories tint their own color.
-  Color badgeFor(BmiCat c) => switch (c) {
-        BmiCat.under => catUnder,
-        BmiCat.normal => badgeOk,
-        BmiCat.over => catOver,
-        BmiCat.obese => catObese,
+  Color badgeFor(BmiCategory c) => switch (c) {
+        BmiCategory.underweight => catUnder,
+        BmiCategory.normal => badgeOk,
+        BmiCategory.overweight => catOver,
+        BmiCategory.obese => catObese,
       };
 
   /// Badge label is always dark navy — exactly like the mockup.
@@ -386,25 +387,6 @@ class RagaColors extends ThemeExtension<RagaColors> {
         colors: [btnTop, btnBottom],
       );
 }
-
-/// Thin category enum mirroring core/bmi.dart's BmiCategory so the theme
-/// doesn't import the calculator.
-enum BmiCat { under, normal, over, obese }
-
-BmiCat bmiCatOf(double bmi) {
-  if (bmi < 18.5) return BmiCat.under;
-  if (bmi < 25) return BmiCat.normal;
-  if (bmi < 30) return BmiCat.over;
-  return BmiCat.obese;
-}
-
-/// Category names stay English — the mockup's gauge legend is English.
-String bmiCatLabel(BmiCat c) => switch (c) {
-      BmiCat.under => 'Underweight',
-      BmiCat.normal => 'Normal',
-      BmiCat.over => 'Overweight',
-      BmiCat.obese => 'Obese',
-    };
 
 /// Manrope type scale, measured from the mockup. Every style takes its
 /// color explicitly so light/dark call sites stay obvious.

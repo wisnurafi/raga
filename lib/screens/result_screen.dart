@@ -43,8 +43,7 @@ class _ResultScreenState extends State<ResultScreen> {
     final state = AppState.of(context);
     final rc = context.rc;
     final bmi = widget.bmi;
-    final cat = bmiCatOf(bmi);
-    final coreCat = categoryOf(bmi);
+    final cat = categoryOf(bmi);
     final name = state.activeProfile.name;
 
     return RagaBg(
@@ -84,7 +83,7 @@ class _ResultScreenState extends State<ResultScreen> {
                     style: RagaType.section(rc.onBg),
                   ),
                   const SizedBox(height: 12),
-                  ...healthTips[coreCat]!.map(
+                  ...healthTips[cat]!.map(
                     (t) => Padding(
                       padding: const EdgeInsets.only(bottom: 12),
                       child: GlassCard(
@@ -211,13 +210,13 @@ class _ResultScreenState extends State<ResultScreen> {
           icon: Icons.ios_share,
           onTap: _sharing
               ? () {}
-              : () => _share(widget.bmi, bmiCatOf(widget.bmi)),
+              : () => _share(widget.bmi, categoryOf(widget.bmi)),
         ),
       ],
     );
   }
 
-  Widget _categoryPill(RagaColors rc, BmiCat cat) {
+  Widget _categoryPill(RagaColors rc, BmiCategory cat) {
     return Container(
       padding:
           const EdgeInsets.symmetric(horizontal: 22, vertical: 10),
@@ -226,7 +225,7 @@ class _ResultScreenState extends State<ResultScreen> {
         borderRadius: BorderRadius.circular(20),
       ),
       child: Text(
-        bmiCatLabel(cat),
+        cat.label,
         style: RagaType.chip(rc.onBadge),
       ),
     );
@@ -235,10 +234,10 @@ class _ResultScreenState extends State<ResultScreen> {
   // The legend stays English — exactly like the mockup.
   Widget _legend(RagaColors rc) {
     const cats = [
-      BmiCat.under,
-      BmiCat.normal,
-      BmiCat.over,
-      BmiCat.obese
+      BmiCategory.underweight,
+      BmiCategory.normal,
+      BmiCategory.overweight,
+      BmiCategory.obese
     ];
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,
@@ -255,7 +254,7 @@ class _ResultScreenState extends State<ResultScreen> {
           ),
           const SizedBox(width: 5),
           Text(
-            bmiCatLabel(cats[i]),
+            cats[i].label,
             style: RagaType.caption(rc.onCard)
                 .copyWith(fontWeight: FontWeight.w700),
           ),
@@ -277,7 +276,7 @@ class _ResultScreenState extends State<ResultScreen> {
     Navigator.pop(context);
   }
 
-  Future<void> _share(double bmi, BmiCat cat) async {
+  Future<void> _share(double bmi, BmiCategory cat) async {
     final messenger = ScaffoldMessenger.of(context);
     setState(() => _sharing = true);
     try {
@@ -290,7 +289,7 @@ class _ResultScreenState extends State<ResultScreen> {
       await Share.shareXFiles(
         [XFile(file.path)],
         text:
-            'BMI saya ${formatNum(bmi)} (${bmiCatLabel(cat)}) — dihitung dengan Raga',
+            'BMI saya ${formatNum(bmi)} (${cat.label}) — dihitung dengan Raga',
       );
     } catch (_) {
       if (mounted) {
@@ -308,7 +307,7 @@ class _ResultScreenState extends State<ResultScreen> {
 // with the BMI number, the name, and the category — Manrope throughout.
 class _ShareCard extends StatelessWidget {
   final double bmi;
-  final BmiCat cat;
+  final BmiCategory cat;
   final String name;
 
   const _ShareCard({
@@ -378,7 +377,7 @@ class _ShareCard extends StatelessWidget {
                       borderRadius: BorderRadius.circular(18),
                     ),
                     child: Text(
-                      bmiCatLabel(cat),
+                      cat.label,
                       style: st(14, FontWeight.w700, navy),
                     ),
                   ),
@@ -400,10 +399,10 @@ class _ShareCard extends StatelessWidget {
     );
   }
 
-  Color _catColor(BmiCat c) => switch (c) {
-        BmiCat.under => const Color(0xFF6FB1FF),
-        BmiCat.normal => const Color(0xFF5EE0A0),
-        BmiCat.over => const Color(0xFFF5B84B),
-        BmiCat.obese => const Color(0xFFFF7A6B),
+  Color _catColor(BmiCategory c) => switch (c) {
+        BmiCategory.underweight => const Color(0xFF6FB1FF),
+        BmiCategory.normal => const Color(0xFF5EE0A0),
+        BmiCategory.overweight => const Color(0xFFF5B84B),
+        BmiCategory.obese => const Color(0xFFFF7A6B),
       };
 }

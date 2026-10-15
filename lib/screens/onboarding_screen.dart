@@ -340,7 +340,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
         color: rc.badgeOk,
       ),
       child: Text(
-        bmiCatLabel(bmiCatOf(bmi)),
+        categoryOf(bmi).label,
         style: RagaType.chip(rc.onBadgeOk).copyWith(fontSize: 14),
       ),
     );
@@ -580,7 +580,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                   ),
                   child: Text(
                     'BMI target ${formatNum(targetBmi)} · '
-                    '${bmiCatLabel(bmiCatOf(targetBmi))}',
+                    '${categoryOf(targetBmi).label}',
                     style: RagaType.chip(rc.onBadgeOk)
                         .copyWith(fontSize: 15),
                   ),
