@@ -58,7 +58,7 @@ class _Pill extends StatelessWidget {
   }
 }
 
-/// Profile chip from the home header ("Wisnu ✓", "Ibu", "+ Tambah").
+/// Profile chip from the home header ("Nama ✓", "+ Tambah").
 class ProfileChip extends StatelessWidget {
   final String label;
   final bool selected;

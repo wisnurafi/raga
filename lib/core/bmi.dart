@@ -51,7 +51,8 @@ const Map<String, double> activityFactors = {
 
 double tdee(double bmr, double activityFactor) => bmr * activityFactor;
 
-// Number formatting, US style: decimal point, thousands separator.
+// Fixed-decimal formatting ("24.9"). No thousands separator here — for
+// grouped integers use formatIntNum (US style) or formatIntId (Indonesian).
 String formatNum(double value, [int decimals = 1]) {
   return value.toStringAsFixed(decimals);
 }
