@@ -7,6 +7,7 @@ import 'package:screenshot/screenshot.dart';
 import 'package:share_plus/share_plus.dart';
 
 import '../core/bmi.dart';
+import '../core/streak.dart';
 import '../core/theme.dart';
 import '../core/tips.dart';
 import '../state/app_state.dart';
@@ -89,7 +90,7 @@ class _ResultScreenState extends State<ResultScreen> {
                     style: RagaType.section(rc.onBg),
                   ),
                   const SizedBox(height: 12),
-                  ...healthTips[cat]!.map(
+                  ..._resultTips(state, cat).map(
                     (t) => Padding(
                       padding: const EdgeInsets.only(bottom: 12),
                       child: GlassCard(
@@ -266,6 +267,23 @@ class _ResultScreenState extends State<ResultScreen> {
           ),
         ],
       ],
+    );
+  }
+
+  // Tips for this result: daily rotation plus the comeback/streak
+  // rules (trend vs goal, 4+ week consistency).
+  List<TipItem> _resultTips(AppState state, BmiCategory cat) {
+    final pid = state.activeProfile.id;
+    final recs = state.recordsOf(pid);
+    final weightsKg = [for (final r in recs.reversed) r.weightKg];
+    final streakWeeks =
+        computeStreak([for (final r in recs) r.createdAt]).weeks;
+    return tipsForResult(
+      cat: cat,
+      weightsKg: weightsKg,
+      goalKg: state.goalFor(pid),
+      streakWeeks: streakWeeks,
+      day: DateTime.now(),
     );
   }
 

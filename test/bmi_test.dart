@@ -1,5 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:raga/core/bmi.dart';
+import 'package:raga/core/tips.dart';
 
 void main() {
   group('calcBmi', () {
@@ -112,6 +113,84 @@ void main() {
       );
       expect(s, contains('lb'));
       expect(s, isNot(contains('kg')));
+    });
+  });
+
+  group('tips', () {
+    test('70 tips total across 4 categories', () {
+      final n = BmiCategory.values
+          .map((c) => healthTips[c]!.length)
+          .reduce((a, b) => a + b);
+      expect(n, 70);
+    });
+
+    test('tipsForDay is deterministic per day with distinct tips', () {
+      final day = DateTime(2026, 10, 15);
+      final a = tipsForDay(BmiCategory.normal, day).map((t) => t.title);
+      final b = tipsForDay(BmiCategory.normal, day).map((t) => t.title);
+      expect(a, orderedEquals(b));
+      expect(a.toSet(), hasLength(3));
+    });
+
+    test('fewer than 2 records -> the 3 dasar tips', () {
+      final tips = tipsForResult(
+        cat: BmiCategory.overweight,
+        weightsKg: [80],
+        goalKg: null,
+        streakWeeks: 0,
+        day: DateTime(2026, 10, 15),
+      );
+      expect(
+        tips.map((t) => t.title),
+        orderedEquals([
+          'Kurangi minuman manis',
+          'Jalan santai tiap hari',
+          'Makan perlahan',
+        ]),
+      );
+    });
+
+    test('trend away from goal -> comeback tip first', () {
+      final tips = tipsForResult(
+        cat: BmiCategory.overweight,
+        weightsKg: [78, 79, 80.5], // rising while the goal is below
+        goalKg: 70,
+        streakWeeks: 0,
+        day: DateTime(2026, 10, 15),
+      );
+      expect(tips.first.tags, contains('comeback'));
+    });
+
+    test('trend toward goal -> plain rotation, no overrides', () {
+      final day = DateTime(2026, 10, 15);
+      final tips = tipsForResult(
+        cat: BmiCategory.overweight,
+        weightsKg: [82, 80, 78.5], // falling toward the goal
+        goalKg: 70,
+        streakWeeks: 0,
+        day: day,
+      );
+      expect(
+        tips.map((t) => t.title),
+        orderedEquals(
+            tipsForDay(BmiCategory.overweight, day).map((t) => t.title)),
+      );
+    });
+
+    test('streak of 4+ weeks -> streak tip last', () {
+      final tips = tipsForResult(
+        cat: BmiCategory.normal,
+        weightsKg: [65, 65.1, 64.9],
+        goalKg: null,
+        streakWeeks: 5,
+        day: DateTime(2026, 10, 15),
+      );
+      expect(tips.last.tags, contains('streak'));
+    });
+
+    test('dailyTip returns one tip from the pool', () {
+      final tip = dailyTip(BmiCategory.obese, DateTime(2026, 10, 15));
+      expect(healthTips[BmiCategory.obese]!.contains(tip), isTrue);
     });
   });
 }

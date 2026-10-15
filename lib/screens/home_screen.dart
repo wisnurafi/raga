@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../core/bmi.dart';
 import '../core/theme.dart';
+import '../core/tips.dart';
 import '../state/app_state.dart';
 import '../widgets/profile_sheet.dart';
 import '../widgets/buttons.dart';
@@ -85,7 +86,44 @@ class _HomeScreenState extends State<HomeScreen> {
           label: 'Hitung BMI',
           onPressed: () => _calculate(state),
         ),
+        const SizedBox(height: 18),
+        _dailyTipCard(rc),
       ],
+    );
+  }
+
+  // "Tips hari ini": one tip from the pool of the BMI category the
+  // current inputs fall into, rotated daily (different seed from the
+  // Result screen so they rarely overlap).
+  Widget _dailyTipCard(RagaColors rc) {
+    final cat = categoryOf(calcBmi(weightKg: _w, heightCm: _h));
+    final tip = dailyTip(cat, DateTime.now());
+    return GlassCard(
+      radius: 20,
+      padding: const EdgeInsets.all(16),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(Icons.lightbulb_outlined, size: 22, color: rc.chipActive),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Tips hari ini',
+                  style: RagaType.cardTitle(rc.onCard),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  '${tip.title} · ${tip.desc}',
+                  style: RagaType.body(rc.onCardMuted),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
     );
   }
 
