@@ -23,8 +23,8 @@ Future<Profile?> showProfileSheet(
   var heightCm = existing?.heightCm ?? 170.0;
 
   // The slider works in display units; the profile stores canonical cm.
-  double dispH() => metric ? heightCm : heightCm / cmToIn;
-  void setDispH(double v) => heightCm = metric ? v : v * cmToIn;
+  double dispH() => metric ? heightCm : heightCm * cmToIn;
+  void setDispH(double v) => heightCm = metric ? v : v / cmToIn;
 
   return showModalBottomSheet<Profile>(
     context: context,

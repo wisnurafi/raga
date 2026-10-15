@@ -68,7 +68,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   // Imperial display conversions (metric stays canonical).
   String get _weightUnit => _metric ? 'kg' : 'lb';
   String get _heightUnit => _metric ? 'cm' : 'in';
-  double _dispH() => _metric ? _heightCm : _heightCm / cmToIn;
+  double _dispH() => _metric ? _heightCm : _heightCm * cmToIn;
   double _dispW(double kg) => _metric ? kg : kg * kgToLb;
 
   Future<void> _setUnits(bool metric) async {

@@ -322,7 +322,7 @@ class ProfileScreen extends StatelessWidget {
   String _profileLine(AppState state, Profile p) {
     final h = state.metricUnits
         ? '${p.heightCm.toStringAsFixed(0)} cm'
-        : '${(p.heightCm / cmToIn).round()} in';
+        : '${(p.heightCm * cmToIn).round()} in';
     return '${p.isMale ? 'Pria' : 'Wanita'} · ${p.age} th · $h';
   }
 

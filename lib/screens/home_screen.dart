@@ -67,7 +67,7 @@ class _HomeScreenState extends State<HomeScreen> {
     final rc = context.rc;
     final metric = state.metricUnits;
 
-    final hDisp = metric ? _h : _h / cmToIn;
+    final hDisp = metric ? _h : _h * cmToIn;
     final wDisp = metric ? _w : _w * kgToLb;
 
     return ListView(
