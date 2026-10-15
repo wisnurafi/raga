@@ -26,13 +26,34 @@ class _HomeScreenState extends State<HomeScreen> {
   double _w = 65;
   bool _isMale = true;
   int _age = 21;
+  // True once a slider moved and the value isn't persisted to the profile
+  // yet (persist happens on "Hitung BMI"). While dirty, external profile
+  // changes must not clobber the in-progress input (see below).
+  bool _dirty = false;
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
     final p = AppState.of(context).activeProfile;
     if (p.id != _pid) {
+      // Profile switch: always take the new profile's data, dropping any
+      // un-persisted slider movement.
       _pid = p.id;
+      _dirty = false;
+      _h = p.heightCm;
+      _w = p.weightKg;
+      _isMale = p.isMale;
+      _age = p.age;
+    } else if (!_dirty &&
+        (p.heightCm != _h ||
+            p.weightKg != _w ||
+            p.isMale != _isMale ||
+            p.age != _age)) {
+      // The stored profile changed underneath (e.g. edited from the Profil
+      // tab): pick it up, otherwise Home would keep showing stale values
+      // and the next "Hitung BMI" would silently overwrite the edit.
+      // Skipped while _dirty so a slider drag in progress isn't wiped by a
+      // Home-originated notify (e.g. tapping gender right after dragging).
       _h = p.heightCm;
       _w = p.weightKg;
       _isMale = p.isMale;
@@ -90,7 +111,14 @@ class _HomeScreenState extends State<HomeScreen> {
             label: pr.name,
             selected: pr.id == state.activeProfileId,
             showCheck: true,
-            onTap: () => state.setActiveProfile(pr.id),
+            onTap: () {
+              // No-op on the active chip: without this, tapping it after
+              // dragging a slider would reset the slider via the sync in
+              // didChangeDependencies (same id, different values).
+              if (pr.id != state.activeProfileId) {
+                state.setActiveProfile(pr.id);
+              }
+            },
           );
         },
       ),
@@ -125,8 +153,13 @@ class _HomeScreenState extends State<HomeScreen> {
             sliderValue: hDisp,
             min: metric ? heightRangeCm.min : heightRangeIn.min,
             max: metric ? heightRangeCm.max : heightRangeIn.max,
-            onChanged: (v) =>
-                setState(() => _h = metric ? v : v / cmToIn),
+            onChanged: (v) {
+              final nv = metric ? v : v / cmToIn;
+              setState(() {
+                _h = nv;
+                _dirty = true;
+              });
+            },
           ),
           const SizedBox(height: 6),
           MeasureSlider(
@@ -136,8 +169,13 @@ class _HomeScreenState extends State<HomeScreen> {
             sliderValue: wDisp,
             min: metric ? weightRangeKg.min : weightRangeLb.min,
             max: metric ? weightRangeKg.max : weightRangeLb.max,
-            onChanged: (v) =>
-                setState(() => _w = metric ? v : v / kgToLb),
+            onChanged: (v) {
+              final nv = metric ? v : v / kgToLb;
+              setState(() {
+                _w = nv;
+                _dirty = true;
+              });
+            },
           ),
         ],
       ),
@@ -219,6 +257,10 @@ class _HomeScreenState extends State<HomeScreen> {
     state.updateActiveProfile(
       (p) => p.copyWith(heightCm: _h, weightKg: _w),
     );
+    // Persisted now — external profile edits may sync again.
+    // (Set synchronously: the notify inside updateActiveProfile only
+    // schedules a build, which always runs after this line.)
+    _dirty = false;
     final bmi = calcBmi(weightKg: _w, heightCm: _h);
     Navigator.of(context).push(
       MaterialPageRoute(
