@@ -473,8 +473,8 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
             value: formatNumTrimmed(_dispH()),
             unit: _heightUnit,
             sliderValue: _dispH(),
-            min: _metric ? 130 : 51,
-            max: _metric ? 220 : 87,
+            min: _metric ? heightRangeCm.min : heightRangeIn.min,
+            max: _metric ? heightRangeCm.max : heightRangeIn.max,
             onChanged: (v) => setState(
                 () => _heightCm = _metric ? v : v / cmToIn),
           ),
@@ -486,8 +486,8 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
             value: formatNumTrimmed(_dispW(_weightKg)),
             unit: _weightUnit,
             sliderValue: _dispW(_weightKg),
-            min: _metric ? 30 : 66,
-            max: _metric ? 150 : 330,
+            min: _metric ? weightRangeKg.min : weightRangeLb.min,
+            max: _metric ? weightRangeKg.max : weightRangeLb.max,
             onChanged: (v) => setState(
                 () => _weightKg = _metric ? v : v / kgToLb),
           ),

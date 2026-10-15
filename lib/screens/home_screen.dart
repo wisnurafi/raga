@@ -123,8 +123,8 @@ class _HomeScreenState extends State<HomeScreen> {
             value: hDisp.toStringAsFixed(0),
             unit: metric ? 'cm' : 'in',
             sliderValue: hDisp,
-            min: metric ? 130 : 51,
-            max: metric ? 220 : 87,
+            min: metric ? heightRangeCm.min : heightRangeIn.min,
+            max: metric ? heightRangeCm.max : heightRangeIn.max,
             onChanged: (v) =>
                 setState(() => _h = metric ? v : v / cmToIn),
           ),
@@ -134,8 +134,8 @@ class _HomeScreenState extends State<HomeScreen> {
             value: wDisp.toStringAsFixed(0),
             unit: metric ? 'kg' : 'lb',
             sliderValue: wDisp,
-            min: metric ? 30 : 66,
-            max: metric ? 150 : 330,
+            min: metric ? weightRangeKg.min : weightRangeLb.min,
+            max: metric ? weightRangeKg.max : weightRangeLb.max,
             onChanged: (v) =>
                 setState(() => _w = metric ? v : v / kgToLb),
           ),

@@ -56,6 +56,13 @@ double tdee(double bmr, double activityFactor) => bmr * activityFactor;
 const kgToLb = 2.20462;
 const cmToIn = 1 / 2.54;
 
+// Height/weight ranges for the sliders on the home and onboarding
+// screens. One place so the two screens can't drift apart.
+const heightRangeCm = (min: 130.0, max: 220.0);
+const heightRangeIn = (min: 51.0, max: 87.0);
+const weightRangeKg = (min: 30.0, max: 150.0);
+const weightRangeLb = (min: 66.0, max: 330.0);
+
 // Fixed-decimal formatting ("24.9"). No thousands separator here — for
 // grouped integers use formatIntNum (US style) or formatIntId (Indonesian).
 String formatNum(double value, [int decimals = 1]) {
