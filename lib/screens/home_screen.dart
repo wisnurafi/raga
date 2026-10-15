@@ -163,18 +163,48 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
           ),
           const SizedBox(width: 12),
-          // Display only — age is edited in Profil.
-          Padding(
-            padding: const EdgeInsets.symmetric(
-                horizontal: 14, vertical: 14),
-            child: Text(
-              '$_age tahun',
-              style: RagaType.chip(rc.onCard),
-            ),
+          // Age is editable here too (typo fix, birthday) and writes
+          // back to the profile, mirroring the gender segmented above.
+          Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              _ageStepBtn(rc, Icons.remove, () => _setAge(state, _age - 1)),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 4),
+                child: Text(
+                  '$_age thn',
+                  style: RagaType.chip(rc.onCard),
+                ),
+              ),
+              _ageStepBtn(rc, Icons.add, () => _setAge(state, _age + 1)),
+            ],
           ),
         ],
       ),
     );
+  }
+
+  Widget _ageStepBtn(RagaColors rc, IconData icon, VoidCallback onTap) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(20),
+      child: Container(
+        width: 32,
+        height: 32,
+        decoration: BoxDecoration(
+          shape: BoxShape.circle,
+          color: rc.chipInactive,
+          border: Border.all(color: rc.chipBorder),
+        ),
+        child: Icon(icon, size: 16, color: rc.onCard),
+      ),
+    );
+  }
+
+  void _setAge(AppState state, int v) {
+    final nv = v.clamp(5, 120);
+    setState(() => _age = nv);
+    state.updateActiveProfile((p) => p.copyWith(age: nv));
   }
 
   Future<void> _addProfileSheet(AppState state) async {
