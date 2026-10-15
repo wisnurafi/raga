@@ -58,7 +58,7 @@ class _ResultScreenState extends State<ResultScreen> {
               ListView(
                 padding: const EdgeInsets.fromLTRB(22, 8, 22, 32),
                 children: [
-                  _topRow(rc, name),
+                  _topRow(rc, name, cat),
                   const SizedBox(height: 18),
                   GlassCard(
                     child: Column(
@@ -187,7 +187,7 @@ class _ResultScreenState extends State<ResultScreen> {
     );
   }
 
-  Widget _topRow(RagaColors rc, String name) {
+  Widget _topRow(RagaColors rc, String name, BmiCategory cat) {
     return Row(
       children: [
         CircleBtn(
@@ -213,9 +213,7 @@ class _ResultScreenState extends State<ResultScreen> {
         ),
         CircleBtn(
           icon: Icons.ios_share,
-          onTap: _sharing
-              ? () {}
-              : () => _share(widget.bmi, categoryOf(widget.bmi)),
+          onTap: _sharing ? () {} : () => _share(widget.bmi, cat),
         ),
       ],
     );
