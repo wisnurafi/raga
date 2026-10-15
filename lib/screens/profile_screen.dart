@@ -984,7 +984,7 @@ class ProfileScreen extends StatelessWidget {
           ],
         ),
       ),
-    );
+    ).whenComplete(ctl.dispose);
   }
 
   void _renameDialog(
@@ -1025,7 +1025,7 @@ class ProfileScreen extends StatelessWidget {
           ],
         ),
       ),
-    );
+    ).whenComplete(ctrl.dispose);
   }
 
   void _applyRename(AppState state, String name) {
@@ -1136,7 +1136,7 @@ class ProfileScreen extends StatelessWidget {
           ],
         ),
       ),
-    );
+    ).whenComplete(ctl.dispose);
   }
 
   void _confirmRestore(
