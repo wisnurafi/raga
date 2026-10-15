@@ -36,6 +36,9 @@ jobs:
       - name: Analyze
         run: flutter analyze
 
+      - name: Run tests
+        run: flutter test
+
       - name: Decode release keystore
         run: |
           if [ -z "${{ secrets.RAGA_KEYSTORE_BASE64 }}" ]; then
