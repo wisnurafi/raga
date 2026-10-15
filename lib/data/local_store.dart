@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/profile.dart';
 import '../models/bmi_record.dart';
+import 'secure_store.dart';
 
 // Local storage (SharedPreferences). This is the source of truth —
 // the app works fully offline or before Supabase is even configured.
@@ -18,7 +19,6 @@ class LocalStore {
   static const _kReminderMin = 'raga.reminder_minute';
   static const _kDarkMode = 'raga.dark_mode';
   static const _kGoals = 'raga.goal_weights';
-  static const _kBackupCode = 'raga.backup_code';
   static const _kDevMode = 'raga.dev_mode';
   static const _kOnboardingDone = 'raga.onboarding_done';
   static const _kMilestonesSeen = 'raga.milestones_seen';
@@ -135,10 +135,10 @@ class LocalStore {
 
   // Backup code: the restorable identity for cloud backup. Anonymous
   // sign-ins get a fresh user_id per install, so this code (kept by the
-  // user) is what ties a reinstall back to the old rows.
-  String? get backupCode => _prefs.getString(_kBackupCode);
+  // user) is what ties a reinstall back to the old rows. Lives in
+  // encrypted secure storage, never in plaintext prefs.
   Future<void> saveBackupCode(String code) =>
-      _prefs.setString(_kBackupCode, code);
+      SecureStore.writeBackupCode(code);
 
   bool get devMode => _prefs.getBool(_kDevMode) ?? false;
   Future<void> saveDevMode(bool v) => _prefs.setBool(_kDevMode, v);

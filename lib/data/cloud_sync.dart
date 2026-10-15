@@ -3,6 +3,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../models/bmi_record.dart';
 import '../models/profile.dart';
+import 'secure_store.dart';
 
 // Cloud backup state, shown in the UI so it's never a mystery.
 enum SyncState {
@@ -113,11 +114,19 @@ class CloudSync {
       logEvent('init: not configured');
       return;
     }
-    backupCode = _prefs!.getString(_kBackupCode);
+    backupCode = await SecureStore.readBackupCode();
     if (backupCode == null || backupCode!.isEmpty) {
-      backupCode = generateBackupCode();
-      await _prefs!.setString(_kBackupCode, backupCode!);
-      logEvent('init: generated backup code');
+      // One-time migration from plaintext prefs (pre-secure-storage installs).
+      final legacy = _prefs!.getString(_kBackupCode);
+      if (legacy != null && legacy.isNotEmpty) {
+        backupCode = legacy;
+        logEvent('init: migrated backup code to secure storage');
+      } else {
+        backupCode = generateBackupCode();
+        logEvent('init: generated backup code');
+      }
+      await SecureStore.writeBackupCode(backupCode!);
+      await _prefs!.remove(_kBackupCode);
     }
     try {
       await Supabase.initialize(url: _url, publishableKey: _anonKey);
