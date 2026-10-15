@@ -45,8 +45,8 @@ class _HomeScreenState extends State<HomeScreen> {
     final rc = context.rc;
     final metric = state.metricUnits;
 
-    final hDisp = metric ? _h : _h / 2.54;
-    final wDisp = metric ? _w : _w * 2.20462;
+    final hDisp = metric ? _h : _h / cmToIn;
+    final wDisp = metric ? _w : _w * kgToLb;
 
     return ListView(
       padding: const EdgeInsets.fromLTRB(22, 8, 22, 110),
@@ -125,7 +125,7 @@ class _HomeScreenState extends State<HomeScreen> {
             min: metric ? 130 : 51,
             max: metric ? 220 : 87,
             onChanged: (v) =>
-                setState(() => _h = metric ? v : v * 2.54),
+                setState(() => _h = metric ? v : v / cmToIn),
           ),
           const SizedBox(height: 6),
           MeasureSlider(
@@ -136,7 +136,7 @@ class _HomeScreenState extends State<HomeScreen> {
             min: metric ? 30 : 66,
             max: metric ? 150 : 330,
             onChanged: (v) =>
-                setState(() => _w = metric ? v : v / 2.20462),
+                setState(() => _w = metric ? v : v / kgToLb),
           ),
         ],
       ),

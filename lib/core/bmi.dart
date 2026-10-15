@@ -51,6 +51,11 @@ const Map<String, double> activityFactors = {
 
 double tdee(double bmr, double activityFactor) => bmr * activityFactor;
 
+// Unit conversions, single source of truth (home, history, health,
+// onboarding, and profile screens all convert for imperial display).
+const kgToLb = 2.20462;
+const cmToIn = 1 / 2.54;
+
 // Fixed-decimal formatting ("24.9"). No thousands separator here — for
 // grouped integers use formatIntNum (US style) or formatIntId (Indonesian).
 String formatNum(double value, [int decimals = 1]) {

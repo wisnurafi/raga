@@ -12,7 +12,6 @@ import '../widgets/gauge.dart';
 import '../widgets/glass.dart';
 import '../widgets/headers.dart';
 
-const _kgToLb = 2.20462;
 
 // History: 6-month strip, weight/BMI trend chart, recent entries.
 class HistoryScreen extends StatefulWidget {
@@ -81,7 +80,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
   }
 
   String _stripWeight(double kg, bool metric) {
-    final v = metric ? kg : kg * _kgToLb;
+    final v = metric ? kg : kg * kgToLb;
     return formatNum(v).replaceAll(RegExp(r'\.0$'), '');
   }
 
@@ -110,7 +109,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
   // --- trend chart card ----------------------------------------------------
 
   double _plotValue(BmiRecord r, bool metric) => _showWeight
-      ? (metric ? r.weightKg : r.weightKg * _kgToLb)
+      ? (metric ? r.weightKg : r.weightKg * kgToLb)
       : r.bmi;
 
   Widget _chartCard(List<BmiRecord> records, bool metric) {
@@ -135,7 +134,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
       final d = _showWeight
           ? (metric
               ? b.weightKg - a.weightKg
-              : (b.weightKg - a.weightKg) * _kgToLb)
+              : (b.weightKg - a.weightKg) * kgToLb)
           : b.bmi - a.bmi;
       final unit = _showWeight ? (metric ? ' kg' : ' lb') : '';
       final span = _spanLabel(a.createdAt, b.createdAt);
@@ -239,7 +238,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
     var deltaColor = rc.onCardMuted;
     if (older != null) {
       final dKg = r.weightKg - older.weightKg;
-      final d = metric ? dKg : dKg * _kgToLb;
+      final d = metric ? dKg : dKg * kgToLb;
       final unit = metric ? 'kg' : 'lb';
       if (d < 0) {
         deltaTxt = '−${formatNum(d.abs())} $unit';
@@ -254,7 +253,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
 
     final weightTxt = metric
         ? '${formatNum(r.weightKg)} kg'
-        : '${formatNum(r.weightKg * _kgToLb)} lb';
+        : '${formatNum(r.weightKg * kgToLb)} lb';
 
     return GlassCard(
       radius: 20,

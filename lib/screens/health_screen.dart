@@ -9,8 +9,6 @@ import '../widgets/glass.dart';
 import '../widgets/headers.dart';
 import '../widgets/ring.dart';
 
-const _kgToLb = 2.20462;
-const _cmToIn = 1 / 2.54;
 
 // Display labels (Indonesian) -> stored activity keys (English, unchanged
 // in storage so old installs keep their value).
@@ -92,10 +90,10 @@ class HealthScreen extends StatelessWidget {
     final rc = context.rc;
     final heightTxt = metric
         ? '${formatNum(p.heightCm, 0)} cm'
-        : '${formatNum(p.heightCm * _cmToIn, 0)} in';
+        : '${formatNum(p.heightCm * cmToIn, 0)} in';
     final weightTxt = metric
         ? '${formatNum(p.weightKg)} kg'
-        : '${formatNum(p.weightKg * _kgToLb)} lb';
+        : '${formatNum(p.weightKg * kgToLb)} lb';
     return GlassCard(
       child: Row(
         children: [
@@ -223,12 +221,12 @@ class HealthScreen extends StatelessWidget {
   Widget _idealCard(BuildContext context, Profile p, bool metric,
       ({double min, double max}) range) {
     final rc = context.rc;
-    final lo = metric ? range.min : range.min * _kgToLb;
-    final hi = metric ? range.max : range.max * _kgToLb;
-    final cur = metric ? p.weightKg : p.weightKg * _kgToLb;
+    final lo = metric ? range.min : range.min * kgToLb;
+    final hi = metric ? range.max : range.max * kgToLb;
+    final cur = metric ? p.weightKg : p.weightKg * kgToLb;
     final unit = metric ? 'kg' : 'lb';
-    final scaleLo = metric ? 40.0 : 40 * _kgToLb;
-    final scaleHi = metric ? 90.0 : 90 * _kgToLb;
+    final scaleLo = metric ? 40.0 : 40 * kgToLb;
+    final scaleHi = metric ? 90.0 : 90 * kgToLb;
     final curTxt = formatNum(cur).replaceAll(RegExp(r'\.0$'), '');
 
     return GlassCard(

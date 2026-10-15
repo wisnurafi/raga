@@ -68,8 +68,8 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   // Imperial display conversions (metric stays canonical).
   String get _weightUnit => _metric ? 'kg' : 'lb';
   String get _heightUnit => _metric ? 'cm' : 'in';
-  double _dispH() => _metric ? _heightCm : _heightCm / 2.54;
-  double _dispW(double kg) => _metric ? kg : kg * 2.20462;
+  double _dispH() => _metric ? _heightCm : _heightCm / cmToIn;
+  double _dispW(double kg) => _metric ? kg : kg * kgToLb;
 
   /// Whole numbers print clean ("62"), fractional keep one decimal.
   String _trimNum(double v) => v == v.roundToDouble()
@@ -494,7 +494,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
             min: _metric ? 130 : 51,
             max: _metric ? 220 : 87,
             onChanged: (v) => setState(
-                () => _heightCm = _metric ? v : v * 2.54),
+                () => _heightCm = _metric ? v : v / cmToIn),
           ),
         ),
         const SizedBox(height: 14),
@@ -507,7 +507,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
             min: _metric ? 30 : 66,
             max: _metric ? 150 : 330,
             onChanged: (v) => setState(
-                () => _weightKg = _metric ? v : v / 2.20462),
+                () => _weightKg = _metric ? v : v / kgToLb),
           ),
         ),
         const SizedBox(height: 14),

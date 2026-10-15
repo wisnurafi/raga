@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import '../core/bmi.dart';
 import '../core/theme.dart';
 import '../models/profile.dart';
 import '../state/app_state.dart';
@@ -345,13 +346,13 @@ class ProfileScreen extends StatelessWidget {
   String _profileLine(AppState state, Profile p) {
     final h = state.metricUnits
         ? '${p.heightCm.toStringAsFixed(0)} cm'
-        : '${(p.heightCm / 2.54).round()} in';
+        : '${(p.heightCm / cmToIn).round()} in';
     return '${p.isMale ? 'Pria' : 'Wanita'} · ${p.age} th · $h';
   }
 
   String _fmtW(double kg, bool metric) => metric
       ? '${kg.toStringAsFixed(1)} kg'
-      : '${(kg * 2.20462).round()} lb';
+      : '${(kg * kgToLb).round()} lb';
 
   String _goalText(bool metric, double curKg, double goalKg) {
     final d = goalKg - curKg;
@@ -611,8 +612,8 @@ class ProfileScreen extends StatelessWidget {
     final min = metric ? 30.0 : 66.0;
     final max = metric ? 150.0 : 330.0;
     final step = metric ? 0.5 : 1.0;
-    double toDisplay(double kg) => metric ? kg : kg * 2.20462;
-    double toKg(double v) => metric ? v : v / 2.20462;
+    double toDisplay(double kg) => metric ? kg : kg * kgToLb;
+    double toKg(double v) => metric ? v : v / kgToLb;
     String dirOf(double v) {
       final d = toKg(v) - cur;
       if (d.abs() < 0.5) return 'Jaga';
