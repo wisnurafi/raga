@@ -6,6 +6,7 @@ import '../core/bmi.dart';
 import '../core/theme.dart';
 import '../models/bmi_record.dart';
 import '../state/app_state.dart';
+import '../widgets/buttons.dart';
 import '../widgets/chart.dart';
 import '../widgets/chips.dart';
 import '../widgets/gauge.dart';
@@ -13,7 +14,8 @@ import '../widgets/glass.dart';
 import '../widgets/headers.dart';
 
 
-// History: 6-month strip, weight/BMI trend chart, recent entries.
+// History: 6-month strip, weight/BMI trend chart with range filter,
+// auto insight, and recent entries.
 class HistoryScreen extends StatefulWidget {
   const HistoryScreen({super.key});
 
@@ -23,6 +25,13 @@ class HistoryScreen extends StatefulWidget {
 
 class _HistoryScreenState extends State<HistoryScreen> {
   bool _showWeight = true;
+  // Default = "Semua": preserves the pre-filter behavior (all records).
+  int _rangeIdx = 4;
+  bool _showAll = false;
+
+  // Range filter labels and matching day counts (null = no limit).
+  static const _rangeLabels = ['7 hari', '30 hari', '3 bulan', '6 bulan', 'Semua'];
+  static const List<int?> _rangeDays = [7, 30, 90, 180, null];
 
   @override
   Widget build(BuildContext context) {
@@ -30,6 +39,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
     final state = AppState.of(context);
     final records = state.recordsOf(state.activeProfileId);
     final metric = state.metricUnits;
+    final ranged = _ranged(records);
 
     return ListView(
       padding: const EdgeInsets.fromLTRB(22, 8, 22, 110),
@@ -46,15 +56,49 @@ class _HistoryScreenState extends State<HistoryScreen> {
           ),
         ] else ...[
           const SizedBox(height: 18),
+          _rangeChips(),
+          const SizedBox(height: 18),
           _monthStrip(records, metric),
           const SizedBox(height: 18),
-          _chartCard(records, metric),
+          _chartCard(ranged, metric),
+          const SizedBox(height: 18),
+          _insightCard(ranged, state, metric),
           const SizedBox(height: 22),
           Text('Catatan terakhir', style: RagaType.section(rc.onBg)),
           const SizedBox(height: 14),
-          ..._entryRows(records, metric),
+          ..._entryRows(ranged, metric),
+          _showAllToggle(ranged.length),
         ],
       ],
+    );
+  }
+
+  // Records inside the selected range filter (newest-first, like input).
+  List<BmiRecord> _ranged(List<BmiRecord> records) {
+    final days = _rangeDays[_rangeIdx];
+    if (days == null) return records;
+    final cutoff = DateTime.now().subtract(Duration(days: days));
+    return records.where((r) => r.createdAt.isAfter(cutoff)).toList();
+  }
+
+  Widget _rangeChips() {
+    return SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
+      child: Row(
+        children: [
+          for (var i = 0; i < _rangeLabels.length; i++) ...[
+            if (i > 0) const SizedBox(width: 10),
+            SelectChip(
+              label: _rangeLabels[i],
+              selected: i == _rangeIdx,
+              onTap: () => setState(() {
+                _rangeIdx = i;
+                _showAll = false;
+              }),
+            ),
+          ],
+        ],
+      ),
     );
   }
 
@@ -114,11 +158,11 @@ class _HistoryScreenState extends State<HistoryScreen> {
 
   Widget _chartCard(List<BmiRecord> records, bool metric) {
     final rc = context.rc;
-    // Plot individual records (oldest-first, capped at 30 points) so
+    // Plot individual records (oldest-first, capped at 60 points) so
     // sparse histories still draw a line instead of "no data".
-    // records arrive newest-first: take the 30 newest first, then
+    // records arrive newest-first: take the 60 newest first, then
     // reverse to oldest-first for plotting.
-    final recs = records.take(30).toList().reversed.toList();
+    final recs = records.take(60).toList().reversed.toList();
     final values = [
       for (final r in recs) _plotValue(r, metric),
     ];
@@ -128,16 +172,18 @@ class _HistoryScreenState extends State<HistoryScreen> {
         latest == null ? '–' : formatNum(_plotValue(latest, metric));
 
     Widget? deltaPill;
-    if (recs.length >= 2) {
-      final a = recs.first;
-      final b = recs.last;
+    // Delta over the whole selected range: records are newest-first,
+    // so first = newest and last = oldest.
+    if (records.length >= 2) {
+      final a = records.last;
+      final b = records.first;
       final d = _showWeight
           ? (metric
               ? b.weightKg - a.weightKg
               : (b.weightKg - a.weightKg) * kgToLb)
           : b.bmi - a.bmi;
       final unit = _showWeight ? (metric ? ' kg' : ' lb') : '';
-      final span = _spanLabel(a.createdAt, b.createdAt);
+      final span = idSpanLabel(a.createdAt, b.createdAt);
       if (d.abs() < 0.0001) {
         deltaPill = _pill('stabil · $span',
             rc.onCardMuted.withValues(alpha: 0.16), rc.onCardMuted);
@@ -190,21 +236,68 @@ class _HistoryScreenState extends State<HistoryScreen> {
               ],
             ],
           ),
+          if (recs.isNotEmpty) ...[
+            const SizedBox(height: 8),
+            Text(
+              _statsLine(recs, metric),
+              style: RagaType.caption(rc.onCardMuted),
+            ),
+          ],
           const SizedBox(height: 12),
-          HistoryChart(values: values),
+          HistoryChart(
+            values: values,
+            // The band only makes sense on the BMI plot.
+            showHealthyBand: !_showWeight,
+          ),
         ],
       ),
     );
   }
 
-  // Human span between two record dates: "hari ini", "3 hari",
-  // "2 minggu", "6 bulan".
-  String _spanLabel(DateTime a, DateTime b) {
-    final days = b.difference(a).inDays.abs();
-    if (days < 1) return 'hari ini';
-    if (days < 14) return '$days hari';
-    if (days < 60) return '${(days / 7).round()} minggu';
-    return '${(days / 30).round()} bulan';
+  // "Rata-rata 62,4 kg · Terendah 61,0 · Tertinggi 64,2" for the
+  // selected range, following the Berat/BMI toggle.
+  String _statsLine(List<BmiRecord> recs, bool metric) {
+    final vals = [for (final r in recs) _plotValue(r, metric)];
+    final avg = vals.reduce((a, b) => a + b) / vals.length;
+    final lo = vals.reduce((a, b) => a < b ? a : b);
+    final hi = vals.reduce((a, b) => a > b ? a : b);
+    final unit = _showWeight ? (metric ? ' kg' : ' lb') : '';
+    return 'Rata-rata ${formatNum(avg)}$unit · '
+        'Terendah ${formatNum(lo)}$unit · '
+        'Tertinggi ${formatNum(hi)}$unit';
+  }
+
+  // Auto-generated Indonesian insight for the selected range.
+  Widget _insightCard(
+      List<BmiRecord> records, AppState state, bool metric) {
+    final rc = context.rc;
+    // buildWeightInsight wants oldest-first; records are newest-first.
+    final ordered = records.reversed.toList();
+    final text = buildWeightInsight(
+      [for (final r in ordered) r.weightKg],
+      [for (final r in ordered) r.createdAt],
+      goalKg: state.goalFor(state.activeProfileId),
+      metric: metric,
+    );
+    return GlassCard(
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(Icons.auto_awesome, size: 22, color: rc.chipActive),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text('Insight', style: RagaType.cardTitle(rc.onCard)),
+                const SizedBox(height: 6),
+                Text(text, style: RagaType.body(rc.onCardMuted)),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
   }
 
   Widget _pill(String text, Color bg, Color fg) {
@@ -221,7 +314,11 @@ class _HistoryScreenState extends State<HistoryScreen> {
   // --- recent entries -------------------------------------------------------
 
   List<Widget> _entryRows(List<BmiRecord> records, bool metric) {
-    final shown = records.take(8).toList();
+    // 10 newest by default; the rest behind "Tampilkan semua".
+    // No real pagination: a personal tracker holds dozens of rows, not
+    // thousands — and every row is a blurred GlassCard, so an unbounded
+    // list would jank the scroll on low-end phones.
+    final shown = (_showAll ? records : records.take(10)).toList();
     final rows = <Widget>[];
     for (var i = 0; i < shown.length; i++) {
       if (i > 0) rows.add(const SizedBox(height: 10));
@@ -229,6 +326,21 @@ class _HistoryScreenState extends State<HistoryScreen> {
       rows.add(_entryRow(shown[i], older, metric));
     }
     return rows;
+  }
+
+  Widget _showAllToggle(int total) {
+    if (total <= 10) return const SizedBox.shrink();
+    return Padding(
+      padding: const EdgeInsets.only(top: 14),
+      child: Center(
+        child: RagaTextButton(
+          label: _showAll
+              ? 'Tampilkan lebih sedikit'
+              : 'Tampilkan semua ($total)',
+          onPressed: () => setState(() => _showAll = !_showAll),
+        ),
+      ),
+    );
   }
 
   Widget _entryRow(BmiRecord r, BmiRecord? older, bool metric) {

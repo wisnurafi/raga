@@ -49,4 +49,69 @@ void main() {
       expect(formatIntNum(2217), '2,217');
     });
   });
+
+  group('idSpanLabel', () {
+    test('human Indonesian spans', () {
+      final a = DateTime(2026, 10, 15);
+      expect(idSpanLabel(a, a), 'hari ini');
+      expect(idSpanLabel(a, a.add(const Duration(days: 3))), '3 hari');
+      expect(idSpanLabel(a, a.add(const Duration(days: 21))), '3 minggu');
+      expect(idSpanLabel(a, a.add(const Duration(days: 90))), '3 bulan');
+    });
+  });
+
+  group('buildWeightInsight', () {
+    test('needs at least 2 points', () {
+      expect(
+        buildWeightInsight([65], [DateTime(2026, 10, 1)]),
+        contains('Belum cukup data'),
+      );
+    });
+
+    test('stable weight', () {
+      final s = buildWeightInsight(
+        [65.0, 65.0],
+        [DateTime(2026, 9, 1), DateTime(2026, 10, 1)],
+      );
+      expect(s, contains('Stabil di 65.0 kg'));
+    });
+
+    test('healthy loss pace with goal remaining', () {
+      final s = buildWeightInsight(
+        [70.0, 68.0],
+        [DateTime(2026, 9, 1), DateTime(2026, 10, 1)],
+        goalKg: 70,
+      );
+      expect(s, contains('Turun 2.0 kg'));
+      expect(s, contains('dalam batas sehat'));
+      expect(s, contains('Kurang 2.0 kg lagi ke target'));
+    });
+
+    test('too-fast loss warns', () {
+      final s = buildWeightInsight(
+        [80.0, 70.0],
+        [DateTime(2026, 9, 1), DateTime(2026, 10, 1)],
+      );
+      expect(s, contains('konsultasi ahli gizi'));
+    });
+
+    test('goal reached', () {
+      final s = buildWeightInsight(
+        [70.0, 65.2],
+        [DateTime(2026, 9, 1), DateTime(2026, 10, 1)],
+        goalKg: 65,
+      );
+      expect(s, contains('tercapai'));
+    });
+
+    test('imperial rendering', () {
+      final s = buildWeightInsight(
+        [70.0, 68.0],
+        [DateTime(2026, 9, 1), DateTime(2026, 10, 1)],
+        metric: false,
+      );
+      expect(s, contains('lb'));
+      expect(s, isNot(contains('kg')));
+    });
+  });
 }

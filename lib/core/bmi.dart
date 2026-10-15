@@ -116,3 +116,66 @@ String reminderSummary(List<int> days, int h, int m) {
 }
 
 String formatDateId(DateTime d) => '${d.day} ${idShortMonths[d.month - 1]}';
+
+/// Human span between two dates, Indonesian:
+/// "hari ini", "3 hari", "2 minggu", "6 bulan".
+String idSpanLabel(DateTime a, DateTime b) {
+  final days = b.difference(a).inDays.abs();
+  if (days < 1) return 'hari ini';
+  if (days < 14) return '$days hari';
+  if (days < 60) return '${(days / 7).round()} minggu';
+  return '${(days / 30).round()} bulan';
+}
+
+/// One-or-two-sentence Indonesian insight for the history analytics card.
+///
+/// [weightsKg] oldest-first, already filtered to the selected range;
+/// [dates] the matching timestamps, oldest-first. [goalKg] the profile's
+/// goal weight in kg, if set. Set [metric] false to render in lb.
+String buildWeightInsight(
+  List<double> weightsKg,
+  List<DateTime> dates, {
+  double? goalKg,
+  bool metric = true,
+}) {
+  assert(weightsKg.length == dates.length);
+  String w(double kg) =>
+      metric ? '${formatNum(kg)} kg' : '${(kg * kgToLb).round()} lb';
+  if (weightsKg.length < 2) {
+    return 'Belum cukup data di rentang ini — timbang minimal 2× biar trennya kebaca.';
+  }
+  final first = weightsKg.first;
+  final last = weightsKg.last;
+  final span = idSpanLabel(dates.first, dates.last);
+  final d = last - first; // negative = lost weight
+  final buf = StringBuffer();
+  if (d.abs() < 0.05) {
+    buf.write('Stabil di ${w(last)} selama $span — pertahankan.');
+  } else {
+    buf.write('${d < 0 ? 'Turun' : 'Naik'} ${w(d.abs())} dalam $span.');
+    final days = dates.last.difference(dates.first).inDays;
+    if (days >= 7) {
+      final rate = d.abs() / (days / 7);
+      if (d < 0) {
+        buf.write(rate <= 1.0
+            ? ' Laju ±${w(rate)}/minggu — masih dalam batas sehat.'
+            : ' Laju ±${w(rate)}/minggu — di atas anjuran umum '
+                '(${metric ? '0,5–1 kg' : '1–2 lb'}/minggu), '
+                'pertimbangkan konsultasi ahli gizi.');
+      } else {
+        buf.write(' Laju ±${w(rate)}/minggu.');
+      }
+    }
+  }
+  if (goalKg != null) {
+    final rem = goalKg - last;
+    if (rem.abs() < 0.5) {
+      buf.write(' Target ${w(goalKg)} tercapai — pertahankan!');
+    } else if (rem > 0) {
+      buf.write(' Kurang ${w(rem)} lagi ke target.');
+    } else {
+      buf.write(' ${w(rem.abs())} di bawah target.');
+    }
+  }
+  return buf.toString();
+}

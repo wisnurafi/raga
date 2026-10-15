@@ -9,7 +9,16 @@ class HistoryChart extends StatelessWidget {
   final List<double> values;
   final double height;
 
-  const HistoryChart({super.key, required this.values, this.height = 180});
+  /// Shades the healthy BMI band (18.5–24.99) behind the line.
+  /// Only meaningful when [values] are BMI numbers.
+  final bool showHealthyBand;
+
+  const HistoryChart({
+    super.key,
+    required this.values,
+    this.height = 180,
+    this.showHealthyBand = false,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -64,6 +73,17 @@ class HistoryChart extends StatelessWidget {
           titlesData: const FlTitlesData(show: false),
           borderData: FlBorderData(show: false),
           lineTouchData: const LineTouchData(enabled: false),
+          rangeAnnotations: showHealthyBand
+              ? RangeAnnotations(
+                  horizontalRangeAnnotations: [
+                    HorizontalRangeAnnotation(
+                      y1: 18.5,
+                      y2: 24.99,
+                      color: rc.catNormal.withValues(alpha: 0.10),
+                    ),
+                  ],
+                )
+              : const RangeAnnotations(),
           lineBarsData: [
             LineChartBarData(
               spots: spots,
