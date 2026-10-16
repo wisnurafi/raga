@@ -837,7 +837,7 @@ const Map<String, Map<String, String>> _strings = {
     'detak_msg_trend_0': '+1 closeness! Thanks for checking the trend.',
     'detak_msg_trend_1': 'Trend checked, closeness up. Awesome!',
     'detak_msg_streak_0': '{n} days in a row! My leaves are getting lusher.',
-    'detak_msg_streak_1': '{n}-day streak! We're so in sync.',
+    'detak_msg_streak_1': "{n}-day streak! We're so in sync.",
     'detak_msg_levelup_0': "Up to Lv. {n}! We're growing together.",
     'detak_msg_levelup_1': 'Lv. {n} reached! My leaves are getting {stage}.',
     'detak_msg_goal_0': 'GOAL REACHED! Detak is so proud of you!',
