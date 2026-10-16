@@ -110,7 +110,7 @@ class _WrappedStoryScreenState extends State<WrappedStoryScreen> {
                         for (var i = 0; i < _slideCount; i++)
                           Expanded(
                             child: Container(
-                              height: 4,
+                              height: 5,
                               margin:
                                   const EdgeInsets.symmetric(horizontal: 2),
                               decoration: BoxDecoration(
@@ -164,7 +164,8 @@ class _WrappedStoryScreenState extends State<WrappedStoryScreen> {
               child: Text(
                 tx(context, 'wrapped_tap_next'),
                 textAlign: TextAlign.center,
-                style: RagaType.caption(_white.withValues(alpha: 0.6)),
+                style: RagaType.caption(_white.withValues(alpha: 0.6))
+                    .copyWith(fontSize: 14),
               ),
             ),
           // Tap zones (disabled on the recap slide — its buttons own taps).
@@ -342,13 +343,14 @@ class _WrappedStoryScreenState extends State<WrappedStoryScreen> {
           const SizedBox(height: 28),
           Text(
             tx(context, 'wrapped_cover_title'),
-            style: RagaType.bigTitle(_white).copyWith(fontSize: 30),
+            style: RagaType.bigTitle(_white).copyWith(fontSize: 32),
             textAlign: TextAlign.center,
           ),
           const SizedBox(height: 10),
           Text(
             fullRange,
-            style: RagaType.caption(_white.withValues(alpha: 0.65)),
+            style: RagaType.caption(_white.withValues(alpha: 0.65))
+                .copyWith(fontSize: 15),
             textAlign: TextAlign.center,
           ),
         ],
@@ -377,14 +379,14 @@ class _WrappedStoryScreenState extends State<WrappedStoryScreen> {
             children: [
               Text(
                 _signedDelta(d),
-                style: RagaType.hero(96, _white),
+                style: RagaType.hero(112, _white),
               ),
               Padding(
-                padding: const EdgeInsets.only(left: 6, bottom: 12),
+                padding: const EdgeInsets.only(left: 8, bottom: 14),
                 child: Text('kg',
                     style: RagaType.title(
                             _white.withValues(alpha: 0.85))
-                        .copyWith(fontSize: 26)),
+                        .copyWith(fontSize: 28)),
               ),
             ],
           ),
@@ -396,7 +398,7 @@ class _WrappedStoryScreenState extends State<WrappedStoryScreen> {
                     'b': formatNum(d.lastKg!, 1),
                   })
                 : tx(context, 'wrapped_delta_need'),
-            style: RagaType.label(_white).copyWith(fontSize: 17),
+            style: RagaType.label(_white).copyWith(fontSize: 20),
             textAlign: TextAlign.center,
           ),
           if (hasDelta) ...[
@@ -645,14 +647,14 @@ class _WrappedStoryScreenState extends State<WrappedStoryScreen> {
           const SizedBox(height: 14),
           Text(
             tx(context, titleKey, {'z': zoneEn}),
-            style: RagaType.title(_white).copyWith(fontSize: 24),
+            style: RagaType.title(_white).copyWith(fontSize: 26),
             textAlign: TextAlign.center,
           ),
           const SizedBox(height: 18),
           // Gauge with the number parked in the arc's empty interior,
           // clear of both the arc and the needle dot on the ring.
           SizedBox(
-            width: 260,
+            width: 280,
             height: 172,
             child: Stack(
               children: [
@@ -666,7 +668,7 @@ class _WrappedStoryScreenState extends State<WrappedStoryScreen> {
                   top: 86,
                   child: Text(
                     formatNum(d.avgBmi),
-                    style: RagaType.hero(56, _white),
+                    style: RagaType.hero(60, _white),
                     textAlign: TextAlign.center,
                   ),
                 ),
@@ -679,10 +681,10 @@ class _WrappedStoryScreenState extends State<WrappedStoryScreen> {
           const SizedBox(height: 12),
           Container(
             padding:
-                const EdgeInsets.symmetric(horizontal: 22, vertical: 10),
+                const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
             decoration: BoxDecoration(
               color: _zoneColor(zone),
-              borderRadius: BorderRadius.circular(20),
+              borderRadius: BorderRadius.circular(22),
             ),
             child: Text(
               zoneEn,
@@ -702,7 +704,7 @@ class _WrappedStoryScreenState extends State<WrappedStoryScreen> {
                 Text(
                   tx(context, 'wrapped_bmi_streak_n',
                       {'n': d.zoneStreakWeeks}),
-                  style: RagaType.title(_white).copyWith(fontSize: 28),
+                  style: RagaType.title(_white).copyWith(fontSize: 30),
                   textAlign: TextAlign.center,
                 ),
                 const SizedBox(height: 4),
@@ -754,7 +756,7 @@ class _WrappedStoryScreenState extends State<WrappedStoryScreen> {
           const SizedBox(height: 14),
           Text(
             tx(context, 'wrapped_detak_heading'),
-            style: RagaType.bigTitle(_white).copyWith(fontSize: 28),
+            style: RagaType.bigTitle(_white).copyWith(fontSize: 30),
             textAlign: TextAlign.center,
           ),
           const SizedBox(height: 24),
@@ -767,7 +769,7 @@ class _WrappedStoryScreenState extends State<WrappedStoryScreen> {
                 child: Icon(Icons.arrow_forward,
                     color: _white.withValues(alpha: 0.7), size: 26),
               ),
-              _detak(150, detak, energy, stage: nextStage),
+              _detak(160, detak, energy, stage: nextStage),
             ],
           ),
           const SizedBox(height: 26),
@@ -843,11 +845,11 @@ class _WrappedStoryScreenState extends State<WrappedStoryScreen> {
               Expanded(
                 child: Text(
                   tx(context, 'wrapped_sum_heading'),
-                  style: RagaType.bigTitle(_white).copyWith(fontSize: 26),
+                  style: RagaType.bigTitle(_white).copyWith(fontSize: 28),
                 ),
               ),
               const SizedBox(width: 12),
-              _detak(64, detak, energy),
+              _detak(70, detak, energy),
             ],
           ),
           const SizedBox(height: 20),
@@ -866,21 +868,21 @@ class _WrappedStoryScreenState extends State<WrappedStoryScreen> {
                   tx(context, 'wrapped_sum_logs'),
                   Text(
                     tx(context, 'wrapped_sum_days', {'n': d.activeDays}),
-                    style: RagaType.label(_white).copyWith(fontSize: 17),
+                    style: RagaType.label(_white).copyWith(fontSize: 18),
                   ),
                 ),
                 _sumRow(
                   tx(context, 'wrapped_sum_weight'),
                   Text(
                     d.deltaKg == null ? '–' : '${_signedDelta(d)} kg',
-                    style: RagaType.label(_white).copyWith(fontSize: 17),
+                    style: RagaType.label(_white).copyWith(fontSize: 18),
                   ),
                 ),
                 _sumRow(
                   tx(context, 'wrapped_sum_bmi'),
                   Text(
                     '${formatNum(d.avgBmi)} · $zoneEn',
-                    style: RagaType.label(_white).copyWith(fontSize: 17),
+                    style: RagaType.label(_white).copyWith(fontSize: 18),
                   ),
                 ),
                 Padding(
@@ -904,7 +906,7 @@ class _WrappedStoryScreenState extends State<WrappedStoryScreen> {
                           }),
                           style: const TextStyle(
                             color: Colors.white,
-                            fontSize: 13,
+                            fontSize: 14,
                             fontWeight: FontWeight.w700,
                           ),
                         ),
@@ -937,7 +939,7 @@ class _WrappedStoryScreenState extends State<WrappedStoryScreen> {
               child: Text(
                 tx(context, 'wrapped_share'),
                 style: const TextStyle(
-                  fontSize: 16,
+                  fontSize: 17,
                   fontWeight: FontWeight.w800,
                   color: Color(0xFF1A1030),
                 ),
