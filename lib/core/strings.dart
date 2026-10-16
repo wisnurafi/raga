@@ -252,6 +252,7 @@ const Map<String, Map<String, String>> _strings = {
     'auth_sync_merge': 'Gabung',
     'auth_sync_later': 'Nanti',
     'auth_merged': '{n} catatan dari cloud digabung',
+    'auth_merge_empty': 'Datamu sudah sinkron — tidak ada yang baru.',
     'auth_merge_failed': 'Gagal mengambil data cloud',
 
     // --- log viewer ---
@@ -534,6 +535,7 @@ const Map<String, Map<String, String>> _strings = {
     'auth_sync_merge': 'Merge',
     'auth_sync_later': 'Later',
     'auth_merged': '{n} cloud entries merged',
+    'auth_merge_empty': "Already in sync — nothing new.",
     'auth_merge_failed': "Couldn't fetch cloud data",
 
     // --- log viewer ---

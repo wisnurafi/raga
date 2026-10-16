@@ -176,9 +176,11 @@ class AppState extends ChangeNotifier {
 
   // Pulls the account's `records` rows and unions them into the local
   // history. Pulled rows also go through pushRecord so the backup-code
-  // path keeps seeing everything. Returns how many new rows arrived.
+  // path keeps seeing everything. Returns the new-row count, or -1 when
+  // the pull itself failed.
   Future<int> mergeFromCloud() async {
     final cloud = await CloudSync.fetchUserRecords();
+    if (cloud == null) return -1;
     if (cloud.isEmpty) return 0;
     final knownProfiles = profiles.map((p) => p.id).toSet();
     final have = records.map((r) => r.id).toSet();

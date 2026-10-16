@@ -239,11 +239,12 @@ class CloudSync {
   }
 
   // Pulls the account's rows from the relational `records` table
-  // (logged-in mode). Returns an empty list on any failure — the caller
-  // decides what the UI says.
-  static Future<List<BmiRecord>> fetchUserRecords() async {
+  // (logged-in mode). Null on failure (so the caller can tell "failed"
+  // apart from "nothing there"), empty list when the account simply has
+  // no rows yet.
+  static Future<List<BmiRecord>?> fetchUserRecords() async {
     final uid = _userId;
-    if (!isReady || uid == null) return [];
+    if (!isReady || uid == null) return null;
     try {
       final rows = await Supabase.instance.client
           .from('records')
@@ -257,7 +258,7 @@ class CloudSync {
     } catch (e) {
       lastError = _short(e);
       logEvent('user pull failed: $lastError');
-      return [];
+      return null;
     }
   }
 

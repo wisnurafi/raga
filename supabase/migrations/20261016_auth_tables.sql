@@ -92,6 +92,15 @@ create trigger trg_records_touch
   before update on public.records
   for each row execute function public.touch_updated_at();
 
+-- ------------------------------------------------------------ fix anon-only grants
+-- restore_backup() and save_backup_blob() were granted to `anon` only.
+-- A Google-logged-in user talks to PostgREST as `authenticated`, so
+-- without this the backup-code path breaks the moment they log in —
+-- and the plan requires it to work in both modes.
+grant execute on function public.restore_backup(text) to authenticated;
+grant execute on function public.save_backup_blob(text, jsonb, jsonb, jsonb)
+  to authenticated;
+
 -- ------------------------------------------------------------ avatars bucket
 insert into storage.buckets (id, name, public)
 values ('avatars', 'avatars', true)

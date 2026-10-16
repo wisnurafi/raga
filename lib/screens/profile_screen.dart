@@ -583,7 +583,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     SnackBar(
                       content: Text(n > 0
                           ? tx(context, 'auth_merged', {'n': n})
-                          : tx(context, 'auth_merge_failed')),
+                          : n == 0
+                              ? tx(context, 'auth_merge_empty')
+                              : tx(context, 'auth_merge_failed')),
                     ),
                   );
                 }
