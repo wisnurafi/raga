@@ -245,36 +245,14 @@ class _WrappedStoryScreenState extends State<WrappedStoryScreen> {
   }
 
   /// Slide content: centered, scrolls if the screen is short.
-  /// [pinnedBottom] (e.g. the weight slide's footnote) is anchored to the
-  /// bottom of the visible area instead of flowing with the centered group.
-  Widget _body(Widget child, {Widget? pinnedBottom}) {
-    final content = pinnedBottom == null
-        ? Center(
-            child: SingleChildScrollView(
-              child: child,
-            ),
-          )
-        : LayoutBuilder(
-            builder: (context, constraints) => SingleChildScrollView(
-              child: ConstrainedBox(
-                constraints:
-                    BoxConstraints(minHeight: constraints.maxHeight),
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    child,
-                    Padding(
-                      padding: const EdgeInsets.only(top: 28),
-                      child: pinnedBottom,
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          );
+  Widget _body(Widget child) {
     return Padding(
       padding: const EdgeInsets.fromLTRB(32, 140, 32, 84),
-      child: content,
+      child: Center(
+        child: SingleChildScrollView(
+          child: child,
+        ),
+      ),
     );
   }
 
@@ -427,17 +405,26 @@ class _WrappedStoryScreenState extends State<WrappedStoryScreen> {
             if (hasDelta) ...[
               const SizedBox(height: 22),
               _weightChart(locale, d),
+              const SizedBox(height: 22),
+              // Footnote as an in-flow callout card, like the consistency
+              // and BMI slides — not pinned to the screen bottom.
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: _white.withValues(alpha: 0.07),
+                  borderRadius: BorderRadius.circular(18),
+                ),
+                child: Text(
+                  _weightNote(d),
+                  style: RagaType.label(_white.withValues(alpha: 0.9))
+                      .copyWith(fontSize: 15, height: 1.4),
+                  textAlign: TextAlign.center,
+                ),
+              ),
             ],
           ],
         ),
-        pinnedBottom: hasDelta
-            ? Text(
-                _weightNote(d),
-                style: RagaType.label(_white.withValues(alpha: 0.9))
-                    .copyWith(fontSize: 16, height: 1.4),
-                textAlign: TextAlign.center,
-              )
-            : null,
       ),
     );
   }
