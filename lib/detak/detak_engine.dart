@@ -129,7 +129,9 @@ class DetakEngine {
     return DetakEngineResult(mood: mood, messageKey: key);
   }
 
-  /// Called right after a weight record is saved.
+  /// Called right after a weight record is saved. The 'log' quest (and
+  /// its XP) counts once per day — repeat saves still react, but don't
+  /// farm closeness.
   static DetakEngineResult onRecordSaved(
     DetakState s,
     DetakFacts f, {
@@ -137,8 +139,9 @@ class DetakEngine {
   }) {
     final today = DateTime(f.now.year, f.now.month, f.now.day);
     s.lastLogDay = today;
+    final isNewQuest = !s.isQuestDone(today, 'log');
     s.markQuest(today, 'log');
-    final gained = s.addXp(1);
+    final gained = isNewQuest ? s.addXp(1) : 0;
     final streakHit = isStreakMilestone(f.dailyStreak, true);
 
     final DetakMood mood;
