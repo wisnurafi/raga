@@ -211,6 +211,49 @@ const Map<String, Map<String, String>> _strings = {
     'profile_alarms_empty': 'Tidak ada alarm yang terdaftar di OS.',
     'alarms_no_title': '(tanpa judul)',
 
+    // --- restore choice (merge vs replace) ---
+    'profile_restore_mode_title': 'Restore dari kode',
+    'profile_restore_mode_body': 'Kode ini cocok. Gabungkan dengan data '
+        'yang sudah ada di HP ini, atau ganti semuanya?',
+    'profile_merge': 'Gabung',
+    'profile_merged': '{n} catatan baru digabung dari backup',
+    'profile_merge_empty':
+        'Tidak ada catatan baru dari backup — datamu sudah lengkap.',
+
+    // --- account: optional Google login (auth_service.dart) ---
+    'auth_title': 'Akun',
+    'auth_anon_note': 'Kamu memakai Raga tanpa login — semua fitur tetap '
+        'jalan. Masuk dengan Google kalau mau datamu ngikut akun di HP lain.',
+    'auth_sign_in_google': 'Masuk dengan Google',
+    'auth_sign_in_cancelled': 'Login dibatalkan',
+    'auth_not_configured': 'Login Google belum disiapkan di build ini',
+    'auth_sign_in_failed': 'Gagal masuk: {e}',
+    'auth_migrated': '{n} catatan dipindah ke akunmu',
+    'auth_welcome': 'Selamat datang, {name}!',
+    'auth_welcome_back': 'Selamat datang kembali!',
+    'auth_default_name': 'Pengguna Google',
+    'auth_edit_name': 'Ubah nama',
+    'auth_name_title': 'Nama tampilan',
+    'auth_name_hint': 'Nama tampilan',
+    'auth_name_updated': 'Nama diperbarui',
+    'auth_name_failed': 'Gagal menyimpan nama',
+    'auth_change_photo': 'Ganti foto',
+    'auth_uploading_photo': 'Mengunggah foto…',
+    'auth_photo_updated': 'Foto profil diperbarui',
+    'auth_photo_failed': 'Gagal mengunggah foto',
+    'auth_sign_out': 'Keluar',
+    'auth_sign_out_title': 'Keluar dari akun?',
+    'auth_sign_out_body': 'Sesi login berakhir. Data di HP ini tetap ada '
+        '— masuk lagi kapan pun untuk menyinkronkannya.',
+    'auth_signed_out': 'Kamu sudah keluar',
+    'auth_sync_offer_title': 'Sinkronkan data akun?',
+    'auth_sync_offer_body':
+        'Akun ini punya {n} catatan di cloud. Gabungkan ke HP ini?',
+    'auth_sync_merge': 'Gabung',
+    'auth_sync_later': 'Nanti',
+    'auth_merged': '{n} catatan dari cloud digabung',
+    'auth_merge_failed': 'Gagal mengambil data cloud',
+
     // --- log viewer ---
     'log_hint': 'tahan baris untuk salin',
     'log_copy_all': 'Salin semua',
@@ -448,6 +491,50 @@ const Map<String, Map<String, String>> _strings = {
     'profile_wiped': 'All data deleted',
     'profile_alarms_empty': 'No alarms registered with the OS.',
     'alarms_no_title': '(no title)',
+
+    // --- restore choice (merge vs replace) ---
+    'profile_restore_mode_title': 'Restore from code',
+    'profile_restore_mode_body': 'This code matches. Merge it with the '
+        'data already on this phone, or replace everything?',
+    'profile_merge': 'Merge',
+    'profile_merged': '{n} new entries merged from backup',
+    'profile_merge_empty':
+        'No new entries in the backup — your data is already complete.',
+
+    // --- account: optional Google login (auth_service.dart) ---
+    'auth_title': 'Account',
+    'auth_anon_note': 'You are using Raga without logging in — everything '
+        'still works. Sign in with Google if you want your data to follow '
+        'your account on other phones.',
+    'auth_sign_in_google': 'Sign in with Google',
+    'auth_sign_in_cancelled': 'Sign-in cancelled',
+    'auth_not_configured': 'Google sign-in is not set up in this build',
+    'auth_sign_in_failed': 'Sign-in failed: {e}',
+    'auth_migrated': '{n} entries moved to your account',
+    'auth_welcome': 'Welcome, {name}!',
+    'auth_welcome_back': 'Welcome back!',
+    'auth_default_name': 'Google user',
+    'auth_edit_name': 'Edit name',
+    'auth_name_title': 'Display name',
+    'auth_name_hint': 'Display name',
+    'auth_name_updated': 'Name updated',
+    'auth_name_failed': "Couldn't save the name",
+    'auth_change_photo': 'Change photo',
+    'auth_uploading_photo': 'Uploading photo…',
+    'auth_photo_updated': 'Profile photo updated',
+    'auth_photo_failed': 'Failed to upload photo',
+    'auth_sign_out': 'Sign out',
+    'auth_sign_out_title': 'Sign out of your account?',
+    'auth_sign_out_body': 'The login session ends. Data on this phone '
+        'stays — sign in again anytime to sync it.',
+    'auth_signed_out': "You're signed out",
+    'auth_sync_offer_title': 'Sync your account data?',
+    'auth_sync_offer_body':
+        'This account has {n} entries in the cloud. Merge them into this phone?',
+    'auth_sync_merge': 'Merge',
+    'auth_sync_later': 'Later',
+    'auth_merged': '{n} cloud entries merged',
+    'auth_merge_failed': "Couldn't fetch cloud data",
 
     // --- log viewer ---
     'log_hint': 'long-press a line to copy',

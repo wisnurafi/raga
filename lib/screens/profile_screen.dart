@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:image_picker/image_picker.dart';
 import '../core/bmi.dart';
 import '../core/strings.dart';
 import '../core/theme.dart';
@@ -13,12 +14,20 @@ import '../widgets/buttons.dart';
 import '../widgets/chips.dart';
 import '../widgets/headers.dart';
 
-// Profile tab: identity, profiles, reminder, units, appearance,
+// Profile tab: account, identity, profiles, reminder, units, appearance,
 // cloud backup, developer tools, and the danger zone.
 // (The weight target lives on the Streak tab as "Goals".)
 // New visual language — every feature from the old screen is ported.
-class ProfileScreen extends StatelessWidget {
+class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
+
+  @override
+  State<ProfileScreen> createState() => _ProfileScreenState();
+}
+
+class _ProfileScreenState extends State<ProfileScreen> {
+  // True while a Google sign-in / photo upload is in flight.
+  bool _authBusy = false;
 
   static String _dayName(BuildContext context, int d) =>
       shortDays(AppState.of(context).locale)[d - 1];
@@ -35,6 +44,8 @@ class ProfileScreen extends StatelessWidget {
       padding: const EdgeInsets.fromLTRB(22, 8, 22, 110),
       children: [
         RagaHeader(title: tx(context, 'profile_title')),
+        const SizedBox(height: 18),
+        _accountCard(context, state),
         const SizedBox(height: 18),
         // Active profile identity card.
         GlassCard(
@@ -323,6 +334,407 @@ class ProfileScreen extends StatelessWidget {
           ),
         ),
       ],
+    );
+  }
+
+  // --- optional Google account -------------------------------------
+  Widget _accountCard(BuildContext context, AppState state) {
+    final rc = context.rc;
+    return GlassCard(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            tx(context, 'auth_title'),
+            style: RagaType.label(rc.onCardMuted),
+          ),
+          const SizedBox(height: 10),
+          if (state.isLoggedIn)
+            _loggedInBody(context, state)
+          else ...[
+            Text(
+              tx(context, 'auth_anon_note'),
+              style: RagaType.body(rc.onCardMuted),
+            ),
+            const SizedBox(height: 14),
+            _googleButton(context),
+          ],
+        ],
+      ),
+    );
+  }
+
+  // White Google-style button with a "G" monogram (no asset needed).
+  Widget _googleButton(BuildContext context) {
+    return GestureDetector(
+      onTap: _authBusy ? null : () => _signIn(context),
+      behavior: HitTestBehavior.opaque,
+      child: Opacity(
+        opacity: _authBusy ? 0.6 : 1.0,
+        child: Container(
+          height: 56,
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(28),
+            color: Colors.white,
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.18),
+                blurRadius: 14,
+                spreadRadius: -6,
+                offset: const Offset(0, 6),
+              ),
+            ],
+          ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              if (_authBusy)
+                const SizedBox(
+                  width: 22,
+                  height: 22,
+                  child: CircularProgressIndicator(strokeWidth: 2.5),
+                )
+              else
+                const Text(
+                  'G',
+                  style: TextStyle(
+                    fontSize: 22,
+                    fontWeight: FontWeight.w700,
+                    color: Color(0xFF4285F4),
+                  ),
+                ),
+              const SizedBox(width: 12),
+              Text(
+                _authBusy
+                    ? tx(context, 'splash_loading')
+                    : tx(context, 'auth_sign_in_google'),
+                style: const TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w700,
+                  color: Color(0xFF1F1F1F),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _loggedInBody(BuildContext context, AppState state) {
+    final rc = context.rc;
+    final name = state.accountName ?? tx(context, 'auth_default_name');
+    return Column(
+      children: [
+        Row(
+          children: [
+            GestureDetector(
+              onTap: _authBusy ? null : () => _changePhoto(context),
+              child: _avatar(context, state, name),
+            ),
+            const SizedBox(width: 14),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    name,
+                    style: RagaType.cardTitle(rc.onCard),
+                  ),
+                  if (state.accountEmail != null) ...[
+                    const SizedBox(height: 2),
+                    Text(
+                      state.accountEmail!,
+                      style: RagaType.caption(rc.onCardMuted),
+                    ),
+                  ],
+                ],
+              ),
+            ),
+            IconButton(
+              icon: Icon(Icons.logout, color: rc.onCardMuted),
+              tooltip: tx(context, 'auth_sign_out'),
+              onPressed:
+                  _authBusy ? null : () => _confirmSignOut(context, state),
+            ),
+          ],
+        ),
+        const SizedBox(height: 14),
+        Row(
+          children: [
+            Expanded(
+              child: RagaOutlineButton(
+                label: tx(context, 'auth_edit_name'),
+                height: 52,
+                onPressed: () => _editNameSheet(context, state),
+              ),
+            ),
+            const SizedBox(width: 10),
+            Expanded(
+              child: RagaOutlineButton(
+                label: tx(context, 'auth_change_photo'),
+                height: 52,
+                onPressed:
+                    _authBusy ? null : () => _changePhoto(context),
+              ),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+
+  Widget _avatar(BuildContext context, AppState state, String name) {
+    final rc = context.rc;
+    final url = state.accountAvatarUrl;
+    final initial =
+        name.trim().isEmpty ? '?' : name.trim()[0].toUpperCase();
+    return Container(
+      width: 64,
+      height: 64,
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        color: rc.avatarBg,
+      ),
+      clipBehavior: Clip.antiAlias,
+      child: (url != null && url.isNotEmpty)
+          ? Image.network(
+              url,
+              fit: BoxFit.cover,
+              errorBuilder: (_, __, ___) => Center(
+                child: Text(
+                  initial,
+                  style: RagaType.hero(28, rc.avatarFg),
+                ),
+              ),
+            )
+          : Center(
+              child: Text(
+                initial,
+                style: RagaType.hero(28, rc.avatarFg),
+              ),
+            ),
+    );
+  }
+
+  Future<void> _signIn(BuildContext context) async {
+    final state = AppState.of(context);
+    // Capture everything context-derived up front: using BuildContext
+    // after an await trips use_build_context_synchronously.
+    final cancelledMsg = tx(context, 'auth_sign_in_cancelled');
+    final notConfiguredMsg = tx(context, 'auth_not_configured');
+    setState(() => _authBusy = true);
+    final res = await state.signInWithGoogle();
+    if (!mounted) return;
+    setState(() => _authBusy = false);
+    final messenger = ScaffoldMessenger.of(context);
+    void snack(String s) =>
+        messenger.showSnackBar(SnackBar(content: Text(s)));
+    if (res.cancelled) {
+      snack(cancelledMsg);
+      return;
+    }
+    if (res.notConfigured) {
+      snack(notConfiguredMsg);
+      return;
+    }
+    if (res.failed) {
+      snack(tx(context, 'auth_sign_in_failed', {'e': res.detail}));
+      return;
+    }
+    if (res.isFirstLogin) {
+      snack(res.migratedCount > 0
+          ? tx(context, 'auth_migrated', {'n': res.migratedCount})
+          : tx(context, 'auth_welcome',
+              {'name': state.accountName ?? ''}));
+      return;
+    }
+    if (res.cloudCount > 0) {
+      _offerMerge(context, state, res.cloudCount);
+    } else {
+      snack(tx(context, 'auth_welcome_back'));
+    }
+  }
+
+  // Returning login with cloud rows: offer to merge them in.
+  void _offerMerge(BuildContext context, AppState state, int cloudCount) {
+    final rc = context.rc;
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text(tx(ctx, 'auth_sync_offer_title')),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              tx(ctx, 'auth_sync_offer_body', {'n': cloudCount}),
+              style: TextStyle(color: rc.onCardMuted),
+            ),
+            const SizedBox(height: 20),
+            RagaButton(
+              label: tx(ctx, 'auth_sync_merge'),
+              height: 56,
+              onPressed: () async {
+                Navigator.pop(ctx);
+                final n = await state.mergeFromCloud();
+                if (context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text(n > 0
+                          ? tx(context, 'auth_merged', {'n': n})
+                          : tx(context, 'auth_merge_failed')),
+                    ),
+                  );
+                }
+              },
+            ),
+            RagaTextButton(
+              label: tx(ctx, 'auth_sync_later'),
+              onPressed: () => Navigator.pop(ctx),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _confirmSignOut(BuildContext context, AppState state) {
+    final rc = context.rc;
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text(tx(ctx, 'auth_sign_out_title')),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              tx(ctx, 'auth_sign_out_body'),
+              style: TextStyle(color: rc.onCardMuted),
+            ),
+            const SizedBox(height: 20),
+            DangerPillButton(
+              label: tx(ctx, 'auth_sign_out'),
+              onTap: () async {
+                Navigator.pop(ctx);
+                await state.signOut();
+                if (context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                        content: Text(tx(context, 'auth_signed_out'))),
+                  );
+                }
+              },
+            ),
+            RagaTextButton(
+              label: tx(ctx, 'cancel'),
+              onPressed: () => Navigator.pop(ctx),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _editNameSheet(BuildContext context, AppState state) {
+    final rc = context.rc;
+    final nameCtrl =
+        TextEditingController(text: state.accountName ?? '');
+    showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      builder: (ctx) => SafeArea(
+        child: SingleChildScrollView(
+          padding: EdgeInsets.only(
+            left: 22,
+            right: 22,
+            top: 24,
+            bottom: MediaQuery.of(ctx).viewInsets.bottom + 24,
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(tx(ctx, 'auth_name_title'),
+                  style: RagaType.cardTitle(rc.onCard)),
+              const SizedBox(height: 14),
+              TextField(
+                controller: nameCtrl,
+                autofocus: true,
+                textCapitalization: TextCapitalization.words,
+                style: RagaType.body(rc.onCard),
+                decoration: InputDecoration(
+                  hintText: tx(ctx, 'auth_name_hint'),
+                  hintStyle: RagaType.body(rc.onCardMuted),
+                  filled: true,
+                  fillColor: rc.chipInactive,
+                  contentPadding: const EdgeInsets.symmetric(
+                      horizontal: 18, vertical: 16),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(18),
+                    borderSide: BorderSide(color: rc.chipBorder),
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(18),
+                    borderSide: BorderSide(color: rc.chipBorder),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(18),
+                    borderSide:
+                        BorderSide(color: rc.chipActive, width: 2),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 20),
+              RagaButton(
+                label: tx(ctx, 'save'),
+                onPressed: () async {
+                  final ok =
+                      await state.setAccountName(nameCtrl.text);
+                  if (!mounted) return;
+                  Navigator.pop(ctx);
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text(tx(
+                          context,
+                          ok ? 'auth_name_updated' : 'auth_name_failed')),
+                    ),
+                  );
+                },
+              ),
+            ],
+          ),
+        ),
+      ),
+    ).whenComplete(nameCtrl.dispose);
+  }
+
+  Future<void> _changePhoto(BuildContext context) async {
+    final state = AppState.of(context);
+    final messenger = ScaffoldMessenger.of(context);
+    final uploading = tx(context, 'auth_uploading_photo');
+    final picked = await ImagePicker().pickImage(
+      source: ImageSource.gallery,
+      maxWidth: 768,
+      imageQuality: 85,
+    );
+    if (picked == null) return;
+    if (!mounted) return;
+    setState(() => _authBusy = true);
+    messenger.showSnackBar(SnackBar(content: Text(uploading)));
+    final bytes = await picked.readAsBytes();
+    final url = await state.uploadAccountAvatar(bytes);
+    if (!mounted) return;
+    setState(() => _authBusy = false);
+    messenger.showSnackBar(
+      SnackBar(
+        content: Text(tx(
+            context,
+            url != null
+                ? 'auth_photo_updated'
+                : 'auth_photo_failed')),
+      ),
     );
   }
 
@@ -863,7 +1275,7 @@ class ProfileScreen extends StatelessWidget {
               onPressed: () {
                 if (ctl.text.trim().isEmpty) return;
                 Navigator.pop(ctx);
-                _confirmRestore(context, state, ctl.text);
+                _chooseRestoreMode(context, state, ctl.text);
               },
             ),
             RagaTextButton(
@@ -874,6 +1286,62 @@ class ProfileScreen extends StatelessWidget {
         ),
       ),
     ).whenComplete(ctl.dispose);
+  }
+
+  // Restore choice: merge the backup into what's on this phone, or
+  // replace everything (the old behavior, still behind a confirm).
+  void _chooseRestoreMode(
+      BuildContext context, AppState state, String code) {
+    final rc = context.rc;
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text(tx(ctx, 'profile_restore_mode_title')),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              tx(ctx, 'profile_restore_mode_body'),
+              style: TextStyle(color: rc.onCardMuted),
+            ),
+            const SizedBox(height: 20),
+            RagaButton(
+              label: tx(ctx, 'profile_merge'),
+              height: 56,
+              onPressed: () async {
+                Navigator.pop(ctx);
+                final n = await state.mergeFromBackupCode(code);
+                if (context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text(n < 0
+                          ? tx(context, 'profile_restore_fail')
+                          : n == 0
+                              ? tx(context, 'profile_merge_empty')
+                              : tx(
+                                  context, 'profile_merged', {'n': n})),
+                    ),
+                  );
+                }
+              },
+            ),
+            const SizedBox(height: 10),
+            DangerPillButton(
+              label: tx(ctx, 'profile_replace_ok'),
+              onTap: () {
+                Navigator.pop(ctx);
+                _confirmRestore(context, state, code);
+              },
+            ),
+            RagaTextButton(
+              label: tx(ctx, 'cancel'),
+              onPressed: () => Navigator.pop(ctx),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 
   void _confirmRestore(
