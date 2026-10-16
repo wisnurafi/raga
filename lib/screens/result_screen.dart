@@ -275,12 +275,29 @@ class _ResultScreenState extends State<ResultScreen> {
 
   // Tips for this result: daily rotation plus the comeback/streak
   // rules (trend vs goal, 4+ week consistency).
+  //
+  // Frozen at first build. The record being displayed isn't saved yet, so
+  // the inputs must already include widget.weightKg — otherwise the tips
+  // visibly reshuffle when saving triggers a rebuild (history crosses the
+  // <2-record "dasar" threshold, comeback/streak slots move).
+  List<TipItem>? _frozenTips;
+
   List<TipItem> _resultTips(AppState state, BmiCategory cat) {
+    return _frozenTips ??= _computeTips(state, cat);
+  }
+
+  List<TipItem> _computeTips(AppState state, BmiCategory cat) {
     final pid = state.activeProfile.id;
     final recs = state.recordsOf(pid);
-    final weightsKg = [for (final r in recs.reversed) r.weightKg];
+    // Oldest-first history, plus the just-calculated (not yet saved) weight
+    // as the newest entry — the tips describe THIS result.
+    final weightsKg = [
+      for (final r in recs.reversed) r.weightKg,
+      widget.weightKg,
+    ];
     final streakWeeks =
-        computeStreak([for (final r in recs) r.createdAt]).weeks;
+        computeStreak([for (final r in recs) r.createdAt, DateTime.now()])
+            .weeks;
     return tipsForResult(
       cat: cat,
       weightsKg: weightsKg,
