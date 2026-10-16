@@ -96,7 +96,7 @@ class _DetakScreenState extends State<DetakScreen> {
               Text(tx(context, 'detak_gallery_subtitle'),
                   style: RagaType.caption(rc.onBgMuted)),
               const SizedBox(height: 10),
-              _gallery(context, rc, d),
+              _gallery(context, rc),
               const SizedBox(height: 14),
               GlassCard(
                 padding: const EdgeInsets.all(16),
@@ -386,8 +386,10 @@ class _DetakScreenState extends State<DetakScreen> {
 
   List<Widget> _reactionRows(
       BuildContext context, RagaColors rc, DetakState d) {
+    // The state keeps 20; the page shows the 8 latest to stay scannable.
+    final recent = d.reactions.take(8);
     return [
-      for (final r in d.reactions)
+      for (final r in recent)
         Padding(
           padding: const EdgeInsets.only(bottom: 10),
           child: GlassCard(
@@ -446,8 +448,8 @@ class _DetakScreenState extends State<DetakScreen> {
     return '${ts.day}/${ts.month}/${ts.year}';
   }
 
-  Widget _gallery(BuildContext context, RagaColors rc, DetakState d) {
-    const moods = DetakMood.values;
+  Widget _gallery(BuildContext context, RagaColors rc) {
+    final moods = DetakMood.values;
     const descs = [
       'detak_expr_halo_d',
       'detak_expr_senang_d',

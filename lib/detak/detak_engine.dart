@@ -71,23 +71,6 @@ class DetakEngine {
     return list[idx];
   }
 
-  /// Mood priority: bangga > semangat > senang > ngantuk > dukung > halo.
-  static DetakMood moodFor({
-    required bool goalReached,
-    required bool justLeveledUp,
-    required bool streakMilestone,
-    required bool loggedToday,
-    required int daysSinceOpen,
-    required bool missedYesterday,
-  }) {
-    if (goalReached) return DetakMood.bangga;
-    if (justLeveledUp || streakMilestone) return DetakMood.semangat;
-    if (loggedToday) return DetakMood.senang;
-    if (daysSinceOpen >= 3) return DetakMood.ngantuk;
-    if (missedYesterday) return DetakMood.dukung;
-    return DetakMood.halo;
-  }
-
   static bool isStreakMilestone(int dailyStreak, bool loggedToday) =>
       loggedToday && dailyStreak >= 7 && dailyStreak % 7 == 0;
 

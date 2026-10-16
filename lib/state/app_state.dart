@@ -10,7 +10,6 @@ import '../data/reminder_service.dart';
 import '../models/profile.dart';
 import '../models/bmi_record.dart';
 import '../core/streak.dart';
-import '../detak/detak_assets.dart';
 import '../detak/detak_engine.dart';
 import '../detak/detak_state.dart';
 

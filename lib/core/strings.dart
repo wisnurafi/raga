@@ -363,6 +363,7 @@ const Map<String, Map<String, String>> _strings = {
     'detak_stage_rimbun': 'Rimbun',
     'detak_stage_berbunga': 'Berbunga',
     'detak_growth_hint': 'Catat berat {n}× lagi, daun {name} jadi {stage}',
+    'detak_growth_max': '{name} sudah mekar sempurna di Lv. {m}!',
     'detak_closeness': 'Kedekatan',
     'detak_closeness_hint': 'Catat berat {n}× lagi untuk naik ke Lv. {m}',
     'detak_today': 'Hari ini bareng Detak',
@@ -783,6 +784,7 @@ const Map<String, Map<String, String>> _strings = {
     'detak_stage_berbunga': 'Blooming',
     'detak_growth_hint':
         "Log weight {n}× more and {name}'s leaves turn {stage}",
+    'detak_growth_max': '{name} is in full bloom at Lv. {m}!',
     'detak_closeness': 'Closeness',
     'detak_closeness_hint': 'Log weight {n}× more to reach Lv. {m}',
     'detak_today': 'Today with Detak',
