@@ -39,9 +39,31 @@ class AuthService extends ChangeNotifier {
   String? _displayName;
   String? _avatarUrl;
   String? _email;
+  bool _leaderboardOptIn = false;
 
   bool get isLoggedIn => _userId != null;
   String? get userId => _userId;
+
+  /// Community leaderboard participation. Strictly opt-in, default off.
+  bool get leaderboardOptIn => _leaderboardOptIn;
+
+  /// Flips the opt-in flag on the profiles row. Returns false when the
+  /// write failed (the toggle stays off).
+  Future<bool> setLeaderboardOptIn(bool v) async {
+    final uid = _userId;
+    if (uid == null) return false;
+    try {
+      await _db
+          .from('profiles')
+          .update({'leaderboard_opt_in': v}).eq('user_id', uid);
+      _leaderboardOptIn = v;
+      notifyListeners();
+      return true;
+    } catch (e) {
+      CloudSync.logEvent('auth: opt-in update failed: $e');
+      return false;
+    }
+  }
 
   /// Display name: the profiles row wins (the user may have edited it),
   /// Google's metadata is the fallback. Null when logged out — the UI
@@ -68,6 +90,7 @@ class AuthService extends ChangeNotifier {
       _displayName = null;
       _avatarUrl = null;
       _email = null;
+      _leaderboardOptIn = false;
       notifyListeners();
       return;
     }
@@ -80,7 +103,7 @@ class AuthService extends ChangeNotifier {
     try {
       final row = await _db
           .from('profiles')
-          .select('display_name, avatar_url')
+          .select('display_name, avatar_url, leaderboard_opt_in')
           .eq('user_id', user.id)
           .maybeSingle();
       if (row != null) {
@@ -89,6 +112,7 @@ class AuthService extends ChangeNotifier {
         if (dn != null && dn.isNotEmpty) _displayName = dn;
         final av = m['avatar_url'] as String?;
         if (av != null && av.isNotEmpty) _avatarUrl = av;
+        _leaderboardOptIn = m['leaderboard_opt_in'] == true;
       }
     } catch (e) {
       CloudSync.logEvent('auth: profile row read failed: $e');

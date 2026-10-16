@@ -2,6 +2,7 @@ import 'dart:math';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../models/bmi_record.dart';
+import '../models/leaderboard_entry.dart';
 import '../models/profile.dart';
 import 'secure_store.dart';
 import '../core/strings.dart';
@@ -345,6 +346,45 @@ class CloudSync {
       return h.isEmpty ? '(invalid)' : h;
     } catch (_) {
       return '(invalid)';
+    }
+  }
+
+  // --- Arena: community leaderboard ---------------------------------
+  // The board is served by the get_leaderboard RPC (SECURITY DEFINER),
+  // so RLS on `records` stays airtight: only display name, avatar and
+  // the computed metric ever leave the server.
+
+  /// One row of the community board.
+  /// [value] is % weight lost (metric 'pct_loss') or streak weeks
+  /// (metric 'streak').
+  static Future<List<LeaderboardEntry>> getLeaderboard(String metric,
+      {int limit = 50}) async {
+    if (!isReady || _userId == null) return [];
+    try {
+      final rows = await Supabase.instance.client.rpc('get_leaderboard',
+          params: {'p_metric': metric, 'p_limit': limit});
+      return (rows as List)
+          .map((e) => LeaderboardEntry.fromJson(
+              Map<String, dynamic>.from(e as Map)))
+          .toList();
+    } catch (e) {
+      lastError = _short(e);
+      logEvent('leaderboard failed: $lastError');
+      return [];
+    }
+  }
+
+  /// Keeps the streak board fresh: called on every record save while
+  /// logged in. Best-effort — a failure just means the board lags.
+  static Future<void> pushStreak(int weeks) async {
+    final uid = _userId;
+    if (!isReady || uid == null) return;
+    try {
+      await Supabase.instance.client
+          .from('profiles')
+          .update({'current_streak': weeks}).eq('user_id', uid);
+    } catch (e) {
+      logEvent('streak push failed: ${_short(e)}');
     }
   }
 
