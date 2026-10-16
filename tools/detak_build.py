@@ -23,7 +23,6 @@ from pathlib import Path
 
 import numpy as np
 from PIL import Image
-from scipy import ndimage
 
 SRC = Path.home() / "workspace/detak-assets/raga-characters/detak"
 OUT = Path.home() / "workspace/raga/assets/images/detak"
@@ -155,33 +154,22 @@ def main() -> int:
         ov[m] = arr[m]
         save(ov, f"detak_tunas_{stage}.png")
 
-    # ---- glasses overlay: keep hollow frame rings, drop solid eye dots ----
+    # ---- glasses overlay: diff vs the neutral lavender base.
+    # Geometry is pixel-identical, so changed pixels are the frames only
+    # (the hollow rings leave the eyes untouched).
+    base = load("variants/warna-lavender.png")
     arr = load("variants/aksesori-kacamata.png")
-    H, L, S = rgb_to_hls(arr[..., :3])
-    region = (XX >= 400) & (XX <= 760) & (YY >= 430) & (YY <= 670)
-    navy = region & (arr[..., 3] > 16) & (L < 0.30) & (S > 0.15) \
-        & (H >= 220) & (H <= 265)
-    lab, n = ndimage.label(navy)
-    keep = np.zeros_like(navy)
-    for i in range(1, n + 1):
-        comp = lab == i
-        area = int(comp.sum())
-        if area < 500:
-            continue
-        ys, xs = np.where(comp)
-        bbox = (ys.max() - ys.min() + 1) * (xs.max() - xs.min() + 1)
-        if area / bbox < 0.5:  # hollow ring, not a solid eye dot
-            keep |= comp
-    print(f"glasses: kept {int(keep.sum())} px of {int(navy.sum())} navy px")
+    diff = np.abs(arr[..., :3] - base[..., :3]).sum(axis=-1)
+    keep = (arr[..., 3] > 16) & (diff > 30)
+    print(f"glasses: kept {int(keep.sum())} px")
     ov = np.zeros((1024, 1024, 4), dtype=np.float32)
     ov[keep] = arr[keep]
     save(ov, "detak_acc_kacamata.png")
 
-    # ---- bow overlay (pink, top region only — gauge has a red segment) ----
+    # ---- bow overlay: same diff trick (pink bow on the head) ----
     arr = load("variants/aksesori-pita.png")
-    H, L, S = rgb_to_hls(arr[..., :3])
-    pink = (arr[..., 3] > 16) & (S > 0.35) & (((H >= 295)) | ((H <= 15))) \
-        & (YY < 600)
+    diff = np.abs(arr[..., :3] - base[..., :3]).sum(axis=-1)
+    pink = (arr[..., 3] > 16) & (diff > 30)
     print(f"bow: {int(pink.sum())} px")
     ov = np.zeros((1024, 1024, 4), dtype=np.float32)
     ov[pink] = arr[pink]
