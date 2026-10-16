@@ -245,14 +245,36 @@ class _WrappedStoryScreenState extends State<WrappedStoryScreen> {
   }
 
   /// Slide content: centered, scrolls if the screen is short.
-  Widget _body(Widget child) {
+  /// [pinnedBottom] (e.g. the weight slide's footnote) is anchored to the
+  /// bottom of the visible area instead of flowing with the centered group.
+  Widget _body(Widget child, {Widget? pinnedBottom}) {
+    final content = pinnedBottom == null
+        ? Center(
+            child: SingleChildScrollView(
+              child: child,
+            ),
+          )
+        : LayoutBuilder(
+            builder: (context, constraints) => SingleChildScrollView(
+              child: ConstrainedBox(
+                constraints:
+                    BoxConstraints(minHeight: constraints.maxHeight),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    child,
+                    Padding(
+                      padding: const EdgeInsets.only(top: 28),
+                      child: pinnedBottom,
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          );
     return Padding(
       padding: const EdgeInsets.fromLTRB(32, 140, 32, 84),
-      child: Center(
-        child: SingleChildScrollView(
-          child: child,
-        ),
-      ),
+      child: content,
     );
   }
 
@@ -367,53 +389,56 @@ class _WrappedStoryScreenState extends State<WrappedStoryScreen> {
       glows: const [
         (color: Color(0x594A9EFF), at: Alignment(-0.7, -0.7), radius: 1.0),
       ],
-      child: _body(Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          _cap(tx(context, 'wrapped_weight_cap'),
-              const Color(0xFF9DBCFF)),
-          const SizedBox(height: 18),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            crossAxisAlignment: CrossAxisAlignment.end,
-            children: [
-              Text(
-                _signedDelta(d),
-                style: RagaType.hero(112, _white),
-              ),
-              Padding(
-                padding: const EdgeInsets.only(left: 8, bottom: 14),
-                child: Text('kg',
-                    style: RagaType.title(
-                            _white.withValues(alpha: 0.85))
-                        .copyWith(fontSize: 28)),
-              ),
-            ],
-          ),
-          const SizedBox(height: 10),
-          Text(
-            hasDelta
-                ? tx(context, 'wrapped_weight_week', {
-                    'a': formatNum(d.firstKg!, 1),
-                    'b': formatNum(d.lastKg!, 1),
-                  })
-                : tx(context, 'wrapped_delta_need'),
-            style: RagaType.label(_white).copyWith(fontSize: 20),
-            textAlign: TextAlign.center,
-          ),
-          if (hasDelta) ...[
-            const SizedBox(height: 22),
-            _weightChart(locale, d),
-            const SizedBox(height: 22),
+      child: _body(
+        Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            _cap(tx(context, 'wrapped_weight_cap'),
+                const Color(0xFF9DBCFF)),
+            const SizedBox(height: 18),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                Text(
+                  _signedDelta(d),
+                  style: RagaType.hero(112, _white),
+                ),
+                Padding(
+                  padding: const EdgeInsets.only(left: 8),
+                  child: Text('kg',
+                      style: RagaType.title(
+                              _white.withValues(alpha: 0.85))
+                          .copyWith(fontSize: 28)),
+                ),
+              ],
+            ),
+            const SizedBox(height: 10),
             Text(
-              _weightNote(d),
-              style: RagaType.label(_white.withValues(alpha: 0.9))
-                  .copyWith(fontSize: 16, height: 1.4),
+              hasDelta
+                  ? tx(context, 'wrapped_weight_week', {
+                      'a': formatNum(d.firstKg!, 1),
+                      'b': formatNum(d.lastKg!, 1),
+                    })
+                  : tx(context, 'wrapped_delta_need'),
+              style: RagaType.label(_white).copyWith(fontSize: 20),
               textAlign: TextAlign.center,
             ),
+            if (hasDelta) ...[
+              const SizedBox(height: 22),
+              _weightChart(locale, d),
+            ],
           ],
-        ],
-      )),
+        ),
+        pinnedBottom: hasDelta
+            ? Text(
+                _weightNote(d),
+                style: RagaType.label(_white.withValues(alpha: 0.9))
+                    .copyWith(fontSize: 16, height: 1.4),
+                textAlign: TextAlign.center,
+              )
+            : null,
+      ),
     );
   }
 
