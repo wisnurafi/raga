@@ -46,11 +46,17 @@ begin
       group by r.user_id
       having count(*) >= 2
     )
+    -- Anti-abuse: the counted loss is capped at 3%/week. Absurd drops
+    -- are water weight or fake logs — capping kills the incentive to
+    -- fabricate them, while no honest fat loss ever exceeds 3%/week.
     select
       p.display_name,
       p.avatar_url,
-      round(
-        ((b.w_first - b.w_last) / nullif(b.w_first, 0) * 100)::numeric, 1
+      least(
+        round(
+          ((b.w_first - b.w_last) / nullif(b.w_first, 0) * 100)::numeric, 1
+        ),
+        3.0
       )
     from bounds b
     join profiles p on p.user_id = b.user_id

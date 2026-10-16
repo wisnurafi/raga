@@ -112,9 +112,12 @@ class _ArenaScreenState extends State<ArenaScreen> {
         .toList()
       ..sort((a, b) => a.createdAt.compareTo(b.createdAt));
     if (recs.length < 2) return null;
-    return (recs.first.weightKg - recs.last.weightKg) /
+    final raw = (recs.first.weightKg - recs.last.weightKg) /
         recs.first.weightKg *
         100;
+    // Same 3%/week anti-abuse cap as the server, so the "your rank"
+    // card always matches the board.
+    return raw > 3.0 ? 3.0 : raw;
   }
 
   @override
@@ -246,6 +249,13 @@ class _ArenaScreenState extends State<ArenaScreen> {
                 if (optedIn) _rankCard(rc, state, entries),
                 for (var i = 0; i < entries.length; i++)
                   _row(rc, state, i, entries[i]),
+                if (_metric == 0)
+                  Padding(
+                    padding: const EdgeInsets.only(top: 6, bottom: 8),
+                    child: Text(tx(context, 'lb_cap_note'),
+                        style: RagaType.caption(rc.onCardMuted),
+                        textAlign: TextAlign.center),
+                  ),
               ],
             );
           },

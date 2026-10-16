@@ -304,6 +304,8 @@ const Map<String, Map<String, String>> _strings = {
     'wrapped_closing': 'Sampai jumpa Senin depan. Tetap semangat! 💪',
     'wrapped_preview': 'Preview Wrapped (dev)',
     'wrapped_preview_empty': 'Belum ada timbangan dalam 12 minggu terakhir',
+    'lb_cap_note':
+        'Susut maksimal yang dihitung 3%/minggu — biar fair buat semua.',
     'auth_merge_failed': 'Gagal mengambil data cloud',
 
     // --- log viewer ---
@@ -638,6 +640,8 @@ const Map<String, Map<String, String>> _strings = {
     'wrapped_closing': 'See you next Monday. Keep going! 💪',
     'wrapped_preview': 'Preview Wrapped (dev)',
     'wrapped_preview_empty': 'No weigh-ins in the last 12 weeks',
+    'lb_cap_note':
+        'Losses are capped at 3%/week to keep it fair for everyone.',
     'auth_merge_failed': "Couldn't fetch cloud data",
 
     // --- log viewer ---
