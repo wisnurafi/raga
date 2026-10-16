@@ -348,9 +348,6 @@ class _ArenaScreenState extends State<ArenaScreen> {
               style: RagaType.caption(rc.onCardMuted)),
           const SizedBox(height: 18),
           if (data != null) ...[
-            Text(tx(context, 'wrapped_cover_sub'),
-                style: RagaType.caption(rc.onCardMuted)),
-            const SizedBox(height: 12),
             RagaButton(
               label: tx(context, 'wrapped_view'),
               onPressed: () => Navigator.of(context).push(

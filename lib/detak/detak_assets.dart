@@ -28,6 +28,16 @@ DetakStage detakStageForLevel(int level) {
 /// Lv1->2 = 5, Lv2->3 = 8, Lv3->4 = 13, Lv4->5 = 20, ...
 int detakXpForLevel(int level) => level * level + 4;
 
+/// Total XP earned across the whole journey: everything banked in the
+/// levels below [level], plus [xpInLevel] in the current one.
+int detakTotalXp(int level, int xpInLevel) {
+  var total = xpInLevel;
+  for (var l = 1; l < level; l++) {
+    total += detakXpForLevel(l);
+  }
+  return total;
+}
+
 /// Sprite path helpers. All sprites are 512x512 RGBA PNGs.
 class DetakAssets {
   DetakAssets._();
