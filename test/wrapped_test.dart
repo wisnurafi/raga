@@ -84,5 +84,43 @@ void main() {
       expect(daysUntilNextWrapped(DateTime(2026, 10, 18)), 1); // Sun
       expect(daysUntilNextWrapped(DateTime(2026, 10, 19)), 7); // Mon
     });
+
+    group('previewWeekMonday', () {
+      // "now" fixed: Wed 2026-10-14, so the current week is Mon 2026-10-12.
+      final now = DateTime(2026, 10, 14, 12);
+
+      test('empty records returns null', () {
+        expect(previewWeekMonday([], now), isNull);
+      });
+
+      test('picks the current week when it has logs', () {
+        final recs = [_rec('a', 80, DateTime(2026, 10, 13, 8))];
+        expect(previewWeekMonday(recs, now), DateTime(2026, 10, 12));
+      });
+
+      test('walks back to the most recent week with logs', () {
+        final recs = [
+          _rec('a', 80, DateTime(2026, 10, 5, 8)), // week of Oct 5
+          _rec('b', 79, DateTime(2026, 9, 21, 8)), // week of Sep 21
+        ];
+        expect(previewWeekMonday(recs, now), DateTime(2026, 10, 5));
+      });
+
+      test('returns null when the only logs are beyond 12 weeks', () {
+        final recs = [_rec('a', 80, DateTime(2026, 7, 1, 8))];
+        expect(previewWeekMonday(recs, now), isNull);
+      });
+
+      test('preview story computes for the found week', () {
+        final recs = [
+          _rec('a', 80, DateTime(2026, 10, 13, 8)),
+          _rec('b', 79, DateTime(2026, 10, 14, 8)),
+        ];
+        final monday = previewWeekMonday(recs, now)!;
+        final w = computeWrapped(recs, monday)!;
+        expect(w.logCount, 2);
+        expect(w.deltaKg, closeTo(-1.0, 1e-9));
+      });
+    });
   });
 }

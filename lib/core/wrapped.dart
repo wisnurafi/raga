@@ -15,6 +15,27 @@ int daysUntilNextWrapped(DateTime now) {
   return d == 0 ? 7 : d;
 }
 
+/// Dev-mode preview helper: Monday of the most recent week (starting with
+/// the current, still-open week and walking back) that has at least one
+/// log. Walks back at most [maxWeeksBack] weeks; returns null when no week
+/// in range has logs. The production path (last completed week via
+/// [lastCompletedWeekMonday]) is untouched — this exists only so the story
+/// UI can be QA'd with real data without waiting for Monday.
+DateTime? previewWeekMonday(List<BmiRecord> records, DateTime now,
+    {int maxWeeksBack = 12}) {
+  if (records.isEmpty) return null;
+  var monday = mondayOf(now);
+  for (var i = 0; i < maxWeeksBack; i++) {
+    final start = DateTime(monday.year, monday.month, monday.day);
+    final end = start.add(const Duration(days: 7));
+    final hasLogs = records.any((r) =>
+        !r.createdAt.isBefore(start) && r.createdAt.isBefore(end));
+    if (hasLogs) return start;
+    monday = monday.subtract(const Duration(days: 7));
+  }
+  return null;
+}
+
 class WrappedData {
   final DateTime weekStart;
   final DateTime weekEnd;

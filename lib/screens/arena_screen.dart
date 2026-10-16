@@ -363,7 +363,33 @@ class _ArenaScreenState extends State<ArenaScreen> {
                   ? tx(context, 'wrapped_unlocks_one')
                   : tx(context, 'wrapped_unlocks', {'d': daysLeft}),
               style: RagaType.caption(rc.onCardMuted)),
+          if (state.devMode) ...[
+            const SizedBox(height: 10),
+            RagaTextButton(
+              label: tx(context, 'wrapped_preview'),
+              onPressed: () => _previewWrapped(state),
+            ),
+          ],
         ],
+      ),
+    );
+  }
+
+  /// Dev-mode only: open the Wrapped story for the most recent week with
+  /// real logs, so the story UI can be QA'd without waiting for Monday.
+  /// Production behavior (last completed week) is untouched.
+  void _previewWrapped(AppState state) {
+    final weekMonday = previewWeekMonday(state.records, DateTime.now());
+    final data = weekMonday == null
+        ? null
+        : computeWrapped(state.records, weekMonday);
+    if (data == null) {
+      _snack(tx(context, 'wrapped_preview_empty'));
+      return;
+    }
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => WrappedStoryScreen(data: data),
       ),
     );
   }

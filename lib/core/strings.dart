@@ -302,6 +302,8 @@ const Map<String, Map<String, String>> _strings = {
     'wrapped_badge_penjelajah': 'Penjelajah Data',
     'wrapped_badge_penjelajah_d': 'Setiap perjalanan dimulai dari satu timbangan.',
     'wrapped_closing': 'Sampai jumpa Senin depan. Tetap semangat! 💪',
+    'wrapped_preview': 'Preview Wrapped (dev)',
+    'wrapped_preview_empty': 'Belum ada timbangan dalam 12 minggu terakhir',
     'auth_merge_failed': 'Gagal mengambil data cloud',
 
     // --- log viewer ---
@@ -634,6 +636,8 @@ const Map<String, Map<String, String>> _strings = {
     'wrapped_badge_penjelajah': 'Data Explorer',
     'wrapped_badge_penjelajah_d': 'Every journey starts with one weigh-in.',
     'wrapped_closing': 'See you next Monday. Keep going! 💪',
+    'wrapped_preview': 'Preview Wrapped (dev)',
+    'wrapped_preview_empty': 'No weigh-ins in the last 12 weeks',
     'auth_merge_failed': "Couldn't fetch cloud data",
 
     // --- log viewer ---
