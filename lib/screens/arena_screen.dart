@@ -299,9 +299,12 @@ class _ArenaScreenState extends State<ArenaScreen> {
       mine = boardMe.value;
       rank = entries.indexOf(boardMe) + 1;
     } else {
-      mine = _myValue(state);
-      if (mine == null) return const SizedBox.shrink();
-      rank = 1 + entries.where((e) => e.value > mine).length;
+      // Note: a fresh non-nullable local — Dart won't promote the
+      // deferred-assignment `mine` inside the closure below.
+      final fallback = _myValue(state);
+      if (fallback == null) return const SizedBox.shrink();
+      mine = fallback;
+      rank = 1 + entries.where((e) => e.value > fallback).length;
     }
     final valueText = _metric == 0
         ? '${mine.toStringAsFixed(1)}%'
