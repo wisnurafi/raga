@@ -694,13 +694,15 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   final ok =
                       await state.setAccountName(nameCtrl.text);
                   if (!mounted) return;
-                  Navigator.pop(ctx);
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text(tx(
-                          context,
-                          ok ? 'auth_name_updated' : 'auth_name_failed')),
-                    ),
+                  // Capture State-context work before touching the
+                  // sheet's ctx: each context gets its own guard.
+                  final messenger = ScaffoldMessenger.of(context);
+                  final msg = tx(
+                      context,
+                      ok ? 'auth_name_updated' : 'auth_name_failed');
+                  if (ctx.mounted) Navigator.pop(ctx);
+                  messenger.showSnackBar(
+                    SnackBar(content: Text(msg)),
                   );
                 },
               ),
