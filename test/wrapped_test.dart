@@ -41,15 +41,15 @@ void main() {
       expect(w.weekEnd, DateTime(2026, 10, 18));
     });
 
-    test('dayWeights is Monday-first with last-log-of-day', () {
+    test('dayWeights is Monday-first with first-log-of-day', () {
       final recs = [
-        _rec('a', 70, DateTime(2026, 10, 12, 8)), // Mon morning
-        _rec('b', 69.5, DateTime(2026, 10, 12, 20)), // Mon evening wins
+        _rec('a', 70, DateTime(2026, 10, 12, 8)), // Mon morning wins
+        _rec('b', 69.5, DateTime(2026, 10, 12, 20)), // Mon evening ignored
         _rec('c', 71, DateTime(2026, 10, 14, 8)), // Wed
       ];
       final w = computeWrapped(recs, _monday)!;
       expect(w.dayWeights.length, 7);
-      expect(w.dayWeights[0], 69.5);
+      expect(w.dayWeights[0], 70);
       expect(w.dayWeights[1], isNull);
       expect(w.dayWeights[2], 71);
       expect(w.dayWeights.sublist(3), everyElement(isNull));

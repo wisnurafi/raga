@@ -53,7 +53,10 @@ class WrappedData {
   final double? firstKg;
   final double? lastKg;
 
-  /// Last logged weight of each day, Monday-first; null = no log that day.
+  /// Representative weight per day, Monday-first: the day's FIRST log
+  /// (morning weigh-in convention). Null = no log that day. The chart's
+  /// first point therefore always equals [firstKg], so the chart can
+  /// never tell the opposite story from the headline delta.
   final List<double?> dayWeights;
 
   /// Longest run of consecutive calendar days inside the week with ≥1 log.
@@ -131,13 +134,13 @@ WrappedData? computeWrapped(
   for (var i = 0; i < 7; i++) {
     final day = start.add(Duration(days: i));
     final next = day.add(const Duration(days: 1));
-    double? latest;
+    double? firstLog;
     for (final r in inWeek) {
       if (!r.createdAt.isBefore(day) && r.createdAt.isBefore(next)) {
-        latest = r.weightKg; // inWeek is chronological → last match wins
+        firstLog ??= r.weightKg; // inWeek is chronological → first match wins
       }
     }
-    dayWeights.add(latest);
+    dayWeights.add(firstLog);
   }
 
   var bestDayStreak = 0;

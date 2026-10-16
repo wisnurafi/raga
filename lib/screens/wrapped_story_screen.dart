@@ -457,7 +457,9 @@ class _WrappedStoryScreenState extends State<WrappedStoryScreen> {
     final last = spots.length - 1;
     return Container(
       height: 190,
-      padding: const EdgeInsets.fromLTRB(8, 16, 16, 8),
+      // Wide horizontal padding: the Mon/Sun labels are centered on the
+      // plot edges, so without this they get clipped by the card.
+      padding: const EdgeInsets.fromLTRB(20, 16, 20, 10),
       decoration: BoxDecoration(
         color: _white.withValues(alpha: 0.06),
         border:
@@ -647,9 +649,11 @@ class _WrappedStoryScreenState extends State<WrappedStoryScreen> {
             textAlign: TextAlign.center,
           ),
           const SizedBox(height: 18),
+          // Gauge with the number parked in the arc's empty interior,
+          // clear of both the arc and the needle dot on the ring.
           SizedBox(
-            width: 240,
-            height: 150,
+            width: 260,
+            height: 172,
             child: Stack(
               children: [
                 Positioned.fill(
@@ -659,10 +663,10 @@ class _WrappedStoryScreenState extends State<WrappedStoryScreen> {
                 Positioned(
                   left: 0,
                   right: 0,
-                  top: 30,
+                  top: 86,
                   child: Text(
                     formatNum(d.avgBmi),
-                    style: RagaType.hero(64, _white),
+                    style: RagaType.hero(56, _white),
                     textAlign: TextAlign.center,
                   ),
                 ),
@@ -1053,8 +1057,8 @@ class _ZoneGaugePainter extends CustomPainter {
       center.dy + radius * math.sin(a),
     );
     canvas.drawCircle(
-        dot, 15, Paint()..color = Colors.white.withValues(alpha: 0.3));
-    canvas.drawCircle(dot, 10, Paint()..color = Colors.white);
+        dot, 12, Paint()..color = Colors.white.withValues(alpha: 0.3));
+    canvas.drawCircle(dot, 8, Paint()..color = Colors.white);
   }
 
   @override
