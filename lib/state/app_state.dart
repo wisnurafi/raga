@@ -1,6 +1,7 @@
 import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../data/local_store.dart';
 import '../data/cloud_sync.dart';
@@ -8,6 +9,7 @@ import '../data/auth_service.dart';
 import '../data/reminder_service.dart';
 import '../models/profile.dart';
 import '../models/bmi_record.dart';
+import '../core/streak.dart';
 
 // Outcome of the Google sign-in flow, so the UI can react precisely
 // (cancelled vs failed vs first-login-migrated vs returning-with-cloud).
@@ -78,6 +80,9 @@ class AppState extends ChangeNotifier {
   List<int> milestonesSeen = [];
   String locale = 'id';
 
+  /// From pubspec via package_info_plus — never hardcoded in the UI.
+  String appVersion = '';
+
   AppState(this._store);
 
   static Future<AppState> load() async {
@@ -109,6 +114,12 @@ class AppState extends ChangeNotifier {
     }
     // Account changes (login/logout, name/photo edits) re-render the UI.
     AuthService.instance.addListener(state._onAccountChanged);
+    try {
+      final info = await PackageInfo.fromPlatform();
+      state.appVersion = info.version;
+    } catch (_) {
+      // Tests / odd platforms: leave it empty, the UI hides it.
+    }
     return state;
   }
 
@@ -119,6 +130,21 @@ class AppState extends ChangeNotifier {
   String? get accountName => AuthService.instance.displayName;
   String? get accountEmail => AuthService.instance.email;
   String? get accountAvatarUrl => AuthService.instance.avatarUrl;
+
+  /// Community leaderboard opt-in (default off). AuthService is the
+  /// source of truth and notifies on change.
+  bool get leaderboardOptIn => AuthService.instance.leaderboardOptIn;
+  Future<bool> setLeaderboardOptIn(bool v) =>
+      AuthService.instance.setLeaderboardOptIn(v);
+
+  /// Keeps the streak board fresh while logged in. Best-effort: a
+  /// failure just means the board lags behind.
+  Future<void> _pushStreak() async {
+    if (!isLoggedIn) return;
+    final weeks =
+        computeStreak([for (final r in records) r.createdAt]).weeks;
+    await CloudSync.pushStreak(weeks);
+  }
 
   // Full Google sign-in flow:
   //   1. flush local data to the cloud through the existing backup
@@ -152,10 +178,12 @@ class AppState extends ChangeNotifier {
     }
     if (isFirst) {
       final n = await _migrateLocalToAccount();
+      await _pushStreak();
       notifyListeners();
       return SignInResult.migrated(n);
     }
     final cloud = await CloudSync.cloudUserRecordCount();
+    await _pushStreak();
     notifyListeners();
     return SignInResult.returning(cloud);
   }
@@ -210,6 +238,7 @@ class AppState extends ChangeNotifier {
       await CloudSync.pushRecord(r);
     }
     CloudSync.logEvent('auth: merged ${fresh.length} cloud records');
+    await _pushStreak();
     notifyListeners();
     return fresh.length;
   }
@@ -354,6 +383,7 @@ class AppState extends ChangeNotifier {
     // AppState field, so there's nothing new to broadcast.)
     await CloudSync.pushRecord(r);
     await _saveBackupBlob();
+    await _pushStreak();
   }
 
   Future<void> setMetricUnits(bool v) async {

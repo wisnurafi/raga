@@ -4,9 +4,9 @@ import 'package:flutter/material.dart';
 
 import '../core/theme.dart';
 
-/// Floating bottom nav pill: 5 tabs, no labels. The active tab sits on a
+/// Floating bottom nav pill: 6 tabs, no labels. The active tab sits on a
 /// lavender circle with a white icon — exactly like the mockup.
-/// (The mockup draws 4 tabs; Streak stays as the 4th, Profile 5th.)
+/// (The mockup draws 4 tabs; Streak is the 4th, Arena 5th, Profile 6th.)
 class FloatingNav extends StatelessWidget {
   final int index;
   final ValueChanged<int> onTap;
@@ -18,6 +18,7 @@ class FloatingNav extends StatelessWidget {
     Icons.show_chart_outlined,
     Icons.favorite_outline,
     Icons.local_fire_department_outlined,
+    Icons.emoji_events_outlined,
     Icons.person_outline,
   ];
 
