@@ -87,12 +87,48 @@ class BmiRecord {
         'backup_code': backupCode,
       };
 
-  // A row read back through the restore_backup() RPC. The cloud uuid
-  // becomes the local id, so restored rows are never re-pushed.
+  // A row read back through the restore_backup() RPC. The stable
+  // client_id becomes the local id when present (rows pushed by recent
+  // app versions carry it); older rows fall back to the cloud uuid.
+  // Either way the id is stable across restores, so merges can dedupe on
+  // it and restored rows are never re-pushed (they're marked synced
+  // right after a restore).
   factory BmiRecord.fromCloudJson(Map<String, dynamic> j) {
     final bmi = (j['bmi'] as num).toDouble();
     return BmiRecord._raw(
-      id: j['id'] as String,
+      id: (j['client_id'] as String?) ?? (j['id'] as String),
+      profileId: j['profile_id'] as String,
+      heightCm: (j['height_cm'] as num).toDouble(),
+      weightKg: (j['weight_kg'] as num).toDouble(),
+      bmi: bmi,
+      category: categoryOf(bmi),
+      createdAt: DateTime.parse(j['created_at'] as String).toLocal(), // wall-clock for streak/history grouping
+    );
+  }
+
+  // Payload for the per-account `records` table (logged-in mode). Same
+  // idempotency contract as toCloudJson: pushRecord upserts with
+  // onConflict: 'client_id'. Requires migration
+  // 20261016_auth_tables.sql applied.
+  Map<String, dynamic> toUserJson(String userId) => {
+        'client_id': id,
+        'user_id': userId,
+        'profile_id': profileId,
+        'height_cm': heightCm,
+        'weight_kg': weightKg,
+        'bmi': bmi,
+        'category': category.name,
+        'created_at': createdAt.toUtc().toIso8601String(),
+      };
+
+  // A row read back from the per-account `records` table. The stable
+  // client_id becomes the local id (falling back to the cloud uuid),
+  // so a record keeps one identity on every device and merges never
+  // duplicate it.
+  factory BmiRecord.fromUserJson(Map<String, dynamic> j) {
+    final bmi = (j['bmi'] as num).toDouble();
+    return BmiRecord._raw(
+      id: (j['client_id'] as String?) ?? (j['id'] as String),
       profileId: j['profile_id'] as String,
       heightCm: (j['height_cm'] as num).toDouble(),
       weightKg: (j['weight_kg'] as num).toDouble(),

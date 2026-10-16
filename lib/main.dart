@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'core/theme.dart';
 import 'state/app_state.dart';
+import 'data/auth_service.dart';
 import 'data/cloud_sync.dart';
 import 'data/reminder_service.dart';
 import 'widgets/floating_nav.dart';
@@ -56,6 +57,11 @@ Future<void> main() async {
   }
   try {
     await CloudSync.init();
+  } catch (_) {}
+  // Pick up a persisted Google session (if any) and watch for
+  // login/logout while the app runs.
+  try {
+    await AuthService.init();
   } catch (_) {}
   // Retry records that didn't make it up yet (e.g. saved while offline).
   try {

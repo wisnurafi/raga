@@ -137,8 +137,14 @@ class CloudSync {
     }
     try {
       await Supabase.initialize(url: _url, publishableKey: _anonKey);
-      // Needs "Allow anonymous sign-ins" turned on in the Supabase dashboard.
-      await Supabase.instance.client.auth.signInAnonymously();
+      // A persisted Google session must survive cold starts: only fall
+      // back to anonymous when there is no session at all. (Previously
+      // this signed in anonymously unconditionally, which would have
+      // silently replaced a logged-in session on every launch.)
+      if (Supabase.instance.client.auth.currentSession == null) {
+        // Needs "Allow anonymous sign-ins" turned on in the Supabase dashboard.
+        await Supabase.instance.client.auth.signInAnonymously();
+      }
       state = SyncState.ready;
       lastError = '';
       logEvent('init: signed in, ready');
@@ -180,6 +186,18 @@ class CloudSync {
       await Supabase.instance.client.from('bmi_records').upsert(
           record.toCloudJson(uid, backupCode),
           onConflict: 'client_id');
+      // Logged-in mode: the relational `records` table is the
+      // cross-device source of truth for history, so it gets the same
+      // row. The bmi_records upsert above keeps the backup-code path
+      // working in both modes. (isAnonymous distinguishes the modes
+      // without importing the auth layer.)
+      final user = Supabase.instance.client.auth.currentUser;
+      if (user != null && !user.isAnonymous) {
+        // Requires migration 20261016_auth_tables.sql applied.
+        await Supabase.instance.client
+            .from('records')
+            .upsert(record.toUserJson(user.id), onConflict: 'client_id');
+      }
       _syncedIds.add(record.id);
       await _prefs?.setStringList(_kSyncedIds, _syncedIds.toList());
       // A success clears any earlier transient failure: without this the
@@ -201,6 +219,46 @@ class CloudSync {
   static Future<void> markSynced(Iterable<String> ids) async {
     _syncedIds.addAll(ids);
     await _prefs?.setStringList(_kSyncedIds, _syncedIds.toList());
+  }
+
+  // How many rows the account holds in the relational `records` table.
+  // Used after a returning login to offer a cloud merge.
+  static Future<int> cloudUserRecordCount() async {
+    final uid = _userId;
+    if (!isReady || uid == null) return 0;
+    try {
+      final rows = await Supabase.instance.client
+          .from('records')
+          .select('id')
+          .eq('user_id', uid);
+      return (rows as List).length;
+    } catch (e) {
+      logEvent('user count failed: ${_short(e)}');
+      return 0;
+    }
+  }
+
+  // Pulls the account's rows from the relational `records` table
+  // (logged-in mode). Returns an empty list on any failure — the caller
+  // decides what the UI says.
+  static Future<List<BmiRecord>> fetchUserRecords() async {
+    final uid = _userId;
+    if (!isReady || uid == null) return [];
+    try {
+      final rows = await Supabase.instance.client
+          .from('records')
+          .select()
+          .eq('user_id', uid)
+          .order('created_at', ascending: false);
+      return (rows as List)
+          .map((e) =>
+              BmiRecord.fromUserJson(Map<String, dynamic>.from(e as Map)))
+          .toList();
+    } catch (e) {
+      lastError = _short(e);
+      logEvent('user pull failed: $lastError');
+      return [];
+    }
   }
 
   // Saves profiles, goals, and settings next to the backup code, so a

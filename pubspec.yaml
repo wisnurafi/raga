@@ -1,7 +1,7 @@
 name: raga
 description: Raga - BMI calculator with history, ideal weight, BMR/TDEE, multi-profile, and cloud backup.
 publish_to: 'none'
-version: 2.0.0+1
+version: 2.1.0+1
 
 environment:
   sdk: '>=3.4.0 <4.0.0'
@@ -20,6 +20,8 @@ dependencies:
   flutter_secure_storage: ^10.0.0
   flutter_timezone: ^5.1.1
   timezone: ^0.10.0
+  google_sign_in: ^7.0.0
+  image_picker: ^1.0.0
 
 dev_dependencies:
   flutter_test:

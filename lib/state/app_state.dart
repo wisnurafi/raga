@@ -1,9 +1,58 @@
+import 'dart:typed_data';
+
 import 'package:flutter/material.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import '../data/local_store.dart';
 import '../data/cloud_sync.dart';
+import '../data/auth_service.dart';
 import '../data/reminder_service.dart';
 import '../models/profile.dart';
 import '../models/bmi_record.dart';
+
+// Outcome of the Google sign-in flow, so the UI can react precisely
+// (cancelled vs failed vs first-login-migrated vs returning-with-cloud).
+class SignInResult {
+  final bool cancelled;
+  final bool failed;
+  final bool notConfigured;
+  final String detail;
+  final bool isFirstLogin;
+  final int migratedCount;
+  final int cloudCount;
+
+  const SignInResult._({
+    this.cancelled = false,
+    this.failed = false,
+    this.notConfigured = false,
+    this.detail = '',
+    this.isFirstLogin = false,
+    this.migratedCount = 0,
+    this.cloudCount = 0,
+  });
+
+  const SignInResult.cancelled() : this._(cancelled: true);
+  const SignInResult.notConfigured() : this._(notConfigured: true);
+  const SignInResult.failed(String detail) : this._(failed: true, detail: detail);
+  const SignInResult.migrated(int n)
+      : this._(isFirstLogin: true, migratedCount: n);
+  const SignInResult.returning(int cloud)
+      : this._(cloudCount: cloud);
+}
+
+// Pure helper (unit-tested): union of two record lists, deduped by the
+// stable id, newest first. Incoming rows already carry stable ids
+// (fromUserJson / fromCloudJson), so the same weigh-in never appears
+// twice no matter which device it came from.
+List<BmiRecord> mergeRecordLists(
+    List<BmiRecord> local, List<BmiRecord> incoming) {
+  final have = local.map((r) => r.id).toSet();
+  final merged = [
+    ...local,
+    ...incoming.where((r) => !have.contains(r.id)),
+  ];
+  merged.sort((a, b) => b.createdAt.compareTo(a.createdAt));
+  return merged;
+}
 
 // App-wide state. Kept simple on purpose: ChangeNotifier +
 // InheritedNotifier, no extra dependencies.
@@ -58,7 +107,179 @@ class AppState extends ChangeNotifier {
     if (!state.profiles.any((p) => p.id == state.activeProfileId)) {
       state.activeProfileId = state.profiles.first.id;
     }
+    // Account changes (login/logout, name/photo edits) re-render the UI.
+    AuthService.instance.addListener(state._onAccountChanged);
     return state;
+  }
+
+  void _onAccountChanged() => notifyListeners();
+
+  // --- optional Google account (AuthService is the source of truth) ---
+  bool get isLoggedIn => AuthService.instance.isLoggedIn;
+  String? get accountName => AuthService.instance.displayName;
+  String? get accountEmail => AuthService.instance.email;
+  String? get accountAvatarUrl => AuthService.instance.avatarUrl;
+
+  // Full Google sign-in flow:
+  //   1. flush local data to the cloud through the existing backup
+  //      machinery (export),
+  //   2. native Google sign-in -> Supabase session,
+  //   3. first login: move every local record into the account's
+  //      `records` table (import); returning login: just count the
+  //      cloud rows so the UI can offer a merge.
+  Future<SignInResult> signInWithGoogle() async {
+    await refreshSync();
+    final User? user;
+    try {
+      user = await AuthService.instance.signInWithGoogle();
+    } on AuthException catch (e) {
+      if (e.message == 'not-configured') {
+        return const SignInResult.notConfigured();
+      }
+      return SignInResult.failed(e.message);
+    } catch (e) {
+      return SignInResult.failed(e.toString().split('\n').first);
+    }
+    if (user == null) return const SignInResult.cancelled();
+    final bool isFirst;
+    try {
+      isFirst = await AuthService.instance.ensureProfileRow();
+    } catch (e) {
+      // Account tables missing/misconfigured: don't leave a
+      // half-logged-in session behind — back to anonymous.
+      await AuthService.instance.signOut();
+      return SignInResult.failed(e.toString().split('\n').first);
+    }
+    if (isFirst) {
+      final n = await _migrateLocalToAccount();
+      notifyListeners();
+      return SignInResult.migrated(n);
+    }
+    final cloud = await CloudSync.cloudUserRecordCount();
+    notifyListeners();
+    return SignInResult.returning(cloud);
+  }
+
+  // Moves every local record into the account's `records` table.
+  // pushRecord dual-writes there when logged in; its bmi_records half
+  // keeps the backup-code path intact, so the code stays a recovery
+  // route independent of Google.
+  Future<int> _migrateLocalToAccount() async {
+    var n = 0;
+    for (final r in records) {
+      if (await CloudSync.pushRecord(r)) n++;
+    }
+    CloudSync.logEvent(
+        'auth: migrated $n/${records.length} records to account');
+    return n;
+  }
+
+  // Pulls the account's `records` rows and unions them into the local
+  // history. Pulled rows also go through pushRecord so the backup-code
+  // path keeps seeing everything. Returns how many new rows arrived.
+  Future<int> mergeFromCloud() async {
+    final cloud = await CloudSync.fetchUserRecords();
+    if (cloud.isEmpty) return 0;
+    final knownProfiles = profiles.map((p) => p.id).toSet();
+    final have = records.map((r) => r.id).toSet();
+    final fresh = <BmiRecord>[];
+    for (final r in cloud) {
+      if (have.contains(r.id)) continue;
+      // A row may reference a profile id this device never had (saved on
+      // another phone): fold it into the active profile instead of
+      // orphaning it.
+      fresh.add(knownProfiles.contains(r.profileId)
+          ? r
+          : BmiRecord(
+              id: r.id,
+              profileId: activeProfileId,
+              heightCm: r.heightCm,
+              weightKg: r.weightKg,
+              createdAt: r.createdAt,
+            ));
+    }
+    if (fresh.isEmpty) return 0;
+    records = mergeRecordLists(records, fresh);
+    await _store.saveRecords(records);
+    for (final r in fresh) {
+      // Through the backup-code path too, so code restore keeps seeing
+      // everything (the dual-write also re-upserts the account table —
+      // idempotent, harmless).
+      await CloudSync.pushRecord(r);
+    }
+    CloudSync.logEvent('auth: merged ${fresh.length} cloud records');
+    notifyListeners();
+    return fresh;
+  }
+
+  // "Gabung" half of the restore choice: unions the backup's rows into
+  // the local history instead of replacing it. Profiles/goals already
+  // on this device win on id conflicts; settings are left alone
+  // (they're device preferences). Returns the new-record count, or -1
+  // when the code matched nothing / the cloud was unreachable.
+  Future<int> mergeFromBackupCode(String code) async {
+    final data = await CloudSync.restoreBackup(code);
+    if (data == null || data.isEmpty) return -1;
+    final have = records.map((r) => r.id).toSet();
+    final freshRecords =
+        data.records.where((r) => !have.contains(r.id)).toList();
+    if (freshRecords.isNotEmpty) {
+      records = mergeRecordLists(records, freshRecords);
+      await _store.saveRecords(records);
+      // They came from the cloud, so they're trivially "synced".
+      await CloudSync.markSynced(freshRecords.map((r) => r.id));
+    }
+    final haveProfiles = profiles.map((p) => p.id).toSet();
+    final freshProfiles =
+        data.profiles.where((p) => !haveProfiles.contains(p.id)).toList();
+    if (freshProfiles.isNotEmpty) {
+      profiles = [...profiles, ...freshProfiles];
+      await _store.saveProfiles(profiles);
+    }
+    final goals = Map<String, double>.from(goalWeights);
+    var freshGoals = 0;
+    for (final e in data.goals.entries) {
+      if (!goals.containsKey(e.key)) {
+        goals[e.key] = e.value;
+        freshGoals++;
+      }
+    }
+    if (freshGoals > 0) {
+      goalWeights = goals;
+      await _store.saveGoalWeights(goals);
+    }
+    // Adopt the code like the replace flow does, so future entries stamp
+    // it and the next merge sees the full picture.
+    final normalized = CloudSync.normalizeCode(code);
+    await _store.saveBackupCode(normalized);
+    CloudSync.backupCode = normalized;
+    CloudSync.logEvent('backup: merged ${freshRecords.length} records, '
+        '${freshProfiles.length} profiles, $freshGoals goals from code');
+    notifyListeners();
+    return freshRecords.length;
+  }
+
+  // Ends the account session. Local data is deliberately kept — wiping
+  // is only ever via the explicit wipe button.
+  Future<void> signOut() async {
+    await AuthService.instance.signOut();
+    CloudSync.logEvent('auth: signed out (local data kept)');
+    notifyListeners();
+  }
+
+  Future<bool> setAccountName(String name) async {
+    final ok = await AuthService.instance.setDisplayName(name);
+    if (ok) {
+      CloudSync.logEvent('auth: display name updated');
+      notifyListeners();
+    }
+    return ok;
+  }
+
+  Future<String?> uploadAccountAvatar(Uint8List bytes) async {
+    final url = await AuthService.instance.uploadAvatar(bytes);
+    if (url != null) notifyListeners();
+    return url;
   }
 
   Profile get activeProfile => profiles.firstWhere(
