@@ -43,9 +43,14 @@ class _ArenaScreenState extends State<ArenaScreen> {
   }
 
   void _refreshBoard() {
+    // Push pending weigh-ins first: the board is computed server-side,
+    // so without this a fresh local log wouldn't show up in your row.
     setState(() {
-      _boardFuture =
-          CloudSync.getLeaderboard(_metric == 0 ? 'pct_loss' : 'streak');
+      _boardFuture = () async {
+        await CloudSync.syncPending(AppState.of(context).records);
+        return CloudSync.getLeaderboard(
+            _metric == 0 ? 'pct_loss' : 'streak');
+      }();
     });
   }
 
@@ -246,7 +251,12 @@ class _ArenaScreenState extends State<ArenaScreen> {
             }
             return Column(
               children: [
-                if (optedIn) _rankCard(rc, state, entries),
+                // The "you" card sits apart from the list, not glued to it.
+                if (optedIn)
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 10),
+                    child: _rankCard(rc, state, entries),
+                  ),
                 for (var i = 0; i < entries.length; i++)
                   _row(rc, state, i, entries[i]),
                 if (_metric == 0)
@@ -266,9 +276,33 @@ class _ArenaScreenState extends State<ArenaScreen> {
 
   Widget _rankCard(
       RagaColors rc, AppState state, List<LeaderboardEntry> entries) {
-    final mine = _myValue(state);
-    if (mine == null) return const SizedBox.shrink();
-    final rank = 1 + entries.where((e) => e.value > mine).length;
+    // Prefer the board's own entry for "you": the card then always agrees
+    // with the list below it, even when local records haven't synced yet.
+    // Falls back to the local computation when you're not on the board.
+    final meName = (state.accountName ?? '').trim().toLowerCase();
+    LeaderboardEntry? boardMe;
+    if (meName.isNotEmpty) {
+      final matches = entries
+          .where((e) => e.displayName.trim().toLowerCase() == meName)
+          .toList();
+      if (matches.isNotEmpty) {
+        final local = _myValue(state);
+        boardMe = matches.reduce((a, b) => local == null ||
+                (a.value - local).abs() <= (b.value - local).abs()
+            ? a
+            : b);
+      }
+    }
+    final double? mine;
+    final int rank;
+    if (boardMe != null) {
+      mine = boardMe.value;
+      rank = entries.indexOf(boardMe) + 1;
+    } else {
+      mine = _myValue(state);
+      if (mine == null) return const SizedBox.shrink();
+      rank = 1 + entries.where((e) => e.value > mine).length;
+    }
     final valueText = _metric == 0
         ? '${mine.toStringAsFixed(1)}%'
         : weeksN(state.locale, mine.round());
@@ -296,10 +330,12 @@ class _ArenaScreenState extends State<ArenaScreen> {
         ? '${e.value.toStringAsFixed(1)}%'
         : weeksN(state.locale, e.value.round());
     final name = e.displayName.isEmpty ? '–' : e.displayName;
+    // Name-based: the old value-epsilon check failed whenever local
+    // records hadn't synced to the board yet, showing you twice.
+    final meName = (state.accountName ?? '').trim().toLowerCase();
     final isMe = state.leaderboardOptIn &&
-        e.displayName.trim().toLowerCase() ==
-            (state.accountName ?? '').trim().toLowerCase() &&
-        (e.value - (_myValue(state) ?? double.nan)).abs() < 0.05;
+        meName.isNotEmpty &&
+        e.displayName.trim().toLowerCase() == meName;
     return Padding(
       padding: const EdgeInsets.only(bottom: 10),
       child: GlassCard(
