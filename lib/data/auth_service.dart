@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:typed_data';
 
 import 'package:flutter/foundation.dart';
 import 'package:google_sign_in/google_sign_in.dart';
@@ -198,7 +197,7 @@ class AuthService extends ChangeNotifier {
     }
   }
 
-  /// Uploads a JPEG to avatars/<uid>/avatar.jpg (upsert) and stores the
+  /// Uploads a JPEG to `avatars/<uid>/avatar.jpg` (upsert) and stores the
   /// public URL on the profile row. Returns the URL, or null on failure.
   /// The URL carries a cache-busting query param because the path never
   /// changes between uploads.

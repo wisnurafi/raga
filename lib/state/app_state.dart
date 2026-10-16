@@ -211,7 +211,7 @@ class AppState extends ChangeNotifier {
     }
     CloudSync.logEvent('auth: merged ${fresh.length} cloud records');
     notifyListeners();
-    return fresh;
+    return fresh.length;
   }
 
   // "Gabung" half of the restore choice: unions the backup's rows into

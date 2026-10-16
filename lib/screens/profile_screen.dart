@@ -367,7 +367,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   // White Google-style button with a "G" monogram (no asset needed).
   Widget _googleButton(BuildContext context) {
     return GestureDetector(
-      onTap: _authBusy ? null : () => _signIn(context),
+      onTap: _authBusy ? null : () => _signIn(),
       behavior: HitTestBehavior.opaque,
       child: Opacity(
         opacity: _authBusy ? 0.6 : 1.0,
@@ -429,7 +429,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
         Row(
           children: [
             GestureDetector(
-              onTap: _authBusy ? null : () => _changePhoto(context),
+              onTap: _authBusy ? null : () => _changePhoto(),
               child: _avatar(context, state, name),
             ),
             const SizedBox(width: 14),
@@ -454,8 +454,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
             IconButton(
               icon: Icon(Icons.logout, color: rc.onCardMuted),
               tooltip: tx(context, 'auth_sign_out'),
-              onPressed:
-                  _authBusy ? null : () => _confirmSignOut(context, state),
+              onPressed: _authBusy ? null : () => _confirmSignOut(state),
             ),
           ],
         ),
@@ -466,7 +465,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
               child: RagaOutlineButton(
                 label: tx(context, 'auth_edit_name'),
                 height: 52,
-                onPressed: () => _editNameSheet(context, state),
+                onPressed: () => _editNameSheet(state),
               ),
             ),
             const SizedBox(width: 10),
@@ -474,8 +473,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
               child: RagaOutlineButton(
                 label: tx(context, 'auth_change_photo'),
                 height: 52,
-                onPressed:
-                    _authBusy ? null : () => _changePhoto(context),
+                onPressed: _authBusy ? null : () => _changePhoto(),
               ),
             ),
           ],
@@ -517,7 +515,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
-  Future<void> _signIn(BuildContext context) async {
+  // Note: no BuildContext parameter — these async methods use the
+  // State's own context, so the State's `mounted` guard is the one the
+  // analyzer expects (a context parameter reads as "unrelated").
+  Future<void> _signIn() async {
     final state = AppState.of(context);
     // Capture everything context-derived up front: using BuildContext
     // after an await trips use_build_context_synchronously.
@@ -550,14 +551,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
       return;
     }
     if (res.cloudCount > 0) {
-      _offerMerge(context, state, res.cloudCount);
+      _offerMerge(state, res.cloudCount);
     } else {
       snack(tx(context, 'auth_welcome_back'));
     }
   }
 
   // Returning login with cloud rows: offer to merge them in.
-  void _offerMerge(BuildContext context, AppState state, int cloudCount) {
+  void _offerMerge(AppState state, int cloudCount) {
     final rc = context.rc;
     showDialog(
       context: context,
@@ -578,17 +579,16 @@ class _ProfileScreenState extends State<ProfileScreen> {
               onPressed: () async {
                 Navigator.pop(ctx);
                 final n = await state.mergeFromCloud();
-                if (context.mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text(n > 0
-                          ? tx(context, 'auth_merged', {'n': n})
-                          : n == 0
-                              ? tx(context, 'auth_merge_empty')
-                              : tx(context, 'auth_merge_failed')),
-                    ),
-                  );
-                }
+                if (!mounted) return;
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text(n > 0
+                        ? tx(context, 'auth_merged', {'n': n})
+                        : n == 0
+                            ? tx(context, 'auth_merge_empty')
+                            : tx(context, 'auth_merge_failed')),
+                  ),
+                );
               },
             ),
             RagaTextButton(
@@ -601,7 +601,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
-  void _confirmSignOut(BuildContext context, AppState state) {
+  void _confirmSignOut(AppState state) {
     final rc = context.rc;
     showDialog(
       context: context,
@@ -621,12 +621,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
               onTap: () async {
                 Navigator.pop(ctx);
                 await state.signOut();
-                if (context.mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                        content: Text(tx(context, 'auth_signed_out'))),
-                  );
-                }
+                if (!mounted) return;
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                      content: Text(tx(context, 'auth_signed_out'))),
+                );
               },
             ),
             RagaTextButton(
@@ -639,7 +638,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
-  void _editNameSheet(BuildContext context, AppState state) {
+  void _editNameSheet(AppState state) {
     final rc = context.rc;
     final nameCtrl =
         TextEditingController(text: state.accountName ?? '');
@@ -712,7 +711,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     ).whenComplete(nameCtrl.dispose);
   }
 
-  Future<void> _changePhoto(BuildContext context) async {
+  Future<void> _changePhoto() async {
     final state = AppState.of(context);
     final messenger = ScaffoldMessenger.of(context);
     final uploading = tx(context, 'auth_uploading_photo');
@@ -1277,7 +1276,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
               onPressed: () {
                 if (ctl.text.trim().isEmpty) return;
                 Navigator.pop(ctx);
-                _chooseRestoreMode(context, state, ctl.text);
+                _chooseRestoreMode(state, ctl.text);
               },
             ),
             RagaTextButton(
@@ -1292,8 +1291,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   // Restore choice: merge the backup into what's on this phone, or
   // replace everything (the old behavior, still behind a confirm).
-  void _chooseRestoreMode(
-      BuildContext context, AppState state, String code) {
+  void _chooseRestoreMode(AppState state, String code) {
     final rc = context.rc;
     showDialog(
       context: context,
@@ -1314,18 +1312,17 @@ class _ProfileScreenState extends State<ProfileScreen> {
               onPressed: () async {
                 Navigator.pop(ctx);
                 final n = await state.mergeFromBackupCode(code);
-                if (context.mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text(n < 0
-                          ? tx(context, 'profile_restore_fail')
-                          : n == 0
-                              ? tx(context, 'profile_merge_empty')
-                              : tx(
-                                  context, 'profile_merged', {'n': n})),
-                    ),
-                  );
-                }
+                if (!mounted) return;
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text(n < 0
+                        ? tx(context, 'profile_restore_fail')
+                        : n == 0
+                            ? tx(context, 'profile_merge_empty')
+                            : tx(
+                                context, 'profile_merged', {'n': n})),
+                  ),
+                );
               },
             ),
             const SizedBox(height: 10),
