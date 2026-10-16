@@ -1,5 +1,27 @@
 import 'detak_assets.dart';
 
+/// Read-only snapshot of the facts the engine needs. Built by AppState
+/// so the engine stays pure and unit-testable.
+class DetakFacts {
+  final DateTime now;
+  final int daysSinceOpen; // -1 on the very first run
+  final bool loggedToday;
+  final bool missedYesterday; // a scheduled weigh-in day passed with no log
+  final int dailyStreak; // consecutive days with a weigh-in
+  final double energy; // 0..1 weigh-in consistency over the last 7 days
+  final double? goalKg; // active weight target, null when unset
+
+  const DetakFacts({
+    required this.now,
+    required this.daysSinceOpen,
+    required this.loggedToday,
+    required this.missedYesterday,
+    required this.dailyStreak,
+    required this.energy,
+    this.goalKg,
+  });
+}
+
 /// A single logged Detak reaction (shown in "Reaksi terbaru").
 /// The message is stored as a strings key so it follows locale changes;
 /// [args] fills the key's {placeholders} at display time.
@@ -48,6 +70,10 @@ class DetakState {
   final Map<String, int> lastVariant; // message group -> last variant index
   /// Quest completion clock time ("07:12"), keyed by '$day:$quest'.
   final Map<String, String> questDoneAt;
+  /// Today's quest offer, keyed by day ('yyyy-MM-dd') -> quest ids.
+  /// Rolled once per day (see rollDailyQuests) so the offer can never
+  /// reshuffle mid-day and a completed quest can't come back.
+  final Map<String, List<String>> questOffer;
 
   DetakState({
     this.name = 'Detak',
@@ -64,10 +90,12 @@ class DetakState {
     Map<String, List<String>>? questsDone,
     Map<String, int>? lastVariant,
     Map<String, String>? questDoneAt,
+    Map<String, List<String>>? questOffer,
   })  : reactions = reactions ?? [],
         questsDone = questsDone ?? {},
         lastVariant = lastVariant ?? {},
-        questDoneAt = questDoneAt ?? {};
+        questDoneAt = questDoneAt ?? {},
+        questOffer = questOffer ?? {};
 
   DetakStage get stage => detakStageForLevel(level);
   int get xpNeeded => detakXpForLevel(level);
@@ -140,6 +168,7 @@ class DetakState {
         'questsDone': questsDone,
         'lastVariant': lastVariant,
         'questDoneAt': questDoneAt,
+        'questOffer': questOffer,
       };
 
   factory DetakState.fromJson(Map<String, dynamic> j) {
@@ -165,6 +194,12 @@ class DetakState {
       questsDone[e.key] =
           (e.value as List).map((e) => e as String).toList();
     }
+    final questOffer = <String, List<String>>{};
+    for (final e in (Map<String, dynamic>.from(j['questOffer'] as Map? ?? {}))
+        .entries) {
+      questOffer[e.key] =
+          (e.value as List).map((e) => e as String).toList();
+    }
     DateTime? dt(String? s) => s == null ? null : DateTime.tryParse(s);
     return DetakState(
       name: (j['name'] as String?) ?? 'Detak',
@@ -183,6 +218,7 @@ class DetakState {
           Map<String, int>.from(j['lastVariant'] as Map? ?? {}),
       questDoneAt:
           Map<String, String>.from(j['questDoneAt'] as Map? ?? {}),
+      questOffer: questOffer,
     );
   }
 }

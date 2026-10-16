@@ -11,6 +11,7 @@ import '../models/profile.dart';
 import '../models/bmi_record.dart';
 import '../core/streak.dart';
 import '../detak/detak_engine.dart';
+import '../detak/detak_quests.dart';
 import '../detak/detak_state.dart';
 
 // Outcome of the Google sign-in flow, so the UI can react precisely
@@ -437,6 +438,15 @@ class AppState extends ChangeNotifier {
     CloudSync.logEvent(kg == null
         ? 'goal: cleared for $profileId'
         : 'goal: set ${kg.toStringAsFixed(1)} kg for $profileId');
+    // Detak reacts to a newly set goal (the 'goal' daily quest, if offered).
+    // Guarded: the companion must never break saving a goal.
+    if (kg != null) {
+      try {
+        DetakEngine.onQuestTrigger(
+            detak, _detakFacts(DateTime.now()), 'goal');
+        await _store.saveDetak(detak);
+      } catch (_) {}
+    }
     notifyListeners();
   }
 
@@ -560,6 +570,7 @@ class AppState extends ChangeNotifier {
       dailyStreak:
           DetakEngine.dailyStreak(recs.map((r) => r.createdAt), now),
       energy: DetakEngine.energy(recs.map((r) => r.createdAt), now),
+      goalKg: goalFor(activeProfileId),
     );
   }
 
@@ -567,12 +578,28 @@ class AppState extends ChangeNotifier {
   double get detakEnergy => DetakEngine.energy(
       recordsOf(activeProfileId).map((r) => r.createdAt), DateTime.now());
 
-  /// "Lihat tren minggu ini" quest — completed when the trend is viewed.
-  Future<void> completeDetakTrendQuest() async {
+  /// Today's Detak quest offer for the UI: 'log' plus two seeded picks
+  /// from the eligible pool. Rolls the offer when absent (initDetak
+  /// normally already rolled it at cold start); the roll is date-seeded
+  /// so it stays stable for the rest of the day.
+  List<DetakQuestDef> detakTodayQuests() {
     final now = DateTime.now();
-    if (detak.isQuestDone(now, 'trend')) return;
+    rollDailyQuests(detak, _detakFacts(now), now);
+    final defs = <DetakQuestDef>[];
+    for (final id in offeredQuestIds(detak, now)) {
+      final def = detakQuestDef(id);
+      if (def != null) defs.add(def);
+    }
+    return defs;
+  }
+
+  /// Completes an offered Detak quest for a trigger event ('trend',
+  /// 'goal', 'wrapped'). Only quests in today's offer can complete, and
+  /// each only once per day — safe to call unconditionally.
+  Future<void> completeDetakQuest(String trigger) async {
+    final now = DateTime.now();
     try {
-      DetakEngine.onTrendQuest(detak, _detakFacts(now));
+      DetakEngine.onQuestTrigger(detak, _detakFacts(now), trigger);
       await saveDetak();
     } catch (_) {}
   }

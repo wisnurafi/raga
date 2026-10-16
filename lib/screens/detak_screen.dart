@@ -15,6 +15,7 @@ import '../widgets/headers.dart';
 import '../widgets/raga_bg.dart';
 import '../detak/detak_assets.dart';
 import '../detak/detak_engine.dart';
+import '../detak/detak_quests.dart';
 import '../detak/detak_state.dart';
 import '../detak/detak_ui.dart';
 import '../detak/detak_widget.dart';
@@ -84,9 +85,7 @@ class _DetakScreenState extends State<DetakScreen> {
               Text(tx(context, 'detak_today'),
                   style: RagaType.section(rc.onBg)),
               const SizedBox(height: 10),
-              _questRow(context, state, rc, d, 'log'),
-              const SizedBox(height: 10),
-              _questRow(context, state, rc, d, 'trend'),
+              ..._questRows(context, state, rc, d),
               const SizedBox(height: 20),
               Text(tx(context, 'detak_recent'),
                   style: RagaType.section(rc.onBg)),
@@ -335,25 +334,38 @@ class _DetakScreenState extends State<DetakScreen> {
     );
   }
 
+  List<Widget> _questRows(
+      BuildContext context, AppState state, RagaColors rc, DetakState d) {
+    final quests = state.detakTodayQuests();
+    final rows = <Widget>[];
+    for (var i = 0; i < quests.length; i++) {
+      if (i > 0) rows.add(const SizedBox(height: 10));
+      rows.add(_questRow(context, state, rc, d, quests[i]));
+    }
+    return rows;
+  }
+
   Widget _questRow(BuildContext context, AppState state, RagaColors rc,
-      DetakState d, String quest) {
+      DetakState d, DetakQuestDef def) {
     final now = DateTime.now();
-    final done = d.isQuestDone(now, quest);
-    final label = tx(
-        context, quest == 'log' ? 'detak_quest_log' : 'detak_quest_trend');
+    final done = d.isQuestDone(now, def.id);
     return GlassCard(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
       radius: 18,
       onTap: () {
-        if (quest == 'log') {
-          // Deep-link to the weigh-in flow on the Home tab.
-          Navigator.pop(context);
-          state.requestTab(0);
-        } else {
-          // Viewing the trend completes the quest.
-          Navigator.pop(context);
-          state.requestTab(1);
-          unawaited(state.completeDetakTrendQuest());
+        // Deep-link to where the quest can be done. The trend quest keeps
+        // its old behavior: tapping it counts as viewing the trend.
+        Navigator.pop(context);
+        switch (def.action) {
+          case 'tab:0':
+            state.requestTab(0);
+          case 'tab:1':
+            state.requestTab(1);
+            unawaited(state.completeDetakQuest('trend'));
+          case 'tab:3':
+            state.requestTab(3);
+          case 'tab:4':
+            state.requestTab(4);
         }
       },
       child: Row(
@@ -376,12 +388,13 @@ class _DetakScreenState extends State<DetakScreen> {
           ),
           const SizedBox(width: 14),
           Expanded(
-            child: Text(label, style: RagaType.body(rc.onCard)),
+            child: Text(tx(context, def.titleKey),
+                style: RagaType.body(rc.onCard)),
           ),
           Text(
             done
-                ? (d.questTime(now, quest) ?? '')
-                : tx(context, 'detak_quest_reward'),
+                ? (d.questTime(now, def.id) ?? '')
+                : tx(context, 'detak_quest_reward', {'n': def.xp}),
             style: RagaType.caption(rc.onCardMuted),
           ),
         ],

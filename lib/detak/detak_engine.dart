@@ -1,27 +1,8 @@
 import 'dart:math';
 
 import 'detak_assets.dart';
+import 'detak_quests.dart';
 import 'detak_state.dart';
-
-/// Read-only snapshot of the facts the engine needs. Built by AppState
-/// so the engine stays pure and unit-testable.
-class DetakFacts {
-  final DateTime now;
-  final int daysSinceOpen; // -1 on the very first run
-  final bool loggedToday;
-  final bool missedYesterday; // a scheduled weigh-in day passed with no log
-  final int dailyStreak; // consecutive days with a weigh-in
-  final double energy; // 0..1 weigh-in consistency over the last 7 days
-
-  const DetakFacts({
-    required this.now,
-    required this.daysSinceOpen,
-    required this.loggedToday,
-    required this.missedYesterday,
-    required this.dailyStreak,
-    required this.energy,
-  });
-}
 
 class DetakEngineResult {
   final DetakMood mood;
@@ -78,6 +59,8 @@ class DetakEngine {
   /// the greeting. Logs a reaction only for the first open of the day
   /// (the "Reaksi terbaru" feed is for notable moments, not every open).
   static DetakEngineResult onAppOpen(DetakState s, DetakFacts f) {
+    // Roll today's quest offer once (persisted; the caller saves the state).
+    rollDailyQuests(s, f, f.now);
     final today = DetakState.dayKey(f.now);
     final greetedToday = s.lastGreetDay != null &&
         DetakState.dayKey(s.lastGreetDay!) == today;
@@ -112,9 +95,9 @@ class DetakEngine {
     return DetakEngineResult(mood: mood, messageKey: key);
   }
 
-  /// Called right after a weight record is saved. The 'log' quest (and
-  /// its XP) counts once per day — repeat saves still react, but don't
-  /// farm closeness.
+  /// Called right after a weight record is saved. Offered 'log'-trigger
+  /// quests (log / early / comeback) complete here, once per day each —
+  /// repeat saves still react, but don't farm closeness.
   static DetakEngineResult onRecordSaved(
     DetakState s,
     DetakFacts f, {
@@ -122,9 +105,8 @@ class DetakEngine {
   }) {
     final today = DateTime(f.now.year, f.now.month, f.now.day);
     s.lastLogDay = today;
-    final isNewQuest = !s.isQuestDone(today, 'log');
-    s.markQuest(today, 'log');
-    final gained = isNewQuest ? s.addXp(1) : 0;
+    rollDailyQuests(s, f, f.now);
+    final gained = completeQuests(s, f, f.now, 'log');
     final streakHit = isStreakMilestone(f.dailyStreak, true);
 
     final DetakMood mood;
@@ -153,18 +135,22 @@ class DetakEngine {
         mood: mood, messageKey: key, leveledUp: gained > 0);
   }
 
-  /// Called when the "Lihat tren minggu ini" quest is completed.
-  static DetakEngineResult onTrendQuest(DetakState s, DetakFacts f) {
-    final today = DateTime(f.now.year, f.now.month, f.now.day);
-    s.markQuest(today, 'trend');
-    final gained = s.addXp(1);
+  /// Generic quest-trigger completion ('trend', 'goal', 'wrapped').
+  /// Only quests in today's persisted offer can complete, and each only
+  /// once per day — firing the same trigger twice is a no-op.
+  static DetakEngineResult onQuestTrigger(
+      DetakState s, DetakFacts f, String trigger) {
+    final now = f.now;
+    rollDailyQuests(s, f, now);
+    final gained = completeQuests(s, f, now, trigger);
     final mood = gained > 0 ? DetakMood.semangat : DetakMood.senang;
-    final group = gained > 0 ? 'levelup' : 'trend';
+    final group =
+        gained > 0 ? 'levelup' : (trigger == 'trend' ? 'trend' : 'record');
     final args = gained > 0
         ? {'n': '${s.level}', 'stage': s.stage.name}
         : const <String, String>{};
     final key = pickVariant(s, group);
-    s.logReaction(mood, key, f.now, args);
+    s.logReaction(mood, key, now, args);
     return DetakEngineResult(
         mood: mood, messageKey: key, leveledUp: gained > 0);
   }

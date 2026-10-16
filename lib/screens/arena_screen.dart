@@ -2,6 +2,8 @@
 // leaderboard (login-gated, strictly opt-in) and Raga Wrapped
 // (a weekly recap story, unlocked every Monday).
 
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import '../core/bmi.dart';
 import '../core/strings.dart';
@@ -389,11 +391,7 @@ class _ArenaScreenState extends State<ArenaScreen> {
           if (data != null) ...[
             RagaButton(
               label: tx(context, 'wrapped_view'),
-              onPressed: () => Navigator.of(context).push(
-                MaterialPageRoute(
-                  builder: (_) => WrappedStoryScreen(data: data),
-                ),
-              ),
+              onPressed: () => _openWrapped(state, data),
             ),
           ] else ...[
             Text(tx(context, 'wrapped_empty_title'),
@@ -417,6 +415,18 @@ class _ArenaScreenState extends State<ArenaScreen> {
             ),
           ],
         ],
+      ),
+    );
+  }
+
+  /// Opens the real weekly Wrapped story. Firing the 'wrapped' quest
+  /// trigger is safe: it only completes when the quest is in today's
+  /// offer, and only once per day.
+  void _openWrapped(AppState state, WrappedData data) {
+    unawaited(state.completeDetakQuest('wrapped'));
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => WrappedStoryScreen(data: data),
       ),
     );
   }
