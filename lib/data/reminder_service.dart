@@ -149,16 +149,25 @@ class ReminderService {
     required tz.TZDateTime when,
     required AndroidScheduleMode mode,
     String locale = 'id',
+    String? detakName,
   }) async {
     onLog('reminder: schedule #$id -> $when '
         '(tz=${tz.local.name}, mode=$mode)');
     // The nudge text follows the app locale; the channel name stays
-    // English (it's registered once with the OS).
+    // English (it's registered once with the OS). With a Detak name,
+    // the companion speaks the nudge in its own voice.
     final title =
         locale == 'en' ? 'Weigh-in time' : 'Saatnya menimbang';
-    final body = locale == 'en'
-        ? 'Hop on the scale and log your weight in Raga.'
-        : 'Naik ke timbangan dan catat berat badanmu di Raga.';
+    final String body;
+    if (detakName == null) {
+      body = locale == 'en'
+          ? 'Hop on the scale and log your weight in Raga.'
+          : 'Naik ke timbangan dan catat berat badanmu di Raga.';
+    } else if (locale == 'en') {
+      body = '$detakName: time to hop on the scale~';
+    } else {
+      body = '$detakName: eh, udah waktunya nimbang nih~';
+    }
     await _withIconFallback(
       (d) => _plugin.zonedSchedule(
         id,
@@ -197,6 +206,7 @@ class ReminderService {
     required int hour,
     required int minute,
     String locale = 'id',
+    String? detakName,
   }) async {
     var mode = AndroidScheduleMode.inexactAllowWhileIdle;
     try {
@@ -208,7 +218,9 @@ class ReminderService {
       final when = occurrenceInWeeks(weekday, hour, minute, w);
       final id = _idForDay(weekday, w);
       try {
-        await _schedule(id: id, when: when, mode: mode, locale: locale);
+        await _schedule(
+            id: id, when: when, mode: mode, locale: locale,
+            detakName: detakName);
       } catch (_) {
         // Permission lost between check and schedule — fall back to
         // inexact for this and remaining weeks.
@@ -216,7 +228,11 @@ class ReminderService {
           mode = AndroidScheduleMode.inexactAllowWhileIdle;
           try {
             await _schedule(
-                id: id, when: when, mode: mode, locale: locale);
+                id: id,
+                when: when,
+                mode: mode,
+                locale: locale,
+                detakName: detakName);
           } catch (_) {}
         }
       }
@@ -232,6 +248,7 @@ class ReminderService {
     required int hour,
     required int minute,
     String locale = 'id',
+    String? detakName,
   }) async {
     await cancelAll();
     if (weekdays.isEmpty) return false;
@@ -242,6 +259,7 @@ class ReminderService {
         hour: hour,
         minute: minute,
         locale: locale,
+        detakName: detakName,
       );
       if (!exact) allExact = false;
     }

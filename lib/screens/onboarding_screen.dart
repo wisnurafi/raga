@@ -221,7 +221,12 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     await state.setReminderSchedule(
         weekdays: days, hour: _hour, minute: _minute);
     await ReminderService.scheduleBestEffortDays(
-        weekdays: days, hour: _hour, minute: _minute, locale: state.locale);
+        weekdays: days,
+        hour: _hour,
+        minute: _minute,
+        locale: state.locale,
+        detakName:
+            state.detak.notifFlavor ? state.detak.name : null);
   }
 
   // ---------- build ----------

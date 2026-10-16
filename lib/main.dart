@@ -53,6 +53,8 @@ Future<void> main() async {
         hour: state.reminderHour,
         minute: state.reminderMinute,
         locale: state.locale,
+        detakName:
+            state.detak.notifFlavor ? state.detak.name : null,
       );
     } catch (_) {}
   }
@@ -140,6 +142,18 @@ class MainShell extends StatefulWidget {
 
 class _MainShellState extends State<MainShell> {
   int _index = 0;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // Deep-link tab switches (e.g. Detak's daily quests). Consumed once.
+    final req = AppState.of(context).consumeRequestedTab();
+    if (req != null && req != _index) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) setState(() => _index = req);
+      });
+    }
+  }
 
   @override
   Widget build(BuildContext context) {

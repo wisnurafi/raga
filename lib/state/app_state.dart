@@ -10,6 +10,9 @@ import '../data/reminder_service.dart';
 import '../models/profile.dart';
 import '../models/bmi_record.dart';
 import '../core/streak.dart';
+import '../detak/detak_assets.dart';
+import '../detak/detak_engine.dart';
+import '../detak/detak_state.dart';
 
 // Outcome of the Google sign-in flow, so the UI can react precisely
 // (cancelled vs failed vs first-login-migrated vs returning-with-cloud).
@@ -79,6 +82,7 @@ class AppState extends ChangeNotifier {
   bool onboardingDone = false;
   List<int> milestonesSeen = [];
   String locale = 'id';
+  DetakState detak = DetakState();
 
   /// From pubspec via package_info_plus — never hardcoded in the UI.
   String appVersion = '';
@@ -102,6 +106,7 @@ class AppState extends ChangeNotifier {
     state.onboardingDone = store.onboardingDone;
     state.milestonesSeen = store.milestonesSeen;
     state.locale = store.locale;
+    state.detak = store.detak;
     if (state.profiles.isEmpty) {
       final p = Profile(name: 'You');
       state.profiles = [p];
@@ -120,6 +125,8 @@ class AppState extends ChangeNotifier {
     } catch (_) {
       // Tests / odd platforms: leave it empty, the UI hides it.
     }
+    // Detak companion: evaluate the greeting once per cold start.
+    await state.initDetak();
     return state;
   }
 
@@ -377,6 +384,17 @@ class AppState extends ChangeNotifier {
     await _store.saveRecords(records);
     CloudSync.logEvent('record: saved ${r.weightKg.toStringAsFixed(1)} kg '
         '(bmi ${r.bmi.toStringAsFixed(1)})');
+    // Detak reacts to the new habit (mood, XP, quest, maybe level-up).
+    // Guarded: the companion must never break saving a record.
+    try {
+      final goalReached = _detakGoalReached(weightKg);
+      DetakEngine.onRecordSaved(
+        detak,
+        _detakFacts(DateTime.now()),
+        goalReached: goalReached,
+      );
+      await _store.saveDetak(detak);
+    } catch (_) {}
     notifyListeners();
     // Cloud backup runs in the background; check its status in Profile.
     // (No second notify: the push and the blob RPC don't change any
@@ -502,6 +520,88 @@ class AppState extends ChangeNotifier {
     notifyListeners();
   }
 
+  // --- Detak companion ---
+
+  /// Persist Detak state and refresh the UI.
+  Future<void> saveDetak() async {
+    await _store.saveDetak(detak);
+    notifyListeners();
+  }
+
+  /// Cold-start greeting. Never throws — Detak must never break app start.
+  Future<void> initDetak() async {
+    try {
+      DetakEngine.onAppOpen(detak, _detakFacts(DateTime.now()));
+      await _store.saveDetak(detak);
+    } catch (_) {}
+  }
+
+  /// Facts the engine needs, from the active profile's records.
+  DetakFacts _detakFacts(DateTime now) {
+    final recs = recordsOf(activeProfileId);
+    final today = DateTime(now.year, now.month, now.day);
+    bool onDay(DateTime day) => recs.any((r) =>
+        r.createdAt.year == day.year &&
+        r.createdAt.month == day.month &&
+        r.createdAt.day == day.day);
+    final yesterday = today.subtract(const Duration(days: 1));
+    final daysSinceOpen = detak.lastOpenDay == null
+        ? -1
+        : today
+            .difference(DateTime(detak.lastOpenDay!.year,
+                detak.lastOpenDay!.month, detak.lastOpenDay!.day))
+            .inDays;
+    return DetakFacts(
+      now: now,
+      daysSinceOpen: daysSinceOpen,
+      loggedToday: onDay(today),
+      missedYesterday: weeklyReminder &&
+          reminderWeekdays.contains(yesterday.weekday) &&
+          !onDay(yesterday),
+      dailyStreak:
+          DetakEngine.dailyStreak(recs.map((r) => r.createdAt), now),
+      energy: DetakEngine.energy(recs.map((r) => r.createdAt), now),
+    );
+  }
+
+  /// Current chest-needle energy for the Detak widget.
+  double get detakEnergy => DetakEngine.energy(
+      recordsOf(activeProfileId).map((r) => r.createdAt), DateTime.now());
+
+  /// "Lihat tren minggu ini" quest — completed when the trend is viewed.
+  Future<void> completeDetakTrendQuest() async {
+    final now = DateTime.now();
+    if (detak.isQuestDone(now, 'trend')) return;
+    try {
+      DetakEngine.onTrendQuest(detak, _detakFacts(now));
+      await saveDetak();
+    } catch (_) {}
+  }
+
+  /// True the first time a new record lands on the goal weight.
+  bool _detakGoalReached(double weightKg) {
+    final goal = goalFor(activeProfileId);
+    if (goal == null) return false;
+    bool hit(double w) => (w - goal).abs() <= 0.05;
+    if (!hit(weightKg)) return false;
+    return !records.skip(1).any((r) => hit(r.weightKg));
+  }
+
+  // --- deep-link tab requests (Detak quests) ---
+  int? _requestedTab;
+
+  /// Ask MainShell to switch to a tab. Consumed once.
+  void requestTab(int index) {
+    _requestedTab = index;
+    notifyListeners();
+  }
+
+  int? consumeRequestedTab() {
+    final t = _requestedTab;
+    _requestedTab = null;
+    return t;
+  }
+
   // Saves profiles/goals/settings next to the backup code. Cheap RPC,
   // no-op when the cloud isn't connected.
   Future<void> _saveBackupBlob() async {
@@ -594,6 +694,7 @@ class AppState extends ChangeNotifier {
           hour: reminderHour,
           minute: reminderMinute,
           locale: locale,
+          detakName: detak.notifFlavor ? detak.name : null,
         );
       } catch (_) {
         // The toggle flow will re-arm it on next launch.
@@ -620,6 +721,16 @@ class AppState extends ChangeNotifier {
     records = [];
     goalWeights = {};
     milestonesSeen = [];
+    // Detak keeps its identity (name/color/accessory/preferences) but
+    // its habit-grown progress resets with the wiped data.
+    detak = DetakState(
+      name: detak.name,
+      color: detak.color,
+      accessory: detak.accessory,
+      notifFlavor: detak.notifFlavor,
+      calmMode: detak.calmMode,
+    );
+    await _store.saveDetak(detak);
     // A wiped phone is a fresh phone: onboarding runs again next launch.
     onboardingDone = false;
     await _store.saveProfiles(profiles);

@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/profile.dart';
 import '../models/bmi_record.dart';
+import '../detak/detak_state.dart';
 import 'secure_store.dart';
 
 // Local storage (SharedPreferences). This is the source of truth —
@@ -23,6 +24,7 @@ class LocalStore {
   static const _kOnboardingDone = 'raga.onboarding_done';
   static const _kMilestonesSeen = 'raga.milestones_seen';
   static const _kLocale = 'raga.locale';
+  static const _kDetak = 'raga.detak';
 
   final SharedPreferences _prefs;
   LocalStore(this._prefs);
@@ -169,6 +171,21 @@ class LocalStore {
   }
 
   Future<void> saveLocale(String v) => _prefs.setString(_kLocale, v);
+
+  // Detak companion state. Corrupt JSON falls back to a fresh Detak —
+  // the companion must never break the app.
+  DetakState get detak {
+    final raw = _prefs.getString(_kDetak);
+    if (raw == null || raw.isEmpty) return DetakState();
+    try {
+      return DetakState.fromJson(jsonDecode(raw) as Map<String, dynamic>);
+    } catch (_) {
+      return DetakState();
+    }
+  }
+
+  Future<void> saveDetak(DetakState d) =>
+      _prefs.setString(_kDetak, jsonEncode(d.toJson()));
 
   // Factory reset for user DATA: profiles, history, goals, milestones,
   // and the onboarding flag (so a wiped phone onboards again like new).

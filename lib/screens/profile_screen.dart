@@ -806,6 +806,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
     // Capture everything context-derived up front: using BuildContext
     // after an await trips use_build_context_synchronously.
     final locale = AppState.of(context).locale;
+    final detak = AppState.of(context).detak;
+    final detakName = detak.notifFlavor ? detak.name : null;
     final notifOff = tx(context, 'profile_arm_notif');
     final exactOff = tx(context, 'profile_arm_exact');
     final okMsg = tx(context, 'profile_arm_ok');
@@ -839,6 +841,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
       hour: hour,
       minute: minute,
       locale: locale,
+      detakName: detakName,
     );
     messenger.showSnackBar(
       SnackBar(
