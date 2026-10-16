@@ -107,7 +107,35 @@ back to the old data. Run `supabase/restore-migration.sql` once in the
 SQL Editor: it adds the `backup_code` column, a small blob table for
 profiles/goals/settings, and two locked-down functions the app calls to
 save and restore. On the new install: Cloud backup → Restore from backup
-code → enter the code.
+code → enter the code. Restore offers **Merge** (union into the data
+already on the phone) or **Replace** (the old wipe-and-restore).
+
+### Google login (optional)
+
+The app works 100% without an account. Signing in with Google
+(Profile → Account) ties the data to the account: history syncs through
+the relational `records` table, so logging in on another phone pulls it
+down. Run `supabase/migrations/20261016_auth_tables.sql` once in the SQL
+Editor: it creates the `profiles` and `records` tables (RLS-locked to
+`auth.uid() = user_id`) and the public `avatars` Storage bucket.
+
+Setup outside the SQL (all manual):
+
+1. **Google Cloud Console** → Credentials → Create OAuth client ID:
+   - one **Web application** client (copy its Client ID),
+   - one **Android** client with the app's package name
+     (`com.wisnurafi.raga`) and the release keystore's SHA-1 fingerprint.
+2. **Supabase dashboard** → Authentication → Providers → enable
+   **Google**, paste the Web Client ID. (The Client Secret field is for
+   the web OAuth flow; the app's native sign-in doesn't need it.)
+   Anonymous sign-ins stay enabled — the app still works logged out.
+3. **GitHub repo** → Settings → Secrets → Actions → add
+   `GOOGLE_WEB_CLIENT_ID` (the Web client from step 1). The Build APK
+   workflow bakes it into the release build; until then the sign-in
+   button reports "not set up" instead of crashing.
+
+Logout ends the session but keeps the local data; signing in again
+offers to merge the account's cloud rows.
 
 ## Project structure
 
@@ -123,6 +151,7 @@ lib/
   data/
     local_store.dart   # local storage (the source of truth)
     cloud_sync.dart    # Supabase backup + visible status & auto-retry
+    auth_service.dart  # optional Google login, account profile, avatars
   widgets/             # gauge, glass nav, glass cards, input cards, chips
   screens/             # Calculate, Result, History, Health, Profile
 assets/
