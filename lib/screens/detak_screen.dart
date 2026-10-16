@@ -30,6 +30,9 @@ class DetakScreen extends StatefulWidget {
 class _DetakScreenState extends State<DetakScreen> {
   String? _bubbleOverrideKey;
   Timer? _bubbleTimer;
+  // Recent reactions: 5 latest by default, the rest behind "show all"
+  // (same pattern as the history tab).
+  bool _showAllReactions = false;
 
   @override
   void dispose() {
@@ -88,7 +91,9 @@ class _DetakScreenState extends State<DetakScreen> {
               Text(tx(context, 'detak_recent'),
                   style: RagaType.section(rc.onBg)),
               const SizedBox(height: 10),
-              ..._reactionRows(context, rc, d),
+              ..._reactionRows(context, rc, d,
+                  _showAllReactions ? d.reactions : d.reactions.take(5)),
+              _reactionsToggle(context, d.reactions.length),
               const SizedBox(height: 20),
               Text(tx(context, 'detak_gallery_title'),
                   style: RagaType.section(rc.onBg)),
@@ -385,11 +390,11 @@ class _DetakScreenState extends State<DetakScreen> {
   }
 
   List<Widget> _reactionRows(
-      BuildContext context, RagaColors rc, DetakState d) {
-    // The state keeps 20; the page shows the 8 latest to stay scannable.
-    final recent = d.reactions.take(8);
+      BuildContext context, RagaColors rc, DetakState d,
+      Iterable<DetakReaction> shown) {
+    // The state keeps 20; the page shows the 5 latest by default.
     return [
-      for (final r in recent)
+      for (final r in shown)
         Padding(
           padding: const EdgeInsets.only(bottom: 10),
           child: GlassCard(
@@ -436,6 +441,21 @@ class _DetakScreenState extends State<DetakScreen> {
           ),
         ),
     ];
+  }
+
+  Widget _reactionsToggle(BuildContext context, int total) {
+    if (total <= 5) return const SizedBox.shrink();
+    return Padding(
+      padding: const EdgeInsets.only(top: 4),
+      child: Center(
+        child: RagaTextButton(
+          label: _showAllReactions
+              ? tx(context, 'detak_show_less')
+              : tx(context, 'detak_show_all', {'n': total}),
+          onPressed: () => setState(() => _showAllReactions = !_showAllReactions),
+        ),
+      ),
+    );
   }
 
   String _timeLabel(BuildContext context, DateTime ts) {
