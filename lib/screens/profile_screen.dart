@@ -325,7 +325,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   ),
                   const Spacer(),
                   Text(
-                    'Raga 2.0.0',
+                    'Raga ${state.appVersion}',
                     style: RagaType.label(rc.onCard),
                   ),
                 ],
