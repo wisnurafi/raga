@@ -218,21 +218,6 @@ const _idMonthsFull = [
   'Desember',
 ];
 
-const _enMonthsFull = [
-  'January',
-  'February',
-  'March',
-  'April',
-  'May',
-  'June',
-  'July',
-  'August',
-  'September',
-  'October',
-  'November',
-  'December',
-];
-
 const _idMonthsShortUp = [
   'JAN',
   'FEB',
@@ -269,8 +254,10 @@ const _enMonthsShortUp = [
 ///             / 'Dec 29, 2025 – Jan 4, 2026'.
 String formatWeekRangeFull(DateTime start, DateTime end, String locale) {
   final id = locale != 'en';
-  final m1 = (id ? _idMonthsFull : _enMonthsFull)[start.month - 1];
-  final m2 = (id ? _idMonthsFull : _enMonthsFull)[end.month - 1];
+  // Indonesian uses full month names ("12 – 18 Oktober 2026", per the
+  // mockup); English uses the app's short months ("Oct 12 – 18, 2026").
+  final m1 = (id ? _idMonthsFull : enShortMonths)[start.month - 1];
+  final m2 = (id ? _idMonthsFull : enShortMonths)[end.month - 1];
   if (start.year != end.year) {
     return id
         ? '${start.day} $m1 ${start.year} – ${end.day} $m2 ${end.year}'
