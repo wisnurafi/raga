@@ -208,6 +208,11 @@ class _ArenaScreenState extends State<ArenaScreen> {
                 const SizedBox(height: 6),
                 Text(tx(context, 'lb_opt_in_on'),
                     style: RagaType.caption(rc.chipActive)),
+                if (_metric == 0 && _myValue(state) == null) ...[
+                  const SizedBox(height: 6),
+                  Text(tx(context, 'lb_min_records'),
+                      style: RagaType.caption(rc.onCardMuted)),
+                ],
               ] else if (_metric == 0) ...[
                 const SizedBox(height: 6),
                 Text(tx(context, 'lb_min_records'),
