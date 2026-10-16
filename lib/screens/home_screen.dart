@@ -11,6 +11,9 @@ import '../widgets/chips.dart';
 import '../widgets/controls.dart';
 import '../widgets/glass.dart';
 import '../widgets/headers.dart';
+import '../detak/detak_assets.dart';
+import '../detak/detak_widget.dart';
+import 'detak_screen.dart';
 import 'result_screen.dart';
 
 // The "Hitung BMI" screen from the mockup: profile chips, body-data
@@ -76,6 +79,8 @@ class _HomeScreenState extends State<HomeScreen> {
       padding: const EdgeInsets.fromLTRB(22, 8, 22, 110),
       children: [
         RagaHeader(title: tx(context, 'home_title')),
+        const SizedBox(height: 14),
+        _detakCard(context, state),
         const SizedBox(height: 18),
         _profileChips(state),
         const SizedBox(height: 18),
@@ -90,6 +95,124 @@ class _HomeScreenState extends State<HomeScreen> {
         const SizedBox(height: 18),
         _dailyTipCard(context, state, rc),
       ],
+    );
+  }
+
+  // Compact Detak entry: the companion + its current speech bubble.
+  // Tapping opens an intro dialog first (never navigates directly).
+  Widget _detakCard(BuildContext context, AppState state) {
+    final d = state.detak;
+    final mood =
+        d.reactions.isNotEmpty ? d.reactions.first.mood : DetakMood.halo;
+    final msg = d.reactions.isNotEmpty
+        ? detakReactionText(context, d.reactions.first)
+        : tx(context, 'detak_msg_greet_0');
+    return GlassCard(
+      padding: const EdgeInsets.all(14),
+      radius: 20,
+      onTap: () => _detakDialog(context, state),
+      child: Row(
+        children: [
+          SizedBox(
+            width: 72,
+            child: DetakWidget(
+              mood: mood,
+              color: d.color,
+              stage: d.stage,
+              accessory: d.accessory,
+              energy: state.detakEnergy,
+              calmMode: d.calmMode,
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  d.name,
+                  style: RagaType.label(context.rc.onCard),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  msg,
+                  style: RagaType.caption(context.rc.onCardMuted),
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ],
+            ),
+          ),
+          Icon(Icons.chevron_right, color: context.rc.onCardMuted),
+        ],
+      ),
+    );
+  }
+
+  // Intro dialog: Detak, the contextual message, what the page is for,
+  // then explicit open / close actions.
+  void _detakDialog(BuildContext context, AppState state) {
+    final d = state.detak;
+    final mood =
+        d.reactions.isNotEmpty ? d.reactions.first.mood : DetakMood.halo;
+    final msg = d.reactions.isNotEmpty
+        ? detakReactionText(context, d.reactions.first)
+        : tx(context, 'detak_msg_greet_0');
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            SizedBox(
+              width: 130,
+              child: DetakWidget(
+                mood: mood,
+                color: d.color,
+                stage: d.stage,
+                accessory: d.accessory,
+                energy: state.detakEnergy,
+                calmMode: d.calmMode,
+                interactive: true,
+              ),
+            ),
+            const SizedBox(height: 12),
+            Text(
+              msg,
+              style: TextStyle(
+                  color: context.rc.onCard,
+                  fontSize: 15,
+                  fontWeight: FontWeight.w600),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 10),
+            Text(
+              tx(ctx, 'detak_dialog_body'),
+              style: TextStyle(color: context.rc.onCardMuted),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 20),
+            RagaButton(
+              label: tx(ctx, 'detak_dialog_open'),
+              height: 56,
+              onPressed: () {
+                Navigator.pop(ctx);
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                      builder: (_) => const DetakScreen()),
+                );
+              },
+            ),
+            const SizedBox(height: 8),
+            TextButton(
+              onPressed: () => Navigator.pop(ctx),
+              child: Text(tx(ctx, 'close')),
+            ),
+          ],
+        ),
+      ),
     );
   }
 
