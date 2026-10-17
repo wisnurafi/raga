@@ -1,0 +1,63 @@
+{
+  "levelThresholds": [
+    20,
+    24,
+    27,
+    31,
+    34,
+    38,
+    41,
+    45,
+    48,
+    52,
+    55,
+    59,
+    62,
+    66,
+    69,
+    73,
+    76,
+    80,
+    83
+  ],
+  "levelTitles": [
+    {
+      "max": 5,
+      "min": 1,
+      "title": "Pemula"
+    },
+    {
+      "max": 10,
+      "min": 6,
+      "title": "Pejalan"
+    },
+    {
+      "max": 15,
+      "min": 11,
+      "title": "Penjelajah"
+    },
+    {
+      "max": 20,
+      "min": 16,
+      "title": "Juara"
+    }
+  ],
+  "maxLevel": 20,
+  "note": "Satu-satunya tempat angka progres avatar. Ubah file ini untuk menyetel ekonomi tanpa menyentuh kode.",
+  "streakMilestones": [
+    3,
+    7,
+    14,
+    30
+  ],
+  "version": 1,
+  "xpAwards": {
+    "daily_record": 15,
+    "goal_reached": 150,
+    "goal_set": 25,
+    "profile_setup_complete": 40,
+    "scheduled_weigh": 8,
+    "streak_milestone": 40,
+    "weekly_wrapped_viewed": 12
+  }
+}

@@ -1,0 +1,203 @@
+{
+  "version": 1,
+  "canvas": 200,
+  "mask": "mask/circle.svg",
+  "note": "Semua layer berukuran 200x200 dan ditumpuk persis di posisi yang sama. Layer 00-07 di-clip lingkaran, layer 08 (frame) digambar di luar clip.",
+  "layerOrder": [
+    "00_bg",
+    "01_back-hair",
+    "02_shirt",
+    "03_neck",
+    "04_head",
+    "05_front-hair",
+    "06_face",
+    "07_accessory",
+    "08_frame"
+  ],
+  "defaults": {
+    "skin": "skin-2",
+    "hair": "short",
+    "hairColor": "navy",
+    "shirt": "lavender",
+    "accessory": null,
+    "frame": null
+  },
+  "palettes": {
+    "skin": {
+      "skin-1": "#F2D0B5",
+      "skin-2": "#D9A57F",
+      "skin-3": "#A86F4C",
+      "skin-4": "#6E4730"
+    },
+    "hairColor": {
+      "navy": "#2B2570",
+      "brown": "#5A3A2B",
+      "black": "#1B1B1F",
+      "blond": "#C9923A"
+    },
+    "shirt": {
+      "lavender": "#A99BE8",
+      "mint": "#5EE0A0",
+      "coral": "#FF7A6B",
+      "amber": "#F5B84B",
+      "blue": "#6FB1FF",
+      "pulse": "#8CF0C0"
+    }
+  },
+  "unlockTypes": [
+    "streak_days",
+    "records_count",
+    "level",
+    "goal_reached"
+  ],
+  "items": [
+    {
+      "id": "short",
+      "category": "hair",
+      "name": "Rambut Pendek",
+      "asset": [
+        null,
+        "05_front-hair/short-{hairColor}.svg"
+      ],
+      "unlock": null
+    },
+    {
+      "id": "wavy",
+      "category": "hair",
+      "name": "Rambut Panjang",
+      "asset": [
+        "01_back-hair/wavy-{hairColor}.svg",
+        "05_front-hair/wavy-{hairColor}.svg"
+      ],
+      "unlock": null
+    },
+    {
+      "id": "bun",
+      "category": "hair",
+      "name": "Rambut Cepol",
+      "asset": [
+        "01_back-hair/bun-{hairColor}.svg",
+        "05_front-hair/bun-{hairColor}.svg"
+      ],
+      "unlock": null
+    },
+    {
+      "id": "curly",
+      "category": "hair",
+      "name": "Rambut Keriting",
+      "asset": [
+        null,
+        "05_front-hair/curly-{hairColor}.svg"
+      ],
+      "unlock": {
+        "type": "streak_days",
+        "value": 7
+      }
+    },
+    {
+      "id": "lavender",
+      "category": "shirt",
+      "name": "Kaus Lavender",
+      "asset": [
+        "02_shirt/lavender.svg"
+      ],
+      "unlock": null
+    },
+    {
+      "id": "mint",
+      "category": "shirt",
+      "name": "Kaus Mint",
+      "asset": [
+        "02_shirt/mint.svg"
+      ],
+      "unlock": null
+    },
+    {
+      "id": "coral",
+      "category": "shirt",
+      "name": "Kaus Koral",
+      "asset": [
+        "02_shirt/coral.svg"
+      ],
+      "unlock": {
+        "type": "records_count",
+        "value": 10
+      }
+    },
+    {
+      "id": "amber",
+      "category": "shirt",
+      "name": "Jaket Amber",
+      "asset": [
+        "02_shirt/amber.svg"
+      ],
+      "unlock": {
+        "type": "level",
+        "value": 8
+      }
+    },
+    {
+      "id": "blue",
+      "category": "shirt",
+      "name": "Kaus Biru",
+      "asset": [
+        "02_shirt/blue.svg"
+      ],
+      "unlock": {
+        "type": "goal_reached",
+        "value": true
+      }
+    },
+    {
+      "id": "pulse",
+      "category": "shirt",
+      "name": "Kaus Pulse",
+      "asset": [
+        "02_shirt/pulse.svg"
+      ],
+      "unlock": {
+        "type": "level",
+        "value": 10
+      }
+    },
+    {
+      "id": "glasses",
+      "category": "accessory",
+      "name": "Kacamata",
+      "asset": [
+        "07_accessory/glasses.svg"
+      ],
+      "unlock": null
+    },
+    {
+      "id": "band",
+      "category": "accessory",
+      "name": "Headband Daun",
+      "asset": [
+        "07_accessory/band.svg"
+      ],
+      "unlock": null
+    },
+    {
+      "id": "leaf",
+      "category": "frame",
+      "name": "Bingkai Daun",
+      "asset": [
+        "08_frame/leaf.svg"
+      ],
+      "unlock": null
+    },
+    {
+      "id": "fire",
+      "category": "frame",
+      "name": "Bingkai Api",
+      "asset": [
+        "08_frame/fire.svg"
+      ],
+      "unlock": {
+        "type": "streak_days",
+        "value": 30
+      }
+    }
+  ]
+}

@@ -10,6 +10,7 @@ dependencies:
   flutter:
     sdk: flutter
   google_fonts: ^6.2.1
+  flutter_svg: ^2.1.0
   shared_preferences: ^2.3.2
   supabase_flutter: ^2.8.4
   fl_chart: ^0.69.0
@@ -38,3 +39,16 @@ flutter:
     - assets/images/raga-mark-light.png
     - assets/images/wrapped/
     - assets/images/detak/
+    - assets/avatar/avatar_manifest.json
+    - assets/avatar/progression.json
+    - assets/avatar/layers/00_bg/
+    - assets/avatar/layers/01_back-hair/
+    - assets/avatar/layers/02_shirt/
+    - assets/avatar/layers/03_neck/
+    - assets/avatar/layers/04_head/
+    - assets/avatar/layers/05_front-hair/
+    - assets/avatar/layers/06_face/
+    - assets/avatar/layers/07_accessory/
+    - assets/avatar/layers/08_frame/
+    - assets/avatar/mask/
+    - assets/avatar/composites/
