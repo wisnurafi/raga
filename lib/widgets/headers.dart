@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../avatar/avatar_view.dart';
 import '../core/theme.dart';
 import '../state/app_state.dart';
 
@@ -73,6 +74,17 @@ class _Avatar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final rc = context.rc;
+    final state = AppState.of(context);
+    final svc = state.avatarService;
+    final aState = state.avatarState;
+    // The avatar the user set is their profile picture.
+    if (svc != null && aState != null) {
+      return AvatarView(
+        manifest: svc.manifest,
+        config: aState.config,
+        size: 44,
+      );
+    }
     return Container(
       width: 44,
       height: 44,

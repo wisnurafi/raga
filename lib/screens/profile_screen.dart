@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:image_picker/image_picker.dart';
+import '../avatar/avatar_view.dart';
 import '../core/bmi.dart';
 import '../core/strings.dart';
 import '../core/theme.dart';
@@ -35,6 +36,48 @@ class _ProfileScreenState extends State<ProfileScreen> {
   static String _hdot(int h, int m) =>
       '${h.toString().padLeft(2, '0')}.${m.toString().padLeft(2, '0')}';
 
+  /// The identity card avatar: the user's set avatar, or the letter
+  /// initial if the avatar feature is off.
+  static Widget _identityAvatar(BuildContext context, AppState state) {
+    final rc = context.rc;
+    final svc = state.avatarService;
+    final config = state.avatarState?.config;
+    if (svc != null && config != null) {
+      return AvatarView(
+        manifest: svc.manifest,
+        config: config,
+        size: 84,
+      );
+    }
+    return Container(
+      width: 84,
+      height: 84,
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        color: rc.avatarBg,
+      ),
+      child: Center(
+        child: Text(
+          state.activeProfile.initial,
+          style: RagaType.hero(32, rc.avatarFg),
+        ),
+      ),
+    );
+  }
+
+  /// Small avatar thumbnail for a profile chip, or null if the
+  /// avatar feature is off.
+  static Widget? _avatarThumb(AppState state, String profileId) {
+    final svc = state.avatarService;
+    final config = state.avatarStates[profileId]?.config;
+    if (svc == null || config == null) return null;
+    return AvatarView(
+      manifest: svc.manifest,
+      config: config,
+      size: 24,
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final rc = context.rc;
@@ -62,20 +105,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     ),
                   );
                 },
-                child: Container(
-                  width: 84,
-                  height: 84,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    color: rc.avatarBg,
-                  ),
-                  child: Center(
-                    child: Text(
-                      p.initial,
-                      style: RagaType.hero(32, rc.avatarFg),
-                    ),
-                  ),
-                ),
+                child: _identityAvatar(context, state),
               ),
               const SizedBox(height: 12),
               GestureDetector(
@@ -133,6 +163,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         await state.setActiveProfile(prof.id);
                       }
                     },
+                    leading: _avatarThumb(state, prof.id),
                   ),
                 ),
                 const SizedBox(width: 10),

@@ -327,8 +327,19 @@ class AvatarProgressService {
     );
   }
 
-  List<AvatarItem> _evaluateUnlocks(
-    AvatarProfileState state, {
+  /// Debug only (demo mode): applies [events] and optional stat bumps,
+  /// re-evaluating unlocks. Keys must be unique per call.
+  AvatarProgressResult debugApply({
+    required String profileId,
+    required AvatarProfileState state,
+    required List<XpEvent> events,
+    int? bestStreak,
+    int? recordsCount,
+  }) =>
+      _apply(profileId, state, events,
+          bestStreak: bestStreak, recordsCount: recordsCount);
+
+  List<AvatarItem> _evaluateUnlocks(    AvatarProfileState state, {
     required int level,
     int? recordsCount,
   }) {

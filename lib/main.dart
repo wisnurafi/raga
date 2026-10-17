@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'avatar/avatar_notifications.dart';
 import 'core/theme.dart';
 import 'state/app_state.dart';
 import 'data/auth_service.dart';
@@ -153,6 +154,10 @@ class _MainShellState extends State<MainShell> {
         if (mounted) setState(() => _index = req);
       });
     }
+    // Avatar side effects (migration notice, level-up, unlocks).
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) checkAvatarNotifications(context);
+    });
   }
 
   @override

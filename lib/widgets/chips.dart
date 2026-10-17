@@ -65,6 +65,7 @@ class ProfileChip extends StatelessWidget {
   final bool showCheck;
   final bool isAdd;
   final VoidCallback onTap;
+  final Widget? leading;
 
   const ProfileChip({
     super.key,
@@ -73,6 +74,7 @@ class ProfileChip extends StatelessWidget {
     required this.onTap,
     this.showCheck = false,
     this.isAdd = false,
+    this.leading,
   });
 
   @override
@@ -82,9 +84,12 @@ class ProfileChip extends StatelessWidget {
       label: label,
       selected: selected,
       onTap: onTap,
-      prefix: showCheck && selected
-          ? Icon(Icons.check, size: 16, color: rc.onChipActive)
-          : (isAdd ? Icon(Icons.add, size: 16, color: rc.onChipInactive) : null),
+      prefix: leading ??
+          (showCheck && selected
+              ? Icon(Icons.check, size: 16, color: rc.onChipActive)
+              : (isAdd
+                  ? Icon(Icons.add, size: 16, color: rc.onChipInactive)
+                  : null)),
     );
   }
 }

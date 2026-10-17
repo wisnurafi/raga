@@ -284,6 +284,10 @@ class _AvatarScreenState extends State<AvatarScreen> {
                 label: tx(context, 'avatar_save'),
                 onPressed: _save,
               ),
+              if (app.devMode) ...[
+                const SizedBox(height: 24),
+                _DemoSection(),
+              ],
             ],
           ),
         ),
@@ -304,6 +308,59 @@ class _AvatarScreenState extends State<AvatarScreen> {
       default:
         return category;
     }
+  }
+}
+
+/// Hidden demo controls (debug only, behind devMode).
+class _DemoSection extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    final rc = context.rc;
+    final app = AppState.of(context);
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: Colors.orange.withValues(alpha: 0.5),
+          width: 1,
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'DEMO (dev only)',
+            style: RagaType.label(Colors.orange),
+          ),
+          const SizedBox(height: 12),
+          Wrap(
+            spacing: 10,
+            runSpacing: 10,
+            children: [
+              _demoBtn(context, '+50 XP', () => app.debugAvatarAddXp(50)),
+              _demoBtn(
+                  context, '+7 streak', () => app.debugAvatarAddStreak(7)),
+              _demoBtn(
+                  context, 'Reset', () => app.debugAvatarReset()),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'XP & unlock langsung diproses; notifikasi muncul via MainShell.',
+            style: RagaType.label(rc.onCardMuted).copyWith(fontSize: 11),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _demoBtn(
+      BuildContext context, String label, Future<void> Function() onTap) {
+    return OutlinedButton(
+      onPressed: () async => await onTap(),
+      child: Text(label),
+    );
   }
 }
 

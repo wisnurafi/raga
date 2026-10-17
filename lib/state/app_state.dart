@@ -782,6 +782,68 @@ class AppState extends ChangeNotifier {
     notifyListeners();
   }
 
+  // ------------------------------------------------------------------
+  // Demo mode (debug only, behind devMode). Lets QA jump to unlocks
+  // and level-ups without waiting days.
+  // ------------------------------------------------------------------
+
+  /// Grants [amount] XP to the active profile (debug event).
+  Future<void> debugAvatarAddXp(int amount) async {
+    final svc = avatarService;
+    final pid = activeProfileId;
+    final st = avatarStates[pid];
+    if (svc == null || st == null) return;
+    final event = XpEvent(
+      profileId: pid,
+      type: 'debug',
+      key: 'debug-${DateTime.now().microsecondsSinceEpoch}',
+      amount: amount,
+      date: DateTime.now(),
+    );
+    final result = svc.debugApply(
+      profileId: pid,
+      state: st,
+      events: [event],
+      recordsCount: recordsOf(pid).length,
+    );
+    avatarStates[pid] = result.nextState;
+    await _store.saveAvatarState(pid, result.nextState);
+    _noteAvatarResult(result);
+    notifyListeners();
+  }
+
+  /// Bumps best streak by [days] and re-evaluates streak unlocks.
+  /// (Does not fabricate records — the next real weigh-in recomputes
+  /// the streak from history.)
+  Future<void> debugAvatarAddStreak(int days) async {
+    final svc = avatarService;
+    final pid = activeProfileId;
+    final st = avatarStates[pid];
+    if (svc == null || st == null) return;
+    final result = svc.debugApply(
+      profileId: pid,
+      state: st,
+      events: const [],
+      bestStreak: st.bestStreak + days,
+      recordsCount: recordsOf(pid).length,
+    );
+    avatarStates[pid] = result.nextState;
+    await _store.saveAvatarState(pid, result.nextState);
+    _noteAvatarResult(result);
+    notifyListeners();
+  }
+
+  /// Resets the active profile's avatar to a fresh state.
+  Future<void> debugAvatarReset() async {
+    final svc = avatarService;
+    final pid = activeProfileId;
+    if (svc == null) return;
+    final fresh = AvatarProfileState.initial(svc.manifest);
+    avatarStates[pid] = fresh;
+    await _store.saveAvatarState(pid, fresh);
+    notifyListeners();
+  }
+
   /// Avatar reaction to a saved record: daily/scheduled XP, streak
   /// milestones, goal-reached check, unlock evaluation. Guarded: avatar
   /// must never break saving a record.
