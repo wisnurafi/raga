@@ -274,11 +274,11 @@ void main() {
       expect(r.nextState.unlockedItemIds, contains('blue'));
     });
 
-    test('weekly_wrapped_viewed +15 once per week', () async {
+    test('weekly_wrapped_viewed +12 once per week', () async {
       final s = await _service(mon9);
       var st = await _fresh(mon9);
       var r = s.onWrappedViewed(profileId: 'p', state: st);
-      expect(r.newEvents.single.amount, 15);
+      expect(r.newEvents.single.amount, 12); // progression.json
       st = r.nextState;
       // Same week again: nothing.
       r = s.onWrappedViewed(profileId: 'p', state: st);
@@ -288,7 +288,7 @@ void main() {
           AvatarProgressService(manifest: s.manifest, progression: s.progression,
               clock: () => DateTime(2026, 10, 26, 9));
       r = nextWeek.onWrappedViewed(profileId: 'p', state: st);
-      expect(r.newEvents.single.amount, 15);
+      expect(r.newEvents.single.amount, 12);
     });
   });
 
@@ -395,8 +395,7 @@ void main() {
   });
 
   group('unlocks', () {
-    Future<AvatarProfileState> _withXp(DateTime now, int xp) async {
-      final s = await _service(now);
+    Future<AvatarProfileState> withXp(DateTime now, int xp) async {
       final st = await _fresh(now);
       // Synthetic ledger grants to reach a precise total.
       var i = 0;
@@ -417,23 +416,23 @@ void main() {
 
     test('level unlock at the boundary and one below', () async {
       final s = await _service(mon9);
-      // Amber needs level 8 = 215 xp.
-      var st = await _withXp(mon9, 200);
-      var r = s.onWrappedViewed(profileId: 'p', state: st); // +15 -> 215
+      // Amber needs level 8 = 215 xp; wrapped grants +12 (progression.json).
+      var st = await withXp(mon9, 203);
+      var r = s.onWrappedViewed(profileId: 'p', state: st); // +12 -> 215
       expect(r.newLevel, 8);
       expect(r.newlyUnlocked.map((e) => e.id), contains('amber'));
 
-      st = await _withXp(mon9, 199);
-      r = s.onWrappedViewed(profileId: 'p', state: st); // +15 -> 214
+      st = await withXp(mon9, 202);
+      r = s.onWrappedViewed(profileId: 'p', state: st); // +12 -> 214
       expect(r.newLevel, 7);
       expect(r.newlyUnlocked.map((e) => e.id), isNot(contains('amber')));
     });
 
     test('pulse needs level 10', () async {
       final s = await _service(mon9);
-      // Level 10 = 308 xp.
-      var st = await _withXp(mon9, 293);
-      var r = s.onWrappedViewed(profileId: 'p', state: st); // +15 -> 308
+      // Level 10 = 308 xp; wrapped grants +12 (progression.json).
+      var st = await withXp(mon9, 296);
+      var r = s.onWrappedViewed(profileId: 'p', state: st); // +12 -> 308
       expect(r.newLevel, 10);
       expect(r.newlyUnlocked.map((e) => e.id), contains('pulse'));
     });
