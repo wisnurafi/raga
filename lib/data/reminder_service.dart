@@ -196,6 +196,48 @@ class ReminderService {
     }
   }
 
+  /// Test seam for [scheduleBestEffort]: the exact mode-fallback loop
+  /// (exact when allowed, downgrade to inexact when the OS rejects it),
+  /// with the permission check and the plugin schedule injected so tests
+  /// can drive every path without a device. Production passes
+  /// [canScheduleExact] and [_schedule]; behavior is identical.
+  @visibleForTesting
+  static Future<bool> scheduleWithMode({
+    required int weekday,
+    required int hour,
+    required int minute,
+    required Future<bool> Function() canUseExact,
+    required Future<void> Function({
+      required int id,
+      required tz.TZDateTime when,
+      required AndroidScheduleMode mode,
+    }) schedule,
+  }) async {
+    var mode = AndroidScheduleMode.inexactAllowWhileIdle;
+    try {
+      if (await canUseExact()) {
+        mode = AndroidScheduleMode.exactAllowWhileIdle;
+      }
+    } catch (_) {}
+    for (var w = 0; w < _weeksToArm; w++) {
+      final when = occurrenceInWeeks(weekday, hour, minute, w);
+      final id = _idForDay(weekday, w);
+      try {
+        await schedule(id: id, when: when, mode: mode);
+      } catch (_) {
+        // Permission lost between check and schedule — fall back to
+        // inexact for this and remaining weeks.
+        if (mode == AndroidScheduleMode.exactAllowWhileIdle) {
+          mode = AndroidScheduleMode.inexactAllowWhileIdle;
+          try {
+            await schedule(id: id, when: when, mode: mode);
+          } catch (_) {}
+        }
+      }
+    }
+    return mode == AndroidScheduleMode.exactAllowWhileIdle;
+  }
+
   /// Schedules with exact alarms when allowed, otherwise inexact.
   /// Arms [_weeksToArm] future weeks as separate one-time alarms
   /// (no matchDateTimeComponents — see _schedule).
@@ -208,36 +250,20 @@ class ReminderService {
     String locale = 'id',
     String? detakName,
   }) async {
-    var mode = AndroidScheduleMode.inexactAllowWhileIdle;
-    try {
-      if (await canScheduleExact()) {
-        mode = AndroidScheduleMode.exactAllowWhileIdle;
-      }
-    } catch (_) {}
-    for (var w = 0; w < _weeksToArm; w++) {
-      final when = occurrenceInWeeks(weekday, hour, minute, w);
-      final id = _idForDay(weekday, w);
-      try {
-        await _schedule(
-            id: id, when: when, mode: mode, locale: locale,
-            detakName: detakName);
-      } catch (_) {
-        // Permission lost between check and schedule — fall back to
-        // inexact for this and remaining weeks.
-        if (mode == AndroidScheduleMode.exactAllowWhileIdle) {
-          mode = AndroidScheduleMode.inexactAllowWhileIdle;
-          try {
-            await _schedule(
-                id: id,
-                when: when,
-                mode: mode,
-                locale: locale,
-                detakName: detakName);
-          } catch (_) {}
-        }
-      }
-    }
-    return mode == AndroidScheduleMode.exactAllowWhileIdle;
+    return scheduleWithMode(
+      weekday: weekday,
+      hour: hour,
+      minute: minute,
+      canUseExact: canScheduleExact,
+      schedule: ({
+        required int id,
+        required tz.TZDateTime when,
+        required AndroidScheduleMode mode,
+      }) =>
+          _schedule(
+              id: id, when: when, mode: mode, locale: locale,
+              detakName: detakName),
+    );
   }
 
   /// Arms the nudge on every selected weekday. Cancels stale days first
