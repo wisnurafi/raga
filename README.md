@@ -32,6 +32,13 @@ A personal project — built to be genuinely useful, not just a demo.
 - **Weekly reminder** — optional local notification every Sunday morning to weigh in
 - **Weight goal** — set a target, see your progress and an estimated timeline from your trend
 - **Export CSV** — share your full history as a CSV file
+- **Google login** — optional account layer on top of anonymous use; unlocks account-bound features
+- **Backup code** — on-demand code that restores everything (records, profiles, goals, settings) on a new install, even without login
+- **Detak** — a mascot companion that reacts to your habits: moods, streaks, quests, and level-ups
+- **Raga Arena** — community leaderboard: weekly % weight lost (capped anti-abuse) and streaks, opt-in only
+- **Wrapped** — year-in-review story of your journey, Spotify-style
+- **Avatar** — customizable profile avatar with XP progression and unlockable collections
+- **Knowledge Hub** — bilingual (id/en) articles, glossary, and quizzes about weight, nutrition, and health
 
 ## Screenshots
 
