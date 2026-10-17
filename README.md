@@ -7,6 +7,11 @@ can share your result as an image.
 
 A personal project — built to be genuinely useful, not just a demo.
 
+> **Platform note:** Raga is Android-only. The iOS target exists in the
+> project but Google sign-in is not wired up there (no
+> `GoogleService-Info.plist` / URL scheme), and releases + CI only build
+> the Android APK.
+
 ## Features
 
 **Required:**
