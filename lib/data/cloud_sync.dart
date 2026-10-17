@@ -112,6 +112,32 @@ class CloudSync {
         '${clean.substring(8, 12)}-${clean.substring(12, 16)}';
   }
 
+  // Persists [code] as this device's backup code (user-initiated only —
+  // see init(): no code is generated until the user asks for one).
+  static Future<void> setBackupCode(String code) async {
+    backupCode = code;
+    await SecureStore.writeBackupCode(code);
+    logEvent('backup: code set by user');
+  }
+
+  // Re-upserts every local record so each row carries the current backup
+  // code. Needed when the code is created *after* rows were already synced:
+  // those rows were stamped with NULL and would otherwise be invisible to
+  // restore_backup(p_code). Only successfully pushed rows are marked
+  // synced, so a failed (e.g. offline) row is retried by syncPending
+  // later. Returns false when any push failed.
+  static Future<bool> restampAllRecords(List<BmiRecord> records) async {
+    if (!isReady || backupCode == null) return false;
+    final done = <String>[];
+    for (final r in records) {
+      if (await pushRecord(r)) done.add(r.id);
+    }
+    await markSynced(done);
+    final ok = done.length == records.length;
+    logEvent('backup: restamped ${done.length}/${records.length} records');
+    return ok;
+  }
+
   static Future<void> init() async {
     _prefs = await SharedPreferences.getInstance();
     _syncedIds.addAll(_prefs!.getStringList(_kSyncedIds) ?? const []);
@@ -128,12 +154,15 @@ class CloudSync {
       final legacy = _prefs!.getString(_kBackupCode);
       if (legacy != null && legacy.isNotEmpty) {
         backupCode = legacy;
+        await SecureStore.writeBackupCode(backupCode!);
         logEvent('init: migrated backup code to secure storage');
       } else {
-        backupCode = generateBackupCode();
-        logEvent('init: generated backup code');
+        // No code yet: one is created only when the user explicitly asks
+        // for it from the Profile screen, so the DB doesn't fill up with
+        // codes nobody will ever use.
+        backupCode = null;
+        logEvent('init: no backup code yet (on-demand)');
       }
-      await SecureStore.writeBackupCode(backupCode!);
       await _prefs!.remove(_kBackupCode);
     }
     try {
