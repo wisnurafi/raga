@@ -1,4 +1,5 @@
 import 'dart:math';
+import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../models/bmi_record.dart';
@@ -64,6 +65,18 @@ class RestampResult {
   final bool ok;
   final Map<String, String> healed;
   const RestampResult(this.ok, this.healed);
+}
+
+// Per-record outcome of the restamp loop, before sync bookkeeping.
+// [done] feeds markSynced; [lastFailure] feeds lastError on failure.
+// Returned by [CloudSync.restampRecordsWith], the @visibleForTesting
+// seam that lets tests drive the 42501-healer without Supabase.
+class RestampOutcome {
+  final bool ok;
+  final Map<String, String> healed;
+  final List<String> done;
+  final String lastFailure;
+  const RestampOutcome(this.ok, this.healed, this.done, this.lastFailure);
 }
 
 class CloudSync {
@@ -176,13 +189,16 @@ class CloudSync {
   // local identity so future upserts and restores dedupe correctly.
   // Only successfully pushed rows are marked synced, so a failed (e.g.
   // offline) row is retried by syncPending later.
-  static Future<RestampResult> restampAllRecords(
+  // Test seam for [restampAllRecords]: the exact per-record loop
+  // (skipIds, upsert-vs-insert, the 42501 re-insert healer), with the
+  // Supabase upsert injected so tests can drive every path without a
+  // backend. Production passes [_upsertRecord]; behavior is identical.
+  @visibleForTesting
+  static Future<RestampOutcome> restampRecordsWith(
     List<BmiRecord> records, {
     Set<String> skipIds = const {},
+    required Future<void> Function(BmiRecord) upsert,
   }) async {
-    if (!isReady || backupCode == null) {
-      return const RestampResult(false, {});
-    }
     final done = <String>[];
     final healed = <String, String>{};
     var ok = true;
@@ -193,13 +209,13 @@ class CloudSync {
         continue;
       }
       try {
-        await _upsertRecord(r);
+        await upsert(r);
         done.add(r.id);
       } on PostgrestException catch (e) {
         if (e.code == '42501') {
           final copy = r.copyWith(id: newId());
           try {
-            await _upsertRecord(copy);
+            await upsert(copy);
             healed[r.id] = copy.id;
             done.add(copy.id);
             logEvent('backup: healed row via re-insert (fresh id)');
@@ -216,18 +232,30 @@ class CloudSync {
         lastFailure = _short(e);
       }
     }
-    await markSynced(done);
-    if (ok) {
+    return RestampOutcome(ok, healed, done, lastFailure);
+  }
+
+  static Future<RestampResult> restampAllRecords(
+    List<BmiRecord> records, {
+    Set<String> skipIds = const {},
+  }) async {
+    if (!isReady || backupCode == null) {
+      return const RestampResult(false, {});
+    }
+    final o = await restampRecordsWith(records,
+        skipIds: skipIds, upsert: _upsertRecord);
+    await markSynced(o.done);
+    if (o.ok) {
       state = SyncState.ready;
       lastError = '';
     } else {
       state = SyncState.error;
-      lastError = lastFailure;
+      lastError = o.lastFailure;
     }
-    logEvent('backup: restamped ${done.length}/${records.length} records'
+    logEvent('backup: restamped ${o.done.length}/${records.length} records'
         '${skipIds.isNotEmpty ? ' (${skipIds.length} via RPC)' : ''}'
-        '${healed.isNotEmpty ? ' (${healed.length} healed)' : ''}');
-    return RestampResult(ok, healed);
+        '${o.healed.isNotEmpty ? ' (${o.healed.length} healed)' : ''}');
+    return RestampResult(o.ok, o.healed);
   }
 
   static Future<void> init() async {
