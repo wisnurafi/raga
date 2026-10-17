@@ -36,8 +36,15 @@ class _FakeQuizRepo implements KnowledgeRepository {
           {String query = ''}) =>
       throw UnimplementedError();
   @override
-  Future<KnowledgeLoad<List<KnowledgeQuiz>>> getQuizzes() =>
-      throw UnimplementedError();
+  Future<KnowledgeLoad<List<KnowledgeQuiz>>> getQuizzes() async =>
+      const KnowledgeLoad(data: [
+        KnowledgeQuiz(
+          id: 'quiz1',
+          slug: 'kuis-coba',
+          title: 'Kuis Coba',
+          description: '',
+        ),
+      ]);
 
   @override
   Future<List<QuizQuestion>> getQuizQuestions(String quizId) async =>

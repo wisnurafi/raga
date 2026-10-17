@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../core/strings.dart';
 import '../core/theme.dart';
+import '../state/app_state.dart';
 import '../knowledge/knowledge_daily.dart';
 import '../knowledge/knowledge_models.dart';
 import '../knowledge/knowledge_progress.dart';
@@ -47,19 +48,30 @@ class _KnowledgeHubScreenState extends State<KnowledgeHubScreen> {
   bool _searching = false;
   List<KnowledgeArticle> _searchResults = const [];
 
+  /// Locale the current repository was built for. Tracks
+  /// AppState.locale so the hub reloads in the new language when the
+  /// user switches it in Profile — but ignores every other
+  /// notifyListeners (record saves, theme flips, ...).
+  String? _repoLocale;
+
   @override
-  void initState() {
-    super.initState();
-    if (widget.repository != null) {
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final locale = AppState.of(context).locale;
+    if (_repoLocale == locale) return;
+    _repoLocale = locale;
+    if (widget.repository != null && _repo == null) {
       _repo = widget.repository;
       _load();
-    } else {
-      KnowledgeRepositoryImpl.create().then((r) {
-        if (!mounted) return;
-        _repo = r;
-        _load();
-      });
+      return;
     }
+    // Guard against a newer locale request overtaking this one.
+    final requestLocale = locale;
+    KnowledgeRepositoryImpl.create(locale: locale).then((r) {
+      if (!mounted || _repoLocale != requestLocale) return;
+      _repo = r;
+      _load();
+    });
   }
 
   Future<void> _load() async {

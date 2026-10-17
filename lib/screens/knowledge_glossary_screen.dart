@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../core/strings.dart';
 import '../core/theme.dart';
+import '../state/app_state.dart';
 import '../knowledge/knowledge_models.dart';
 import '../knowledge/knowledge_repository.dart';
 import '../knowledge/knowledge_repository_impl.dart';
@@ -30,25 +31,40 @@ class _KnowledgeGlossaryScreenState
   bool _error = false;
   bool _offline = false;
   List<GlossaryTerm> _terms = const [];
+  String _query = '';
+
+  /// Locale the current repository was built for; see hub screen.
+  /// The injected repository (tests, or the hub's repo passed down in
+  /// production) is only used on the first run: a language switch
+  /// always builds a fresh one so the screen can't get pinned to the
+  /// old language.
+  String? _repoLocale;
 
   @override
-  void initState() {
-    super.initState();
-    if (widget.repository != null) {
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final locale = AppState.of(context).locale;
+    if (_repoLocale == locale) return;
+    _repoLocale = locale;
+    if (widget.repository != null && _repo == null) {
       _repo = widget.repository;
-      _load('');
-    } else {
-      KnowledgeRepositoryImpl.create().then((r) {
-        if (!mounted) return;
-        _repo = r;
-        _load('');
-      });
+      _load(_query);
+      return;
     }
+    final requestLocale = locale;
+    KnowledgeRepositoryImpl.create(locale: locale).then((r) {
+      if (!mounted || _repoLocale != requestLocale) return;
+      _repo = r;
+      _load(_query);
+    });
   }
 
   Future<void> _load(String query) async {
     final repo = _repo;
     if (repo == null) return;
+    // Remember the query so a language switch reloads the same search
+    // instead of resetting it.
+    _query = query;
     if (query.isEmpty) {
       setState(() {
         _loading = true;

@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../core/strings.dart';
 import '../core/theme.dart';
 import '../data/cloud_sync.dart';
+import '../state/app_state.dart';
 import '../knowledge/knowledge_models.dart';
 import '../knowledge/knowledge_repository.dart';
 import '../knowledge/knowledge_repository_impl.dart';
@@ -47,29 +48,54 @@ class _KnowledgeQuizScreenState extends State<KnowledgeQuizScreen> {
   bool _submitting = false;
   int _score = 0;
 
+  /// Quiz resolved in the current locale. Slugs are stable across
+  /// locales while ids are not.
+  KnowledgeQuiz? _resolvedQuiz;
+
+  /// Locale the current repository was built for; see hub screen.
+  /// The injected repository is only used on the first run (see
+  /// glossary screen): a language switch always builds a fresh one.
+  String? _repoLocale;
+
   @override
-  void initState() {
-    super.initState();
-    if (widget.repository != null) {
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final locale = AppState.of(context).locale;
+    if (_repoLocale == locale) return;
+    _repoLocale = locale;
+    if (widget.repository != null && _repo == null) {
       _repo = widget.repository;
       _load();
-    } else {
-      KnowledgeRepositoryImpl.create().then((r) {
-        if (!mounted) return;
-        _repo = r;
-        _load();
-      });
+      return;
     }
+    final requestLocale = locale;
+    KnowledgeRepositoryImpl.create(locale: locale).then((r) {
+      if (!mounted || _repoLocale != requestLocale) return;
+      _repo = r;
+      _load();
+    });
   }
 
   Future<void> _load() async {
     final repo = _repo;
     if (repo == null) return;
-    setState(() => _phase = _Phase.loading);
+    setState(() {
+      _phase = _Phase.loading;
+      _index = 0;
+      _picked = null;
+      _result = null;
+      _score = 0;
+    });
     try {
-      final qs = await repo.getQuizQuestions(widget.quiz.id);
+      final quizzes = await repo.getQuizzes();
+      final quiz = quizzes.data.firstWhere(
+        (q) => q.slug == widget.quiz.slug,
+        orElse: () => widget.quiz,
+      );
+      final qs = await repo.getQuizQuestions(quiz.id);
       if (!mounted) return;
       setState(() {
+        _resolvedQuiz = quiz;
         _questions = qs;
         _phase = qs.isEmpty ? _Phase.error : _Phase.answering;
       });
@@ -144,7 +170,7 @@ class _KnowledgeQuizScreenState extends State<KnowledgeQuizScreen> {
             padding: const EdgeInsets.fromLTRB(22, 8, 22, 40),
             children: [
               RagaHeader(
-                title: widget.quiz.title,
+                title: (_resolvedQuiz ?? widget.quiz).title,
                 showThemeToggle: false,
                 leading: IconButton(
                   icon: Icon(Icons.arrow_back, color: rc.onBg),

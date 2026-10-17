@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../core/strings.dart';
 import '../core/theme.dart';
+import '../state/app_state.dart';
 import '../knowledge/knowledge_models.dart';
 import '../knowledge/knowledge_repository.dart';
 import '../knowledge/knowledge_repository_impl.dart';
@@ -36,19 +37,31 @@ class _KnowledgeCategoryScreenState
   bool _offline = false;
   List<KnowledgeArticle> _articles = const [];
 
+  /// Category resolved in the current locale. Slugs are stable across
+  /// locales while ids are not, so a language switch re-resolves here
+  /// instead of querying with a stale id.
+  KnowledgeCategory? _resolvedCategory;
+
+  /// Locale the current repository was built for; see hub screen.
+  String? _repoLocale;
+
   @override
-  void initState() {
-    super.initState();
-    if (widget.repository != null) {
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final locale = AppState.of(context).locale;
+    if (_repoLocale == locale) return;
+    _repoLocale = locale;
+    if (widget.repository != null && _repo == null) {
       _repo = widget.repository;
       _load();
-    } else {
-      KnowledgeRepositoryImpl.create().then((r) {
-        if (!mounted) return;
-        _repo = r;
-        _load();
-      });
+      return;
     }
+    final requestLocale = locale;
+    KnowledgeRepositoryImpl.create(locale: locale).then((r) {
+      if (!mounted || _repoLocale != requestLocale) return;
+      _repo = r;
+      _load();
+    });
   }
 
   Future<void> _load() async {
@@ -59,10 +72,15 @@ class _KnowledgeCategoryScreenState
       _error = false;
     });
     try {
-      final res =
-          await repo.getArticlesByCategory(widget.category.id);
+      final cats = await repo.getCategories();
+      final cat = cats.data.firstWhere(
+        (c) => c.slug == widget.category.slug,
+        orElse: () => widget.category,
+      );
+      final res = await repo.getArticlesByCategory(cat.id);
       if (!mounted) return;
       setState(() {
+        _resolvedCategory = cat;
         _articles = res.data;
         _offline = res.offline;
         _loading = false;
@@ -87,7 +105,7 @@ class _KnowledgeCategoryScreenState
             padding: const EdgeInsets.fromLTRB(22, 8, 22, 40),
             children: [
               RagaHeader(
-                title: widget.category.title,
+                title: (_resolvedCategory ?? widget.category).title,
                 showThemeToggle: false,
                 leading: IconButton(
                   icon: Icon(Icons.arrow_back, color: rc.onBg),

@@ -4,12 +4,16 @@
 // cache — both directions are unit-tested.
 
 /// Article category (e.g. "BMI Academy").
+///
+/// [locale] is 'id' or 'en'; slugs are stable across locales while ids
+/// are not, so cross-locale references always go through the slug.
 class KnowledgeCategory {
   final String id;
   final String slug;
   final String title;
   final String description;
   final int sortOrder;
+  final String locale;
 
   const KnowledgeCategory({
     required this.id,
@@ -17,6 +21,7 @@ class KnowledgeCategory {
     required this.title,
     required this.description,
     required this.sortOrder,
+    this.locale = 'id',
   });
 
   factory KnowledgeCategory.fromJson(Map<String, dynamic> j) =>
@@ -26,6 +31,7 @@ class KnowledgeCategory {
         title: j['title'] as String,
         description: (j['description'] as String?) ?? '',
         sortOrder: (j['sort_order'] as num?)?.toInt() ?? 0,
+        locale: (j['locale'] as String?) ?? 'id',
       );
 
   Map<String, dynamic> toJson() => {
@@ -34,6 +40,7 @@ class KnowledgeCategory {
         'title': title,
         'description': description,
         'sort_order': sortOrder,
+        'locale': locale,
       };
 }
 
@@ -108,6 +115,7 @@ class KnowledgeArticle {
   final DateTime? reviewedAt;
   final List<KnowledgeTag> tags;
   final List<KnowledgeSource> sources;
+  final String locale;
 
   const KnowledgeArticle({
     required this.id,
@@ -123,6 +131,7 @@ class KnowledgeArticle {
     this.reviewedAt,
     this.tags = const [],
     this.sources = const [],
+    this.locale = 'id',
   });
 
   static DateTime? _dt(dynamic v) {
@@ -152,6 +161,7 @@ class KnowledgeArticle {
             .map((e) =>
                 KnowledgeSource.fromJson(Map<String, dynamic>.from(e as Map)))
             .toList(),
+        locale: (j['locale'] as String?) ?? 'id',
       );
 
   Map<String, dynamic> toJson() => {
@@ -168,6 +178,7 @@ class KnowledgeArticle {
         'reviewed_at': reviewedAt?.toIso8601String(),
         'tags': tags.map((t) => t.toJson()).toList(),
         'sources': sources.map((s) => s.toJson()).toList(),
+        'locale': locale,
       };
 
   /// Copy with tags/sources attached (used by getArticleDetail).
@@ -189,6 +200,7 @@ class KnowledgeArticle {
         reviewedAt: reviewedAt,
         tags: tags ?? this.tags,
         sources: sources ?? this.sources,
+        locale: locale,
       );
 }
 
@@ -198,12 +210,14 @@ class GlossaryTerm {
   final String term;
   final String definition;
   final String? relatedArticleSlug;
+  final String locale;
 
   const GlossaryTerm({
     required this.id,
     required this.term,
     required this.definition,
     this.relatedArticleSlug,
+    this.locale = 'id',
   });
 
   factory GlossaryTerm.fromJson(Map<String, dynamic> j) => GlossaryTerm(
@@ -211,6 +225,7 @@ class GlossaryTerm {
         term: j['term'] as String,
         definition: j['definition'] as String,
         relatedArticleSlug: j['related_article_slug'] as String?,
+        locale: (j['locale'] as String?) ?? 'id',
       );
 
   Map<String, dynamic> toJson() => {
@@ -218,6 +233,7 @@ class GlossaryTerm {
         'term': term,
         'definition': definition,
         'related_article_slug': relatedArticleSlug,
+        'locale': locale,
       };
 }
 
@@ -228,6 +244,7 @@ class KnowledgeQuiz {
   final String title;
   final String description;
   final String? articleId;
+  final String locale;
 
   const KnowledgeQuiz({
     required this.id,
@@ -235,6 +252,7 @@ class KnowledgeQuiz {
     required this.title,
     required this.description,
     this.articleId,
+    this.locale = 'id',
   });
 
   factory KnowledgeQuiz.fromJson(Map<String, dynamic> j) => KnowledgeQuiz(
@@ -243,6 +261,7 @@ class KnowledgeQuiz {
         title: j['title'] as String,
         description: (j['description'] as String?) ?? '',
         articleId: j['article_id'] as String?,
+        locale: (j['locale'] as String?) ?? 'id',
       );
 
   Map<String, dynamic> toJson() => {
@@ -251,6 +270,7 @@ class KnowledgeQuiz {
         'title': title,
         'description': description,
         'article_id': articleId,
+        'locale': locale,
       };
 }
 

@@ -4,6 +4,7 @@ import 'package:flutter_markdown/flutter_markdown.dart';
 
 import '../core/strings.dart';
 import '../core/theme.dart';
+import '../state/app_state.dart';
 import '../knowledge/knowledge_models.dart';
 import '../knowledge/knowledge_progress.dart';
 import '../knowledge/knowledge_repository.dart';
@@ -44,10 +45,16 @@ class _KnowledgeArticleScreenState extends State<KnowledgeArticleScreen> {
   bool _done = false;
   KnowledgeArticle? _article;
 
+  /// Locale the current repository was built for; see hub screen.
+  /// The article slug is stable across locales, so a language switch
+  /// simply reloads the same slug in the new language.
+  String? _repoLocale;
+
   @override
   void initState() {
     super.initState();
     // Local-first progress: loads even offline, never blocks the read.
+    // Bookmarks/progress are keyed by slug, which is locale-stable.
     KnowledgeProgressStore.load().then((s) {
       if (!mounted) return;
       setState(() {
@@ -56,16 +63,25 @@ class _KnowledgeArticleScreenState extends State<KnowledgeArticleScreen> {
         _done = s.isCompleted(widget.slug);
       });
     });
-    if (widget.repository != null) {
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final locale = AppState.of(context).locale;
+    if (_repoLocale == locale) return;
+    _repoLocale = locale;
+    if (widget.repository != null && _repo == null) {
       _repo = widget.repository;
       _load();
-    } else {
-      KnowledgeRepositoryImpl.create().then((r) {
-        if (!mounted) return;
-        _repo = r;
-        _load();
-      });
+      return;
     }
+    final requestLocale = locale;
+    KnowledgeRepositoryImpl.create(locale: locale).then((r) {
+      if (!mounted || _repoLocale != requestLocale) return;
+      _repo = r;
+      _load();
+    });
   }
 
   Future<void> _toggleBookmark() async {

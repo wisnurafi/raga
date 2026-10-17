@@ -17,6 +17,21 @@ void main() {
       expect(back.title, 'BMI Academy');
       expect(back.description, 'desc');
       expect(back.sortOrder, 2);
+      // Locale defaults to 'id' when the key is absent (pre-i18n rows).
+      expect(back.locale, 'id');
+    });
+
+    test('locale round-trips when present', () {
+      const c = KnowledgeCategory(
+        id: 'c2',
+        slug: 'bmi-academy',
+        title: 'BMI Academy',
+        description: '',
+        sortOrder: 0,
+        locale: 'en',
+      );
+      final back = KnowledgeCategory.fromJson(c.toJson());
+      expect(back.locale, 'en');
     });
   });
 
@@ -90,6 +105,24 @@ void main() {
       expect(a.readingMinutes, 0);
       expect(a.featured, isFalse);
       expect(a.publishedAt, isNull);
+      expect(a.locale, 'id');
+    });
+
+    test('locale survives round-trip and withDetails', () {
+      const a = KnowledgeArticle(
+        id: 'a3',
+        slug: 's3',
+        categoryId: 'c1',
+        title: 'T',
+        summary: '',
+        contentMd: '',
+        readingMinutes: 3,
+        featured: false,
+        locale: 'en',
+      );
+      final back = KnowledgeArticle.fromJson(a.toJson());
+      expect(back.locale, 'en');
+      expect(a.withDetails().locale, 'en');
     });
   });
 
@@ -104,6 +137,26 @@ void main() {
       final back = GlossaryTerm.fromJson(g.toJson());
       expect(back.term, 'BMR');
       expect(back.relatedArticleSlug, 'apa-itu-bmr');
+      expect(back.locale, 'id');
+    });
+  });
+
+  group('KnowledgeQuiz locale', () {
+    test('round-trips, defaults to id', () {
+      const q = KnowledgeQuiz(
+        id: 'z1',
+        slug: 'kuis-bmi',
+        title: 'Kuis',
+        description: '',
+        locale: 'en',
+      );
+      final back = KnowledgeQuiz.fromJson(q.toJson());
+      expect(back.locale, 'en');
+      expect(
+        KnowledgeQuiz.fromJson(
+            {'id': 'z2', 'slug': 's', 'title': 'T'}).locale,
+        'id',
+      );
     });
   });
 

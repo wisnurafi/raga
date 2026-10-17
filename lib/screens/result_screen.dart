@@ -397,8 +397,11 @@ class _ResultScreenState extends State<ResultScreen> {
   /// Opens the BMI Academy knowledge category. Best-effort: any
   /// failure (offline, missing category) is a silent no-op.
   Future<void> _openBmiAcademy(BuildContext context) async {
+    // Locale captured before the await (use_build_context_synchronously).
+    final locale = AppState.of(context).locale;
     try {
-      final repo = await KnowledgeRepositoryImpl.create();
+      final repo =
+          await KnowledgeRepositoryImpl.create(locale: locale);
       final cats = await repo.getCategories();
       KnowledgeCategory? found;
       for (final c in cats.data) {
