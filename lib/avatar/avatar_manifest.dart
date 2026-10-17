@@ -253,7 +253,7 @@ class AvatarManifest {
       layerOrder: orderJson.map((e) => e as String).toList(),
       defaults: AvatarDefaults.fromJson(
           j['defaults'] as Map<String, dynamic>),
-      palettes: (palettesJson as Map).map((k, v) => MapEntry(
+      palettes: palettesJson.map((k, v) => MapEntry(
           k as String,
           (v as Map)
               .map((pk, pv) => MapEntry(pk as String, pv as String)))),

@@ -98,7 +98,7 @@ class AvatarConfig {
 /// Uniqueness is (profileId, type, key): storing the same event twice
 /// must never grant XP twice. Key conventions (owned by the progress
 /// service): daily_record/scheduled_weigh use the calendar day
-/// 'yyyy-MM-dd'; streak_milestone uses '<days>-<streakStartDay>';
+/// 'yyyy-MM-dd'; streak_milestone uses `<days>-<streakStartDay>`;
 /// profile_setup_complete uses 'setup'; goal_set/goal_reached use the
 /// target weight value; weekly_wrapped_viewed uses the ISO week key.
 class XpEvent {
