@@ -19,6 +19,14 @@ import '../widgets/glass.dart';
 import '../widgets/headers.dart';
 import 'wrapped_story_screen.dart';
 
+/// Display text for one leaderboard value. Metric 0 = % lost (one decimal
+/// + % sign, mirroring the server-side 3%/week anti-abuse cap); metric 1
+/// = streak (localized "N minggu" / "N week(s)"). Pure — unit-tested.
+String formatLeaderboardValue(double value, int metric, String locale) =>
+    metric == 0
+        ? '${value.toStringAsFixed(1)}%'
+        : weeksN(locale, value.round());
+
 class ArenaScreen extends StatefulWidget {
   const ArenaScreen({super.key});
 
@@ -308,9 +316,7 @@ class _ArenaScreenState extends State<ArenaScreen> {
       mine = fallback;
       rank = 1 + entries.where((e) => e.value > fallback).length;
     }
-    final valueText = _metric == 0
-        ? '${mine.toStringAsFixed(1)}%'
-        : weeksN(state.locale, mine.round());
+    final valueText = formatLeaderboardValue(mine, _metric, state.locale);
     return GlassCard(
       padding: const EdgeInsets.fromLTRB(20, 16, 20, 16),
       child: Row(
@@ -331,9 +337,7 @@ class _ArenaScreenState extends State<ArenaScreen> {
 
   Widget _row(
       RagaColors rc, AppState state, int i, LeaderboardEntry e) {
-    final valueText = _metric == 0
-        ? '${e.value.toStringAsFixed(1)}%'
-        : weeksN(state.locale, e.value.round());
+    final valueText = formatLeaderboardValue(e.value, _metric, state.locale);
     final name = e.displayName.isEmpty ? '–' : e.displayName;
     // Name-based: the old value-epsilon check failed whenever local
     // records hadn't synced to the board yet, showing you twice.
