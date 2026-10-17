@@ -11,7 +11,10 @@ import '../core/streak.dart';
 import '../core/strings.dart';
 import '../core/theme.dart';
 import '../core/tips.dart';
+import '../knowledge/knowledge_models.dart';
+import '../knowledge/knowledge_repository_impl.dart';
 import '../state/app_state.dart';
+import 'knowledge_category_screen.dart';
 import '../widgets/buttons.dart';
 import '../widgets/gauge.dart';
 import '../widgets/glass.dart';
@@ -140,7 +143,20 @@ class _ResultScreenState extends State<ResultScreen> {
                       ),
                     ),
                   ),
-                  const SizedBox(height: 10),
+                  const SizedBox(height: 4),
+                  // Contextual learning link: opens the BMI Academy
+                  // category. Silent no-op when offline or empty —
+                  // the result itself must never break for this.
+                  Center(
+                    child: TextButton(
+                      onPressed: () => _openBmiAcademy(context),
+                      child: Text(
+                        tx(context, 'kh_learn'),
+                        style: RagaType.chip(rc.chipActive),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 6),
                   Row(
                     children: [
                       Expanded(
@@ -376,6 +392,28 @@ class _ResultScreenState extends State<ResultScreen> {
         ],
       ),
     );
+  }
+
+  /// Opens the BMI Academy knowledge category. Best-effort: any
+  /// failure (offline, missing category) is a silent no-op.
+  Future<void> _openBmiAcademy(BuildContext context) async {
+    try {
+      final repo = await KnowledgeRepositoryImpl.create();
+      final cats = await repo.getCategories();
+      KnowledgeCategory? found;
+      for (final c in cats.data) {
+        if (c.slug == 'akademi-bmi') {
+          found = c;
+          break;
+        }
+      }
+      if (found == null || !context.mounted) return;
+      Navigator.of(context).push(
+        MaterialPageRoute(
+          builder: (_) => KnowledgeCategoryScreen(category: found!),
+        ),
+      );
+    } catch (_) {}
   }
 
   Future<void> _setAsGoal(

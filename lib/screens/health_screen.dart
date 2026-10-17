@@ -9,6 +9,7 @@ import '../widgets/chips.dart';
 import '../widgets/glass.dart';
 import '../widgets/headers.dart';
 import '../widgets/ring.dart';
+import 'knowledge_hub_screen.dart';
 
 
 // Display labels -> stored activity keys (English, unchanged
@@ -68,6 +69,23 @@ class HealthScreen extends StatelessWidget {
                 {'bmr': formatIntId(bmr.round())}),
             textAlign: TextAlign.center,
             style: RagaType.caption(rc.onCardMuted),
+          ),
+        ),
+        const SizedBox(height: 18),
+        // Contextual link into the Knowledge Hub (Phase 1 entry point).
+        Center(
+          child: TextButton.icon(
+            onPressed: () => Navigator.of(context).push(
+              MaterialPageRoute(
+                builder: (_) => const KnowledgeHubScreen(),
+              ),
+            ),
+            icon: Icon(Icons.menu_book_outlined,
+                size: 18, color: rc.chipActive),
+            label: Text(
+              tx(context, 'kh_learn_more'),
+              style: RagaType.chip(rc.chipActive),
+            ),
           ),
         ),
       ],

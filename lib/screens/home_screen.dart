@@ -14,6 +14,7 @@ import '../widgets/headers.dart';
 import '../detak/detak_assets.dart';
 import '../detak/detak_widget.dart';
 import 'detak_screen.dart';
+import 'knowledge_hub_screen.dart';
 import 'result_screen.dart';
 
 // The "Hitung BMI" screen from the mockup: profile chips, body-data
@@ -94,7 +95,47 @@ class _HomeScreenState extends State<HomeScreen> {
         ),
         const SizedBox(height: 18),
         _dailyTipCard(context, state, rc),
+        const SizedBox(height: 18),
+        _knowledgeCard(context, rc),
       ],
+    );
+  }
+
+  // Knowledge Hub entry: a card under the daily tip. Tapping pushes the
+  // hub screen — never a new bottom-nav tab (nav stays at 6 tabs).
+  Widget _knowledgeCard(BuildContext context, RagaColors rc) {
+    return GlassCard(
+      radius: 20,
+      padding: const EdgeInsets.all(16),
+      onTap: () => Navigator.of(context).push(
+        MaterialPageRoute(
+          builder: (_) => const KnowledgeHubScreen(),
+        ),
+      ),
+      child: Row(
+        children: [
+          Icon(Icons.menu_book_outlined,
+              size: 26, color: rc.chipActive),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  tx(context, 'kh_title'),
+                  style: RagaType.cardTitle(rc.onCard),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  tx(context, 'kh_subtitle'),
+                  style: RagaType.caption(rc.onCardMuted),
+                ),
+              ],
+            ),
+          ),
+          Icon(Icons.chevron_right, color: rc.onCardMuted),
+        ],
+      ),
     );
   }
 
