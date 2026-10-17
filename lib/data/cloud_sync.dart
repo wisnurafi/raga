@@ -4,6 +4,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../models/bmi_record.dart';
 import '../models/leaderboard_entry.dart';
 import '../models/profile.dart';
+import '../core/ids.dart';
 import 'secure_store.dart';
 import '../core/strings.dart';
 
@@ -56,6 +57,15 @@ class BackupData {
 // - it remembers which records made it up, and retries the rest
 //   automatically next launch,
 // - it keeps a session log for developer mode.
+// Outcome of [CloudSync.restampAllRecords]: whether every row ended up
+// stamped with the current code, plus the id swaps for rows that had to
+// be re-inserted ([healed] maps the old local id to the fresh cloud id).
+class RestampResult {
+  final bool ok;
+  final Map<String, String> healed;
+  const RestampResult(this.ok, this.healed);
+}
+
 class CloudSync {
   static const _url = String.fromEnvironment('SUPABASE_URL');
   static const _anonKey = String.fromEnvironment('SUPABASE_ANON_KEY');
@@ -151,36 +161,73 @@ class CloudSync {
     }
   }
 
-  // Re-upserts every local record so each row carries the current backup
-  // code. Needed when the code is created *after* rows were already synced:
-  // those rows were stamped with NULL and would otherwise be invisible to
-  // restore_backup(p_code). Rows in [skipIds] were already moved server-side
-  // by restampBackupCode and are marked synced without a push (pushing them
-  // would just hit the RLS 42501 again). Only successfully pushed rows are
-  // marked synced, so a failed (e.g. offline) row is retried by syncPending
-  // later. Returns false when any push failed.
-  static Future<bool> restampAllRecords(
+  // Re-stamps every local record with the current backup code. Needed when
+  // the code is created *after* rows were already synced: those rows were
+  // stamped with NULL (or an older code) and would otherwise be invisible
+  // to restore_backup(p_code). Rows in [skipIds] were already moved
+  // server-side by restampBackupCode and are marked synced without a push.
+  //
+  // Healer: a row owned by a previous auth identity (e.g. after a restore)
+  // can't be updated — RLS rejects it with 42501 — and the RPC can't move
+  // it when its stamp is no longer known. Such rows are re-inserted as
+  // fresh rows owned by this session under the new code; the orphaned
+  // original stays in the cloud, invisible to the code. The returned
+  // [RestampResult.healed] map (old id -> new id) lets the caller swap the
+  // local identity so future upserts and restores dedupe correctly.
+  // Only successfully pushed rows are marked synced, so a failed (e.g.
+  // offline) row is retried by syncPending later.
+  static Future<RestampResult> restampAllRecords(
     List<BmiRecord> records, {
     Set<String> skipIds = const {},
   }) async {
-    if (!isReady || backupCode == null) return false;
+    if (!isReady || backupCode == null) {
+      return const RestampResult(false, {});
+    }
     final done = <String>[];
+    final healed = <String, String>{};
     var ok = true;
+    var lastFailure = '';
     for (final r in records) {
       if (skipIds.contains(r.id)) {
         done.add(r.id);
         continue;
       }
-      if (await pushRecord(r)) {
+      try {
+        await _upsertRecord(r);
         done.add(r.id);
-      } else {
+      } on PostgrestException catch (e) {
+        if (e.code == '42501') {
+          final copy = r.copyWith(id: newId());
+          try {
+            await _upsertRecord(copy);
+            healed[r.id] = copy.id;
+            done.add(copy.id);
+            logEvent('backup: healed row via re-insert (fresh id)');
+          } catch (e2) {
+            ok = false;
+            lastFailure = _short(e2);
+          }
+        } else {
+          ok = false;
+          lastFailure = _short(e);
+        }
+      } catch (e) {
         ok = false;
+        lastFailure = _short(e);
       }
     }
     await markSynced(done);
+    if (ok) {
+      state = SyncState.ready;
+      lastError = '';
+    } else {
+      state = SyncState.error;
+      lastError = lastFailure;
+    }
     logEvent('backup: restamped ${done.length}/${records.length} records'
-        '${skipIds.isNotEmpty ? ' (${skipIds.length} via RPC)' : ''}');
-    return ok;
+        '${skipIds.isNotEmpty ? ' (${skipIds.length} via RPC)' : ''}'
+        '${healed.isNotEmpty ? ' (${healed.length} healed)' : ''}');
+    return RestampResult(ok, healed);
   }
 
   static Future<void> init() async {
@@ -246,46 +293,51 @@ class CloudSync {
   // caller, but records the error in [lastError] so the UI can show it.
   static Future<bool> pushRecord(BmiRecord record) async {
     if (!isReady) return false;
-    final uid = _userId;
-    if (uid == null) {
-      state = SyncState.error;
-      lastError = 'Supabase anonymous session is gone (try restarting the app).';
-      logEvent('push: no session');
-      return false;
-    }
     try {
-      // onConflict: 'client_id' makes the upsert idempotent: a retry after
-      // a crash between a successful upsert and the _syncedIds write
-      // updates the existing row instead of inserting a duplicate.
-      // Requires migration 20261015_client_id_bmi_records.sql applied.
-      await Supabase.instance.client.from('bmi_records').upsert(
-          record.toCloudJson(uid, backupCode),
-          onConflict: 'client_id');
-      // Logged-in mode: the relational `records` table is the
-      // cross-device source of truth for history, so it gets the same
-      // row. The bmi_records upsert above keeps the backup-code path
-      // working in both modes. (isAnonymous distinguishes the modes
-      // without importing the auth layer.)
-      final user = Supabase.instance.client.auth.currentUser;
-      if (user != null && !user.isAnonymous) {
-        // Requires migration 20261016_auth_tables.sql applied.
-        await Supabase.instance.client
-            .from('records')
-            .upsert(record.toUserJson(user.id), onConflict: 'client_id');
-      }
-      _syncedIds.add(record.id);
-      await _prefs?.setStringList(_kSyncedIds, _syncedIds.toList());
-      // A success clears any earlier transient failure: without this the
-      // state stays `error` forever and the UI keeps saying "Couldn't
-      // connect" even though uploads are working again.
-      state = SyncState.ready;
-      lastError = '';
-      return true;
+      await _upsertRecord(record);
     } catch (e) {
       state = SyncState.error;
-      lastError = _short(e);
+      lastError = e is StateError ? e.message : _short(e);
       logEvent('push failed: $lastError');
       return false;
+    }
+    _syncedIds.add(record.id);
+    await _prefs?.setStringList(_kSyncedIds, _syncedIds.toList());
+    // A success clears any earlier transient failure: without this the
+    // state stays `error` forever and the UI keeps saying "Couldn't
+    // connect" even though uploads are working again.
+    state = SyncState.ready;
+    lastError = '';
+    return true;
+  }
+
+  // The actual upsert. Throws on failure (including PostgrestException
+  // 42501 for RLS) so callers that need to tell error kinds apart — like
+  // the restamp healer below — can catch themselves.
+  static Future<void> _upsertRecord(BmiRecord record) async {
+    final uid = _userId;
+    if (uid == null) {
+      throw StateError(
+          'Supabase anonymous session is gone (try restarting the app).');
+    }
+    // onConflict: 'client_id' makes the upsert idempotent: a retry after
+    // a crash between a successful upsert and the _syncedIds write
+    // updates the existing row instead of inserting a duplicate.
+    // Requires migration 20261015_client_id_bmi_records.sql applied.
+    await Supabase.instance.client.from('bmi_records').upsert(
+        record.toCloudJson(uid, backupCode),
+        onConflict: 'client_id');
+    // Logged-in mode: the relational `records` table is the
+    // cross-device source of truth for history, so it gets the same
+    // row. The bmi_records upsert above keeps the backup-code path
+    // working in both modes. (isAnonymous distinguishes the modes
+    // without importing the auth layer.)
+    final user = Supabase.instance.client.auth.currentUser;
+    if (user != null && !user.isAnonymous) {
+      // Requires migration 20261016_auth_tables.sql applied.
+      await Supabase.instance.client
+          .from('records')
+          .upsert(record.toUserJson(user.id), onConflict: 'client_id');
     }
   }
 

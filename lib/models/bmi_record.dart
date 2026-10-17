@@ -42,6 +42,19 @@ class BmiRecord {
     required this.createdAt,
   });
 
+  /// Copy with a new id. Used by the backup restamp healer: a row owned by
+  /// a previous auth identity can't be updated (RLS 42501), so it's
+  /// re-inserted as a fresh row and the local record adopts the new id.
+  BmiRecord copyWith({String? id}) => BmiRecord._raw(
+        id: id ?? this.id,
+        profileId: profileId,
+        heightCm: heightCm,
+        weightKg: weightKg,
+        bmi: bmi,
+        category: category,
+        createdAt: createdAt,
+      );
+
   factory BmiRecord.fromJson(Map<String, dynamic> j) {
     final bmi = (j['bmi'] as num).toDouble();
     return BmiRecord._raw(
