@@ -120,21 +120,66 @@ class CloudSync {
     logEvent('backup: code set by user');
   }
 
+  // Server-side restamp: moves every row stamped with [oldCode] to
+  // [newCode], including rows owned by a previous auth identity (e.g.
+  // after a restore) that RLS would forbid this device from updating
+  // directly (42501). The old code is the ownership proof (80-bit,
+  // unguessable — knowing it already grants full restore access, so this
+  // reveals nothing new). Returns the moved client_ids, or null when the
+  // RPC is unavailable (migration not applied) or the call failed.
+  static Future<Set<String>?> restampBackupCode({
+    required String oldCode,
+    required String newCode,
+  }) async {
+    if (!isReady) return null;
+    try {
+      final res = await Supabase.instance.client.rpc(
+        'restamp_backup_code',
+        params: {'p_old_code': oldCode, 'p_new_code': newCode},
+      );
+      final moved = <String>{};
+      if (res is List) {
+        for (final e in res) {
+          moved.add('$e');
+        }
+      }
+      logEvent('backup: restamp_backup_code moved ${moved.length} rows');
+      return moved;
+    } catch (e) {
+      logEvent('restamp_backup_code failed: ${_short(e)}');
+      return null;
+    }
+  }
+
   // Re-upserts every local record so each row carries the current backup
   // code. Needed when the code is created *after* rows were already synced:
   // those rows were stamped with NULL and would otherwise be invisible to
-  // restore_backup(p_code). Only successfully pushed rows are marked
-  // synced, so a failed (e.g. offline) row is retried by syncPending
+  // restore_backup(p_code). Rows in [skipIds] were already moved server-side
+  // by restampBackupCode and are marked synced without a push (pushing them
+  // would just hit the RLS 42501 again). Only successfully pushed rows are
+  // marked synced, so a failed (e.g. offline) row is retried by syncPending
   // later. Returns false when any push failed.
-  static Future<bool> restampAllRecords(List<BmiRecord> records) async {
+  static Future<bool> restampAllRecords(
+    List<BmiRecord> records, {
+    Set<String> skipIds = const {},
+  }) async {
     if (!isReady || backupCode == null) return false;
     final done = <String>[];
+    var ok = true;
     for (final r in records) {
-      if (await pushRecord(r)) done.add(r.id);
+      if (skipIds.contains(r.id)) {
+        done.add(r.id);
+        continue;
+      }
+      if (await pushRecord(r)) {
+        done.add(r.id);
+      } else {
+        ok = false;
+      }
     }
     await markSynced(done);
-    final ok = done.length == records.length;
-    logEvent('backup: restamped ${done.length}/${records.length} records');
+    logEvent('backup: restamped ${done.length}/${records.length} records'
+        '${skipIds.isNotEmpty ? ' (${skipIds.length} via RPC)' : ''}');
     return ok;
   }
 
