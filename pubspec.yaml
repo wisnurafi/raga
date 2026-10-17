@@ -1,7 +1,7 @@
 name: raga
 description: Raga - BMI calculator with history, ideal weight, BMR/TDEE, multi-profile, and cloud backup.
 publish_to: 'none'
-version: 2.2.0+1
+version: 2.5.0+1
 
 environment:
   sdk: '>=3.4.0 <4.0.0'
