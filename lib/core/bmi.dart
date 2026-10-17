@@ -216,7 +216,11 @@ String buildWeightInsight(
             ? txl(locale, 'insight_rate_ok', {'r': w(rate)})
             : txl(locale, 'insight_rate_fast', {
                 'r': w(rate),
-                'lim': metric ? '0,5–1 kg' : '1–2 lb'
+                'lim': txl(
+                    locale,
+                    metric
+                        ? 'insight_rate_fast_lim_metric'
+                        : 'insight_rate_fast_lim_imperial'),
               }));
       } else {
         buf.write(txl(locale, 'insight_rate', {'r': w(rate)}));

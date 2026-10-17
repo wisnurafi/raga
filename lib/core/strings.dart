@@ -404,6 +404,8 @@ const Map<String, Map<String, String>> _strings = {
     'insight_rate_ok': ' Laju ±{r}/minggu — masih dalam batas sehat.',
     'insight_rate_fast': ' Laju ±{r}/minggu — di atas anjuran umum '
         '({lim}/minggu), pertimbangkan konsultasi ahli gizi.',
+    'insight_rate_fast_lim_metric': '0,5–1 kg',
+    'insight_rate_fast_lim_imperial': '1–2 lb',
     'insight_rate': ' Laju ±{r}/minggu.',
     'insight_goal_done': ' Target {w} tercapai — pertahankan!',
     'insight_goal_left': ' Kurang {w} lagi ke target.',
@@ -939,6 +941,8 @@ const Map<String, Map<String, String>> _strings = {
     'insight_rate_ok': ' Rate ±{r}/week — within a healthy range.',
     'insight_rate_fast': ' Rate ±{r}/week — above the general guideline '
         '({lim}/week); consider talking to a nutritionist.',
+    'insight_rate_fast_lim_metric': '0.5–1 kg',
+    'insight_rate_fast_lim_imperial': '1–2 lb',
     'insight_rate': ' Rate ±{r}/week.',
     'insight_goal_done': ' Target {w} reached — keep it up!',
     'insight_goal_left': ' {w} left to reach your goal.',

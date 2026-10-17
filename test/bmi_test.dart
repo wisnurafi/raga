@@ -96,6 +96,22 @@ void main() {
       expect(s, contains('konsultasi ahli gizi'));
     });
 
+    test('fast-loss limit string is locale-aware (M10)', () {
+      final id = buildWeightInsight(
+        [80.0, 70.0],
+        [DateTime(2026, 9, 1), DateTime(2026, 10, 1)],
+        locale: 'id',
+      );
+      expect(id, contains('0,5–1 kg'));
+      final en = buildWeightInsight(
+        [80.0, 70.0],
+        [DateTime(2026, 9, 1), DateTime(2026, 10, 1)],
+        locale: 'en',
+      );
+      expect(en, contains('0.5–1 kg'));
+      expect(en, isNot(contains('0,5–1 kg')));
+    });
+
     test('goal reached', () {
       final s = buildWeightInsight(
         [70.0, 65.2],
