@@ -286,7 +286,12 @@ class _AvatarScreenState extends State<AvatarScreen> {
               ),
               if (app.devMode) ...[
                 const SizedBox(height: 24),
-                _DemoSection(),
+                _DemoSection(
+                  onReset: () => setState(() {
+                    final cfg = AppState.of(context).avatarState?.config;
+                    if (cfg != null) _draft = cfg;
+                  }),
+                ),
               ],
             ],
           ),
@@ -313,6 +318,10 @@ class _AvatarScreenState extends State<AvatarScreen> {
 
 /// Hidden demo controls (debug only, behind devMode).
 class _DemoSection extends StatelessWidget {
+  final VoidCallback onReset;
+
+  const _DemoSection({required this.onReset});
+
   @override
   Widget build(BuildContext context) {
     final rc = context.rc;
@@ -341,8 +350,10 @@ class _DemoSection extends StatelessWidget {
               _demoBtn(context, '+50 XP', () => app.debugAvatarAddXp(50)),
               _demoBtn(
                   context, '+7 streak', () => app.debugAvatarAddStreak(7)),
-              _demoBtn(
-                  context, 'Reset', () => app.debugAvatarReset()),
+              _demoBtn(context, 'Reset', () async {
+                await app.debugAvatarReset();
+                onReset();
+              }),
             ],
           ),
           const SizedBox(height: 8),
