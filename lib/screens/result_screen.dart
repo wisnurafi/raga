@@ -528,7 +528,7 @@ class _ShareCard extends StatelessWidget {
           children: [
             Positioned.fill(
               child: Image.asset(
-                'assets/images/raga-bg.png',
+                'assets/images/raga-bg.webp',
                 fit: BoxFit.cover,
               ),
             ),

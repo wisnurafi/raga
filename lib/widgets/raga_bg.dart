@@ -19,8 +19,8 @@ class RagaBg extends StatelessWidget {
           Positioned.fill(
             child: Image.asset(
               rc.isDark
-                  ? 'assets/images/raga-bg.png'
-                  : 'assets/images/raga-bg-light.png',
+                  ? 'assets/images/raga-bg.webp'
+                  : 'assets/images/raga-bg-light.webp',
               fit: BoxFit.cover,
             ),
           ),
