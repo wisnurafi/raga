@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/profile.dart';
 import '../models/bmi_record.dart';
+import '../avatar/avatar_models.dart';
 import '../detak/detak_state.dart';
 import 'secure_store.dart';
 
@@ -25,6 +26,7 @@ class LocalStore {
   static const _kMilestonesSeen = 'raga.milestones_seen';
   static const _kLocale = 'raga.locale';
   static const _kDetak = 'raga.detak';
+  static const _kAvatarPrefix = 'raga.avatar.';
 
   final SharedPreferences _prefs;
   LocalStore(this._prefs);
@@ -187,6 +189,33 @@ class LocalStore {
   Future<void> saveDetak(DetakState d) =>
       _prefs.setString(_kDetak, jsonEncode(d.toJson()));
 
+  // Avatar state, namespaced per profile. Missing key = the profile
+  // predates the feature (the caller migrates); corrupt JSON = null
+  // (the caller rebuilds from history rather than crashing).
+  AvatarProfileState? avatarState(String profileId) {
+    final raw = _prefs.getString('$_kAvatarPrefix$profileId');
+    if (raw == null || raw.isEmpty) return null;
+    try {
+      return AvatarProfileState.fromJson(
+          jsonDecode(raw) as Map<String, dynamic>);
+    } catch (_) {
+      return null;
+    }
+  }
+
+  Future<void> saveAvatarState(String profileId, AvatarProfileState s) =>
+      _prefs.setString('$_kAvatarPrefix$profileId', jsonEncode(s.toJson()));
+
+  Future<void> removeAvatarState(String profileId) =>
+      _prefs.remove('$_kAvatarPrefix$profileId');
+
+  /// Profile ids that have a stored avatar state.
+  List<String> get avatarProfileIds => _prefs
+      .getKeys()
+      .where((k) => k.startsWith(_kAvatarPrefix))
+      .map((k) => k.substring(_kAvatarPrefix.length))
+      .toList();
+
   // Factory reset for user DATA: profiles, history, goals, milestones,
   // and the onboarding flag (so a wiped phone onboards again like new).
   // Settings are deliberately kept: units, activity level, reminder
@@ -198,5 +227,9 @@ class LocalStore {
     await _prefs.remove(_kGoals);
     await _prefs.remove(_kMilestonesSeen);
     await _prefs.remove(_kOnboardingDone);
+    // Avatar progress is user data, not a setting — it wipes too.
+    for (final k in _prefs.getKeys()) {
+      if (k.startsWith(_kAvatarPrefix)) await _prefs.remove(k);
+    }
   }
 }

@@ -13,6 +13,11 @@ import '../core/streak.dart';
 import '../detak/detak_engine.dart';
 import '../detak/detak_quests.dart';
 import '../detak/detak_state.dart';
+import '../avatar/avatar_manifest.dart';
+import '../avatar/avatar_migration.dart';
+import '../avatar/avatar_models.dart';
+import '../avatar/avatar_progress.dart';
+import '../avatar/progression.dart';
 
 // Outcome of the Google sign-in flow, so the UI can react precisely
 // (cancelled vs failed vs first-login-migrated vs returning-with-cloud).
@@ -84,6 +89,22 @@ class AppState extends ChangeNotifier {
   String locale = 'id';
   DetakState detak = DetakState();
 
+  // --- Raga Avatar ---
+  // Null when the avatar assets failed to load: the feature stays off
+  // and the app works normally. Every avatar entry point guards this.
+  AvatarProgressService? avatarService;
+
+  /// Per-profile avatar state, keyed by profile id. Never shared.
+  Map<String, AvatarProfileState> avatarStates = {};
+
+  /// Profiles migrated at startup; the UI shows one brief notice, then
+  /// calls [consumeAvatarMigrationNotice].
+  int avatarMigratedProfiles = 0;
+
+  /// Latest avatar result with unseen side effects (level-up / unlocks).
+  /// The UI consumes it via [consumeAvatarResult] after surfacing.
+  AvatarProgressResult? pendingAvatarResult;
+
   /// From pubspec via package_info_plus — never hardcoded in the UI.
   String appVersion = '';
 
@@ -127,6 +148,18 @@ class AppState extends ChangeNotifier {
     }
     // Detak companion: evaluate the greeting once per cold start.
     await state.initDetak();
+    // Raga Avatar: load the progress engine and per-profile state,
+    // migrating profiles that predate the feature. Guarded: avatar must
+    // never break app start.
+    try {
+      final manifest = await AvatarManifest.load();
+      final progression = await ProgressionConfig.load();
+      state.avatarService =
+          AvatarProgressService(manifest: manifest, progression: progression);
+      await state._loadAvatarStates();
+    } catch (_) {
+      state.avatarService = null;
+    }
     return state;
   }
 
@@ -273,6 +306,25 @@ class AppState extends ChangeNotifier {
     if (freshProfiles.isNotEmpty) {
       profiles = [...profiles, ...freshProfiles];
       await _store.saveProfiles(profiles);
+      // Fresh profiles from the merge get avatar state, rebuilt from
+      // the merged history. Silent: no startup notice mid-session.
+      final service = avatarService;
+      if (service != null) {
+        for (final p in freshProfiles) {
+          if (!avatarStates.containsKey(p.id)) {
+            final st = migrateAvatarState(
+              service: service,
+              profileId: p.id,
+              history: recordsOf(p.id),
+              goalKg: goalWeights[p.id],
+              hasWeighSchedule: weeklyReminder,
+              scheduleWeekdays: reminderWeekdays,
+            );
+            avatarStates[p.id] = st;
+            await _store.saveAvatarState(p.id, st);
+          }
+        }
+      }
     }
     final goals = Map<String, double>.from(goalWeights);
     var freshGoals = 0;
@@ -340,6 +392,7 @@ class AppState extends ChangeNotifier {
     await _store.saveProfiles(profiles);
     CloudSync.logEvent('profile: added "${profile.name}"');
     await setActiveProfile(profile.id);
+    await _avatarOnProfileCreated(profile.id);
     await _saveBackupBlob();
   }
 
@@ -359,8 +412,10 @@ class AppState extends ChangeNotifier {
     if (profiles.length <= 1) return;
     profiles = profiles.where((p) => p.id != id).toList();
     records = records.where((r) => r.profileId != id).toList();
+    avatarStates.remove(id);
     await _store.saveProfiles(profiles);
     await _store.saveRecords(records);
+    await _store.removeAvatarState(id);
     CloudSync.logEvent('profile: removed $id');
     if (activeProfileId == id) {
       await setActiveProfile(profiles.first.id);
@@ -395,6 +450,8 @@ class AppState extends ChangeNotifier {
       );
       await _store.saveDetak(detak);
     } catch (_) {}
+    // Avatar reacts to the new habit too (XP ledger, streak, unlocks).
+    await _avatarOnRecordSaved(r);
     notifyListeners();
     // Cloud backup runs in the background; check its status in Profile.
     // (No second notify: the push and the blob RPC don't change any
@@ -446,6 +503,8 @@ class AppState extends ChangeNotifier {
             detak, _detakFacts(DateTime.now()), 'goal');
         await _store.saveDetak(detak);
       } catch (_) {}
+      // Avatar: goal_set XP (once per target value) + baseline capture.
+      await _avatarOnGoalSet(profileId, kg);
     }
     notifyListeners();
   }
@@ -517,6 +576,16 @@ class AppState extends ChangeNotifier {
     await _store.saveActiveProfileId(p.id);
     if (goalKg != null) await _store.saveGoalWeight(p.id, goalKg);
     await _store.saveOnboardingDone(true);
+    // The auto-created placeholder profile is gone: drop any avatar
+    // state that isn't the new profile's, then set the new one up.
+    for (final pid in avatarStates.keys.toList()) {
+      if (pid != p.id) {
+        avatarStates.remove(pid);
+        await _store.removeAvatarState(pid);
+      }
+    }
+    await _avatarOnProfileCreated(p.id);
+    if (goalKg != null) await _avatarOnGoalSet(p.id, goalKg);
     await _saveBackupBlob();
     notifyListeners();
   }
@@ -613,6 +682,193 @@ class AppState extends ChangeNotifier {
     return !records.skip(1).any((r) => hit(r.weightKg));
   }
 
+  // --- Raga Avatar ---
+
+  /// The active profile's avatar state. Null when the avatar engine is
+  /// unavailable — the UI hides the feature then.
+  AvatarProfileState? get avatarState {
+    final service = avatarService;
+    if (service == null) return null;
+    return avatarStates[activeProfileId] ??
+        AvatarProfileState.initial(service.manifest);
+  }
+
+  /// Loads (or migrates) avatar state for every profile and prunes
+  /// states whose profile no longer exists. [fromBlob] supplies states
+  /// from a cloud restore, preferred over local storage.
+  Future<void> _loadAvatarStates(
+      {Map<String, dynamic>? fromBlob}) async {
+    final service = avatarService;
+    avatarStates = {};
+    if (service == null) return;
+    for (final p in profiles) {
+      AvatarProfileState? st;
+      final blobRaw = fromBlob?[p.id];
+      if (blobRaw is Map) {
+        try {
+          st = AvatarProfileState.fromJson(
+              Map<String, dynamic>.from(blobRaw));
+        } catch (_) {}
+      }
+      st ??= _store.avatarState(p.id);
+      if (st == null) {
+        st = migrateAvatarState(
+          service: service,
+          profileId: p.id,
+          history: recordsOf(p.id),
+          goalKg: goalWeights[p.id],
+          hasWeighSchedule: weeklyReminder,
+          scheduleWeekdays: reminderWeekdays,
+        );
+        avatarMigratedProfiles++;
+      }
+      avatarStates[p.id] = st;
+      // Persist: blob-restored states must land in local storage too,
+      // or the next cold start would re-migrate and lose them.
+      await _store.saveAvatarState(p.id, st);
+    }
+    for (final pid in _store.avatarProfileIds) {
+      if (!avatarStates.containsKey(pid)) {
+        await _store.removeAvatarState(pid);
+      }
+    }
+  }
+
+  void consumeAvatarMigrationNotice() {
+    avatarMigratedProfiles = 0;
+  }
+
+  void consumeAvatarResult() {
+    pendingAvatarResult = null;
+  }
+
+  /// Keeps the latest meaningful avatar result for the UI to surface
+  /// (level-up toast, unlock notifications). Empty results — e.g. a
+  /// second record on the same day — are dropped.
+  void _noteAvatarResult(AvatarProgressResult r) {
+    if (r.newEvents.isNotEmpty ||
+        r.newlyUnlocked.isNotEmpty ||
+        r.leveledUp) {
+      pendingAvatarResult = r;
+    }
+  }
+
+  /// Marks unlock notifications as shown. Unlocks themselves are
+  /// permanent — this only silences the notification.
+  Future<void> markAvatarUnlocksSeen(Set<String> ids) async {
+    final st = avatarStates[activeProfileId];
+    if (st == null || ids.isEmpty) return;
+    final next = st.copyWith(
+        unlockSeenIds: {...st.unlockSeenIds, ...ids});
+    avatarStates[activeProfileId] = next;
+    await _store.saveAvatarState(activeProfileId, next);
+  }
+
+  /// The `settings['avatar']` half of the backup blob: profile id ->
+  /// serialized avatar state.
+  Map<String, dynamic> avatarBlob() => {
+        for (final e in avatarStates.entries) e.key: e.value.toJson(),
+      };
+
+  /// Avatar reaction to a saved record: daily/scheduled XP, streak
+  /// milestones, goal-reached check, unlock evaluation. Guarded: avatar
+  /// must never break saving a record.
+  Future<void> _avatarOnRecordSaved(BmiRecord r) async {
+    final service = avatarService;
+    if (service == null) return;
+    try {
+      final pid = r.profileId;
+      var st = avatarStates[pid] ??
+          AvatarProfileState.initial(service.manifest);
+      var result = service.onRecordSaved(
+        profileId: pid,
+        recordDate: r.createdAt,
+        history: recordsOf(pid),
+        state: st,
+        hasWeighSchedule: weeklyReminder,
+        scheduleWeekdays: reminderWeekdays,
+      );
+      st = result.nextState;
+      final goal = goalWeights[pid];
+      AvatarProgressResult? goalResult;
+      if (goal != null &&
+          AvatarProgressService.isGoalReached(
+              weightKg: r.weightKg,
+              goalKg: goal,
+              baselineKg: st.goalBaselineKg)) {
+        goalResult = service.onGoalReached(
+            profileId: pid, targetKg: goal, state: st);
+        st = goalResult.nextState;
+      }
+      avatarStates[pid] = st;
+      await _store.saveAvatarState(pid, st);
+      _noteAvatarResult(goalResult == null
+          ? result
+          : AvatarProgressResult(
+              nextState: st,
+              newEvents: [...result.newEvents, ...goalResult.newEvents],
+              newlyUnlocked: [
+                ...result.newlyUnlocked,
+                ...goalResult.newlyUnlocked
+              ],
+              oldLevel: result.oldLevel,
+              newLevel: goalResult.newLevel,
+            ));
+    } catch (_) {}
+  }
+
+  /// Avatar reaction to a newly set target: goal_set XP (once per value)
+  /// and a refreshed baseline for the direction-aware reached check.
+  Future<void> _avatarOnGoalSet(String profileId, double kg) async {
+    final service = avatarService;
+    if (service == null) return;
+    try {
+      final st = avatarStates[profileId] ??
+          AvatarProfileState.initial(service.manifest);
+      final recs = recordsOf(profileId);
+      final result = service.onGoalSet(
+        profileId: profileId,
+        targetKg: kg,
+        baselineKg: recs.isEmpty ? null : recs.first.weightKg,
+        state: st,
+      );
+      avatarStates[profileId] = result.nextState;
+      await _store.saveAvatarState(profileId, result.nextState);
+      _noteAvatarResult(result);
+    } catch (_) {}
+  }
+
+  /// Avatar setup for a brand-new profile: default config + setup XP.
+  Future<void> _avatarOnProfileCreated(String profileId) async {
+    final service = avatarService;
+    if (service == null) return;
+    try {
+      final result = service.onProfileCreated(
+        profileId: profileId,
+        state: AvatarProfileState.initial(service.manifest),
+      );
+      avatarStates[profileId] = result.nextState;
+      await _store.saveAvatarState(profileId, result.nextState);
+    } catch (_) {}
+  }
+
+  /// Weekly Wrapped was opened (production path only — the dev preview
+  /// never calls this). Grants the weekly XP once per week.
+  Future<void> onAvatarWrappedViewed() async {
+    final service = avatarService;
+    if (service == null) return;
+    try {
+      final pid = activeProfileId;
+      final st = avatarStates[pid] ??
+          AvatarProfileState.initial(service.manifest);
+      final result =
+          service.onWrappedViewed(profileId: pid, state: st);
+      avatarStates[pid] = result.nextState;
+      await _store.saveAvatarState(pid, result.nextState);
+      _noteAvatarResult(result);
+    } catch (_) {}
+  }
+
   // --- deep-link tab requests (Detak quests) ---
   int? _requestedTab;
 
@@ -646,6 +902,9 @@ class AppState extends ChangeNotifier {
         'darkMode': darkMode,
         'milestonesSeen': milestonesSeen,
         'locale': locale,
+        // Avatar progress rides along in the opaque settings blob —
+        // no SQL migration needed (decision 2026-10-17).
+        'avatar': avatarBlob(),
       },
     );
   }
@@ -712,6 +971,12 @@ class AppState extends ChangeNotifier {
     await _store.saveBackupCode(normalized);
     CloudSync.backupCode = normalized;
     await CloudSync.markSynced(records.map((r) => r.id));
+    // Avatar: rebuild from the blob (preferred), local storage, or a
+    // fresh migration from the restored history.
+    final blobAvatar = s['avatar'];
+    await _loadAvatarStates(
+        fromBlob:
+            blobAvatar is Map ? Map<String, dynamic>.from(blobAvatar) : null);
     notifyListeners();
     if (weeklyReminder) {
       try {
@@ -747,6 +1012,9 @@ class AppState extends ChangeNotifier {
     records = [];
     goalWeights = {};
     milestonesSeen = [];
+    avatarStates = {};
+    avatarMigratedProfiles = 0;
+    pendingAvatarResult = null;
     // Detak keeps its identity (name/color/accessory/preferences) but
     // its habit-grown progress resets with the wiped data.
     detak = DetakState(

@@ -424,6 +424,9 @@ class _ArenaScreenState extends State<ArenaScreen> {
   /// offer, and only once per day.
   void _openWrapped(AppState state, WrappedData data) {
     unawaited(state.completeDetakQuest('wrapped'));
+    // Production Wrapped view: grants the weekly avatar XP. The dev
+    // preview below deliberately never calls this.
+    unawaited(state.onAvatarWrappedViewed());
     Navigator.of(context).push(
       MaterialPageRoute(
         builder: (_) => WrappedStoryScreen(data: data),
