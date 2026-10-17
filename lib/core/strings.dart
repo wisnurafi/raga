@@ -148,7 +148,6 @@ const Map<String, Map<String, String>> _strings = {
     // --- profile screen ---
     'profile_title': 'Profil',
     'profile_longpress_hint': 'Tahan chip profil untuk menghapusnya',
-    'profile_avatar_hint': 'Ketuk avatar untuk menyesuaikan penampilan',
 
     // --- avatar screens ---
     'avatar_title': 'Avatar',
@@ -682,7 +681,6 @@ const Map<String, Map<String, String>> _strings = {
     // --- profile screen ---
     'profile_title': 'Profile',
     'profile_longpress_hint': 'Long-press a profile chip to delete it',
-    'profile_avatar_hint': 'Tap the avatar to customize its look',
 
     // --- avatar screens ---
     'avatar_title': 'Avatar',

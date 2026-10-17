@@ -38,7 +38,6 @@ flutter:
     - assets/images/raga-bg-light.png
     - assets/images/raga-mark.png
     - assets/images/raga-mark-light.png
-    - assets/images/wrapped/
     - assets/images/detak/
     - assets/avatar/avatar_manifest.json
     - assets/avatar/progression.json
