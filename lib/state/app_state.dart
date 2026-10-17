@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
@@ -614,6 +615,15 @@ class AppState extends ChangeNotifier {
   Future<void> saveDetak() async {
     await _store.saveDetak(detak);
     notifyListeners();
+  }
+
+  /// Detak tap through the state layer (the screen no longer reaches into
+  /// DetakEngine directly). Persists + notifies via [saveDetak]; returns
+  /// the reaction key for the bubble override.
+  String detakTapMessage() {
+    final key = DetakEngine.tapMessage(detak);
+    unawaited(saveDetak());
+    return key;
   }
 
   /// Cold-start greeting. Never throws — Detak must never break app start.

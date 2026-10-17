@@ -23,6 +23,9 @@ class DetakEngine {
 
   static final _rand = Random();
 
+  /// Streak milestones land on multiples of a week.
+  static const _milestoneEveryDays = 7;
+
   // Message variant groups. Keys live in lib/core/strings.dart (detak_msg_*).
   static const Map<String, List<String>> _variants = {
     'greet': ['detak_msg_greet_0', 'detak_msg_greet_1'],
@@ -53,7 +56,9 @@ class DetakEngine {
   }
 
   static bool isStreakMilestone(int dailyStreak, bool loggedToday) =>
-      loggedToday && dailyStreak >= 7 && dailyStreak % 7 == 0;
+      loggedToday &&
+      dailyStreak >= _milestoneEveryDays &&
+      dailyStreak % _milestoneEveryDays == 0;
 
   /// Called once per cold start. Updates open/greet tracking and returns
   /// the greeting. Logs a reaction only for the first open of the day

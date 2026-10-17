@@ -185,6 +185,13 @@ String _spanLabel(DateTime a, DateTime b, {required String locale}) {
 /// goal weight in kg, if set. Set [metric] false to render in lb.
 /// [locale] picks the sentence language ('id' default keeps the pinned
 /// unit-test output).
+
+// buildWeightInsight thresholds: what counts as "stable", the healthy
+// weekly-loss ceiling, and how close counts as "goal reached".
+const _stableThresholdKg = 0.05;
+const _healthyLossKgPerWeek = 1.0;
+const _goalReachedThresholdKg = 0.5;
+
 String buildWeightInsight(
   List<double> weightsKg,
   List<DateTime> dates, {
@@ -203,7 +210,7 @@ String buildWeightInsight(
   final span = spanLabel(dates.first, dates.last, locale: locale);
   final d = last - first; // negative = lost weight
   final buf = StringBuffer();
-  if (d.abs() < 0.05) {
+  if (d.abs() < _stableThresholdKg) {
     buf.write(txl(locale, 'insight_stable', {'w': w(last), 'span': span}));
   } else {
     buf.write(txl(locale, d < 0 ? 'insight_down' : 'insight_up',
@@ -212,7 +219,7 @@ String buildWeightInsight(
     if (days >= 7) {
       final rate = d.abs() / (days / 7);
       if (d < 0) {
-        buf.write(rate <= 1.0
+        buf.write(rate <= _healthyLossKgPerWeek
             ? txl(locale, 'insight_rate_ok', {'r': w(rate)})
             : txl(locale, 'insight_rate_fast', {
                 'r': w(rate),
@@ -229,7 +236,7 @@ String buildWeightInsight(
   }
   if (goalKg != null) {
     final rem = goalKg - last;
-    if (rem.abs() < 0.5) {
+    if (rem.abs() < _goalReachedThresholdKg) {
       buf.write(txl(locale, 'insight_goal_done', {'w': w(goalKg)}));
     } else if (rem > 0) {
       buf.write(txl(locale, 'insight_goal_left', {'w': w(rem)}));

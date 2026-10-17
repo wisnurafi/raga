@@ -101,24 +101,41 @@ class AuthService extends ChangeNotifier {
         (meta?['full_name'] ?? meta?['name'])?.toString();
     _avatarUrl = meta?['avatar_url']?.toString();
     try {
-      final row = await _db
-          .from('profiles')
-          .select('display_name, avatar_url, leaderboard_opt_in')
-          .eq('user_id', user.id)
-          .maybeSingle();
-      if (row != null) {
-        final m = Map<String, dynamic>.from(row as Map);
-        final dn = (m['display_name'] as String?)?.trim();
-        if (dn != null && dn.isNotEmpty) _displayName = dn;
-        final av = m['avatar_url'] as String?;
-        if (av != null && av.isNotEmpty) _avatarUrl = av;
-        _leaderboardOptIn = m['leaderboard_opt_in'] == true;
-      }
+      await _readProfileRow(user.id);
     } catch (e) {
       CloudSync.logEvent('auth: profile row read failed: $e');
+      // One background retry: a transient blip shouldn't leave the whole
+      // session showing stale profile data.
+      unawaited(Future.delayed(const Duration(seconds: 5), () async {
+        try {
+          await _readProfileRow(user.id);
+        } catch (e2) {
+          CloudSync.logEvent('auth: profile row retry failed: $e2');
+        }
+      }));
     }
     CloudSync.logEvent('auth: session for $_userId');
     notifyListeners();
+  }
+
+  /// Reads the account's profile row into [_displayName]/[_avatarUrl]/
+  /// [_leaderboardOptIn]. Throws on failure so callers decide the retry
+  /// policy; notifies on success so a background retry refreshes the UI.
+  Future<void> _readProfileRow(String userId) async {
+    final row = await _db
+        .from('profiles')
+        .select('display_name, avatar_url, leaderboard_opt_in')
+        .eq('user_id', userId)
+        .maybeSingle();
+    if (row != null) {
+      final m = Map<String, dynamic>.from(row as Map);
+      final dn = (m['display_name'] as String?)?.trim();
+      if (dn != null && dn.isNotEmpty) _displayName = dn;
+      final av = m['avatar_url'] as String?;
+      if (av != null && av.isNotEmpty) _avatarUrl = av;
+      _leaderboardOptIn = m['leaderboard_opt_in'] == true;
+      notifyListeners();
+    }
   }
 
   /// google_sign_in demands initialize() exactly once before any other

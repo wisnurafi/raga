@@ -14,7 +14,6 @@ import '../widgets/glass.dart';
 import '../widgets/headers.dart';
 import '../widgets/raga_bg.dart';
 import '../detak/detak_assets.dart';
-import '../detak/detak_engine.dart';
 import '../detak/detak_quests.dart';
 import '../detak/detak_state.dart';
 import '../detak/detak_ui.dart';
@@ -43,8 +42,7 @@ class _DetakScreenState extends State<DetakScreen> {
 
   void _onDetakTap() {
     final state = AppState.of(context);
-    final key = DetakEngine.tapMessage(state.detak);
-    unawaited(state.saveDetak());
+    final key = state.detakTapMessage();
     setState(() => _bubbleOverrideKey = key);
     _bubbleTimer?.cancel();
     _bubbleTimer = Timer(const Duration(seconds: 4), () {
