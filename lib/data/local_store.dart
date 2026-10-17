@@ -27,12 +27,36 @@ class LocalStore {
   static const _kLocale = 'raga.locale';
   static const _kDetak = 'raga.detak';
   static const _kAvatarPrefix = 'raga.avatar.';
+  // Schema version: lets a future format change detect old payloads
+  // instead of silently misreading them.
+  static const _kSchemaVersion = 'raga.schema_version';
+  static const _kCurrentSchemaVersion = 1;
+
+  // Corrupt-payload hook, wired to CloudSync.logEvent at startup.
+  static void Function(String msg)? onCorrupt;
 
   final SharedPreferences _prefs;
   LocalStore(this._prefs);
 
-  static Future<LocalStore> load() async =>
-      LocalStore(await SharedPreferences.getInstance());
+  static Future<LocalStore> load() async {
+    final prefs = await SharedPreferences.getInstance();
+    if (prefs.getInt(_kSchemaVersion) != _kCurrentSchemaVersion) {
+      await prefs.setInt(_kSchemaVersion, _kCurrentSchemaVersion);
+    }
+    return LocalStore(prefs);
+  }
+
+  // A corrupt payload used to vanish silently (fail-open: the user saw
+  // empty history and the next save overwrote the blob). Now the raw
+  // payload is salvaged to a timestamped backup key and the incident is
+  // logged to the developer sync log.
+  void _salvageCorrupt(String key, String raw) {
+    try {
+      onCorrupt?.call('local: corrupt JSON in $key, salvaged');
+      _prefs.setString(
+          '$key.corrupt.${DateTime.now().millisecondsSinceEpoch}', raw);
+    } catch (_) {}
+  }
 
   List<Profile> get profiles {
     final raw = _prefs.getString(_kProfiles);
@@ -42,6 +66,7 @@ class LocalStore {
           .map((e) => Profile.fromJson(e as Map<String, dynamic>))
           .toList();
     } catch (_) {
+      _salvageCorrupt(_kProfiles, raw);
       return [];
     }
   }
@@ -63,6 +88,7 @@ class LocalStore {
       list.sort((a, b) => b.createdAt.compareTo(a.createdAt));
       return list;
     } catch (_) {
+      _salvageCorrupt(_kRecords, raw);
       return [];
     }
   }
@@ -120,6 +146,7 @@ class LocalStore {
       return (jsonDecode(raw) as Map)
           .map((k, v) => MapEntry(k as String, (v as num).toDouble()));
     } catch (_) {
+      _salvageCorrupt(_kGoals, raw);
       return {};
     }
   }
@@ -158,6 +185,7 @@ class LocalStore {
     try {
       return (jsonDecode(raw) as List).map((e) => (e as num).toInt()).toList();
     } catch (_) {
+      _salvageCorrupt(_kMilestonesSeen, raw);
       return [];
     }
   }
@@ -182,6 +210,7 @@ class LocalStore {
     try {
       return DetakState.fromJson(jsonDecode(raw) as Map<String, dynamic>);
     } catch (_) {
+      _salvageCorrupt(_kDetak, raw);
       return DetakState();
     }
   }
@@ -199,6 +228,7 @@ class LocalStore {
       return AvatarProfileState.fromJson(
           jsonDecode(raw) as Map<String, dynamic>);
     } catch (_) {
+      _salvageCorrupt('$_kAvatarPrefix$profileId', raw);
       return null;
     }
   }

@@ -4,6 +4,7 @@ import 'core/theme.dart';
 import 'state/app_state.dart';
 import 'data/auth_service.dart';
 import 'data/cloud_sync.dart';
+import 'data/local_store.dart';
 import 'data/reminder_service.dart';
 import 'widgets/floating_nav.dart';
 import 'widgets/raga_bg.dart';
@@ -21,6 +22,10 @@ Future<void> main() async {
   // Trap every framework/isolate error into the developer log: if a screen
   // ever goes blank again, the log names the exact line that threw.
   ReminderService.onLog = CloudSync.logEvent;
+  // Corrupt local JSON is salvaged + logged instead of silently dropped
+  // (kept a hook: cloud_sync -> strings -> app_state -> local_store
+  // would be an import cycle).
+  LocalStore.onCorrupt = CloudSync.logEvent;
   FlutterError.onError = (details) {
     CloudSync.logEvent('FLUTTER ERROR: ${details.exceptionAsString()}');
     FlutterError.presentError(details);
