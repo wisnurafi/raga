@@ -15,6 +15,7 @@ import '../widgets/chips.dart';
 import '../widgets/glass.dart';
 import '../widgets/headers.dart';
 import '../widgets/raga_bg.dart';
+import 'collection_screen.dart';
 
 /// The Avatar screen (inside the Profile tab): live avatar preview in
 /// the XP ring, level chip, habit stats, and the item picker.
@@ -212,6 +213,14 @@ class _AvatarScreenState extends State<AvatarScreen> {
                           value:
                               '${st.unlockedItemIds.length}/${manifest.totalItems}',
                           label: tx(context, 'avatar_stat_collection'),
+                          onTap: () {
+                            Navigator.of(context).push(
+                              MaterialPageRoute(
+                                builder: (_) =>
+                                    const CollectionScreen(),
+                              ),
+                            );
+                          },
                         ),
                       ],
                     ),
@@ -301,13 +310,18 @@ class _AvatarScreenState extends State<AvatarScreen> {
 class _StatTile extends StatelessWidget {
   final String value;
   final String label;
+  final VoidCallback? onTap;
 
-  const _StatTile({required this.value, required this.label});
+  const _StatTile({
+    required this.value,
+    required this.label,
+    this.onTap,
+  });
 
   @override
   Widget build(BuildContext context) {
     final rc = context.rc;
-    return Expanded(
+    final tile = Expanded(
       child: Column(
         children: [
           Text(value, style: RagaType.hero(24, rc.onCard)),
@@ -318,6 +332,26 @@ class _StatTile extends StatelessWidget {
             textAlign: TextAlign.center,
           ),
         ],
+      ),
+    );
+    if (onTap == null) return tile;
+    return Expanded(
+      child: GestureDetector(
+        onTap: onTap,
+        behavior: HitTestBehavior.opaque,
+        child: Column(
+          children: [
+            Text(value, style: RagaType.hero(24, rc.onCard)),
+            const SizedBox(height: 2),
+            Text(
+              label,
+              style: RagaType.label(rc.onCardMuted).copyWith(
+                decoration: TextDecoration.underline,
+              ),
+              textAlign: TextAlign.center,
+            ),
+          ],
+        ),
       ),
     );
   }
