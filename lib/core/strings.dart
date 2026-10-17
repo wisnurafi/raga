@@ -191,7 +191,6 @@ const Map<String, Map<String, String>> _strings = {
     'profile_status': 'Status',
     'profile_pending': '{n} catatan menunggu diunggah.',
     'profile_backup_code': 'Kode backup',
-    'profile_code_not_ready': '(belum siap)',
     'profile_copy_code': 'Salin kode',
     'profile_code_copied': 'Kode backup disalin',
     'profile_sync_now': 'Sinkron sekarang',
@@ -249,6 +248,28 @@ const Map<String, Map<String, String>> _strings = {
     'profile_merged': '{n} catatan baru digabung dari backup',
     'profile_merge_empty':
         'Tidak ada catatan baru dari backup — datamu sudah lengkap.',
+
+    // --- backup code: on-demand generation ---
+    'profile_no_code_desc': 'Belum ada kode backup. Buat satu biar datamu '
+        'bisa dipulihkan di HP lain — kode cuma dibuat kalau kamu yang minta.',
+    'profile_generate_code': 'Buat kode backup',
+    'profile_view_code': 'Lihat kode & cara pakai',
+    'profile_regenerate_code': 'Buat kode baru',
+    'profile_regen_title': 'Buat kode baru?',
+    'profile_regen_body': 'Kode lamamu langsung mati dan tidak bisa dipakai '
+        'restore lagi. Data yang sudah ter-backup ikut pindah ke kode baru.',
+    'profile_regen_ok': 'Ya, buat baru',
+    'profile_code_modal_title': 'Kode backup kamu',
+    'profile_code_modal_howto': 'Simpan kode ini baik-baik.\n\n'
+        'Di HP baru: buka Profil → Restore dari kode → masukkan kode ini, '
+        'lalu pilih Gabung atau Ganti.',
+    'profile_code_modal_warn': 'Jangan bagikan ke siapa pun. Kalau kodenya '
+        'hilang, datamu tidak bisa dipulihkan.',
+    'profile_code_modal_offline': 'Kode tersimpan di HP ini, tapi belum '
+        'masuk ke cloud (koneksi terputus?). Buka lagi halaman ini dan tekan '
+        'Sinkron sekarang setelah online.',
+    'profile_generating': 'Membuat kode…',
+    'profile_code_modal_close': 'Mengerti',
 
     // --- account: optional Google login (auth_service.dart) ---
     'auth_title': 'Akun',
@@ -704,7 +725,6 @@ const Map<String, Map<String, String>> _strings = {
     'profile_status': 'Status',
     'profile_pending': '{n} entries waiting to upload.',
     'profile_backup_code': 'Backup code',
-    'profile_code_not_ready': '(not ready)',
     'profile_copy_code': 'Copy code',
     'profile_code_copied': 'Backup code copied',
     'profile_sync_now': 'Sync now',
@@ -762,6 +782,29 @@ const Map<String, Map<String, String>> _strings = {
     'profile_merged': '{n} new entries merged from backup',
     'profile_merge_empty':
         'No new entries in the backup — your data is already complete.',
+
+    // --- backup code: on-demand generation ---
+    'profile_no_code_desc': 'No backup code yet. Create one so your data '
+        'can be restored on another phone — a code is only created when you '
+        'ask for it.',
+    'profile_generate_code': 'Generate backup code',
+    'profile_view_code': 'View code & how to use',
+    'profile_regenerate_code': 'Generate a new code',
+    'profile_regen_title': 'Generate a new code?',
+    'profile_regen_body': 'Your old code stops working immediately and can '
+        'no longer restore. Already-backed-up data moves to the new code.',
+    'profile_regen_ok': 'Yes, generate new',
+    'profile_code_modal_title': 'Your backup code',
+    'profile_code_modal_howto': 'Keep this code somewhere safe.\n\n'
+        'On a new phone: open Profile → Restore from code → enter this '
+        'code, then choose Merge or Replace.',
+    'profile_code_modal_warn': 'Never share it with anyone. If you lose '
+        'the code, your data cannot be restored.',
+    'profile_code_modal_offline': 'The code is saved on this phone but '
+        "hasn't reached the cloud yet (no connection?). Come back here and "
+        'tap Sync now once you are online.',
+    'profile_generating': 'Generating code…',
+    'profile_code_modal_close': 'Got it',
 
     // --- account: optional Google login (auth_service.dart) ---
     'auth_title': 'Account',

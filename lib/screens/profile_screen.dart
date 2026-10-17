@@ -30,6 +30,7 @@ class ProfileScreen extends StatefulWidget {
 class _ProfileScreenState extends State<ProfileScreen> {
   // True while a Google sign-in / photo upload is in flight.
   bool _authBusy = false;
+  bool _generatingCode = false;
 
   static String _dayName(BuildContext context, int d) =>
       shortDays(AppState.of(context).locale)[d - 1];
@@ -1038,7 +1039,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   Widget _backupCard(BuildContext context, AppState state) {
     final rc = context.rc;
-    final code = CloudSync.backupCode ?? tx(context, 'profile_code_not_ready');
+    final code = CloudSync.backupCode;
     final pending = CloudSync.pendingCount(state.records);
     final isError = CloudSync.state == SyncState.error;
     return GlassCard(
@@ -1096,46 +1097,79 @@ class _ProfileScreenState extends State<ProfileScreen> {
             ],
           ],
           const SizedBox(height: 14),
-          Text(
-            tx(context, 'profile_backup_code'),
-            style: RagaType.label(rc.onCardMuted),
-          ),
-          const SizedBox(height: 8),
-          Container(
-            width: double.infinity,
-            padding: const EdgeInsets.symmetric(
-                horizontal: 16, vertical: 14),
-            decoration: BoxDecoration(
-              color: rc.chipInactive,
-              borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: rc.cardBorder, width: 1.2),
-            ),
-            child: SelectableText(
-              code,
+          if (code == null) ...[
+            // No code yet: the user hasn't asked for one. Offer to
+            // generate it on demand instead of showing a dead code box.
+            Text(
+              tx(context, 'profile_no_code_desc'),
               style: TextStyle(
-                fontFamily: 'monospace',
-                fontSize: 16,
-                fontWeight: FontWeight.w700,
-                letterSpacing: 1.0,
-                color: rc.onCard,
+                fontSize: 13.5,
+                color: rc.onCardMuted,
               ),
             ),
-          ),
-          const SizedBox(height: 14),
-          RagaOutlineButton(
-            label: tx(context, 'profile_copy_code'),
-            height: 56,
-            onPressed: () async {
-              await Clipboard.setData(ClipboardData(text: code));
-              if (context.mounted) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                      content:
-                          Text(tx(context, 'profile_code_copied'))),
-                );
-              }
-            },
-          ),
+            const SizedBox(height: 14),
+            RagaButton(
+              label: _generatingCode
+                  ? tx(context, 'profile_generating')
+                  : tx(context, 'profile_generate_code'),
+              height: 56,
+              onPressed: _generatingCode
+                  ? null
+                  : () => _onGenerateCode(context, state),
+            ),
+          ] else ...[
+            Text(
+              tx(context, 'profile_backup_code'),
+              style: RagaType.label(rc.onCardMuted),
+            ),
+            const SizedBox(height: 8),
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.symmetric(
+                  horizontal: 16, vertical: 14),
+              decoration: BoxDecoration(
+                color: rc.chipInactive,
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: rc.cardBorder, width: 1.2),
+              ),
+              child: SelectableText(
+                code,
+                style: TextStyle(
+                  fontFamily: 'monospace',
+                  fontSize: 16,
+                  fontWeight: FontWeight.w700,
+                  letterSpacing: 1.0,
+                  color: rc.onCard,
+                ),
+              ),
+            ),
+            const SizedBox(height: 14),
+            RagaOutlineButton(
+              label: tx(context, 'profile_copy_code'),
+              height: 56,
+              onPressed: () async {
+                await Clipboard.setData(ClipboardData(text: code));
+                if (context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                        content:
+                            Text(tx(context, 'profile_code_copied'))),
+                  );
+                }
+              },
+            ),
+            const SizedBox(height: 10),
+            RagaOutlineButton(
+              label: tx(context, 'profile_view_code'),
+              height: 56,
+              onPressed: () => _showBackupCodeModal(context, code, true),
+            ),
+            const SizedBox(height: 6),
+            RagaTextButton(
+              label: tx(context, 'profile_regenerate_code'),
+              onPressed: () => _confirmRegenerate(context, state),
+            ),
+          ],
           const SizedBox(height: 10),
           RagaButton(
             label: tx(context, 'profile_sync_now'),
@@ -1176,6 +1210,137 @@ class _ProfileScreenState extends State<ProfileScreen> {
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  // Generates the backup code on demand, then shows it in the modal with
+  // usage instructions. The button shows a busy label while the cloud leg
+  // (re-stamp + blob) runs.
+  Future<void> _onGenerateCode(BuildContext context, AppState state) async {
+    setState(() => _generatingCode = true);
+    late final GeneratedBackupCode result;
+    try {
+      result = await state.generateBackupCode();
+    } finally {
+      if (mounted) setState(() => _generatingCode = false);
+    }
+    if (!context.mounted) return;
+    _showBackupCodeModal(context, result.code, result.cloudOk);
+  }
+
+  // The modal shown right after generating (and on "view code"): the code
+  // itself plus how to use it. When [cloudOk] is false the cloud leg
+  // failed (offline) — say so honestly instead of pretending it's safe.
+  void _showBackupCodeModal(
+      BuildContext context, String code, bool cloudOk) {
+    final rc = context.rc;
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text(tx(ctx, 'profile_code_modal_title')),
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Container(
+                padding: const EdgeInsets.symmetric(
+                    horizontal: 16, vertical: 14),
+                decoration: BoxDecoration(
+                  color: rc.chipInactive,
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: rc.cardBorder, width: 1.2),
+                ),
+                child: SelectableText(
+                  code,
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(
+                    fontFamily: 'monospace',
+                    fontSize: 20,
+                    fontWeight: FontWeight.w700,
+                    letterSpacing: 1.0,
+                  ),
+                ),
+              ),
+              const SizedBox(height: 10),
+              RagaOutlineButton(
+                label: tx(ctx, 'profile_copy_code'),
+                height: 56,
+                onPressed: () async {
+                  await Clipboard.setData(ClipboardData(text: code));
+                  if (ctx.mounted) {
+                    ScaffoldMessenger.of(ctx).showSnackBar(
+                      SnackBar(
+                          content:
+                              Text(tx(ctx, 'profile_code_copied'))),
+                    );
+                  }
+                },
+              ),
+              const SizedBox(height: 14),
+              Text(
+                tx(ctx, 'profile_code_modal_howto'),
+                style: TextStyle(color: rc.onCardMuted),
+              ),
+              const SizedBox(height: 10),
+              Text(
+                tx(ctx, 'profile_code_modal_warn'),
+                style: TextStyle(
+                  fontWeight: FontWeight.w600,
+                  color: rc.onCard,
+                ),
+              ),
+              if (!cloudOk) ...[
+                const SizedBox(height: 10),
+                Text(
+                  tx(ctx, 'profile_code_modal_offline'),
+                  style: TextStyle(color: rc.onCardMuted),
+                ),
+              ],
+              const SizedBox(height: 18),
+              RagaButton(
+                label: tx(ctx, 'profile_code_modal_close'),
+                height: 56,
+                onPressed: () => Navigator.pop(ctx),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  // Regenerating kills the old code: confirm first, then run the same
+  // generate flow (new code, re-stamp, new blob, modal).
+  void _confirmRegenerate(BuildContext context, AppState state) {
+    final rc = context.rc;
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text(tx(ctx, 'profile_regen_title')),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              tx(ctx, 'profile_regen_body'),
+              style: TextStyle(color: rc.onCardMuted),
+            ),
+            const SizedBox(height: 20),
+            DangerPillButton(
+              label: tx(ctx, 'profile_regen_ok'),
+              onTap: () {
+                Navigator.pop(ctx);
+                _onGenerateCode(context, state);
+              },
+            ),
+            RagaTextButton(
+              label: tx(ctx, 'cancel'),
+              onPressed: () => Navigator.pop(ctx),
+            ),
+          ],
+        ),
       ),
     );
   }
