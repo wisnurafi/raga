@@ -6,6 +6,7 @@ import '../core/strings.dart';
 import '../core/theme.dart';
 import '../models/profile.dart';
 import '../state/app_state.dart';
+import 'avatar_screen.dart';
 import '../data/cloud_sync.dart';
 import '../data/reminder_service.dart';
 import '../widgets/glass.dart';
@@ -52,17 +53,27 @@ class _ProfileScreenState extends State<ProfileScreen> {
           padding: const EdgeInsets.fromLTRB(22, 26, 22, 26),
           child: Column(
             children: [
-              Container(
-                width: 84,
-                height: 84,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: rc.avatarBg,
-                ),
-                child: Center(
-                  child: Text(
-                    p.initial,
-                    style: RagaType.hero(32, rc.avatarFg),
+              GestureDetector(
+                onTap: () {
+                  if (state.avatarService == null) return;
+                  Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (_) => const AvatarScreen(),
+                    ),
+                  );
+                },
+                child: Container(
+                  width: 84,
+                  height: 84,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: rc.avatarBg,
+                  ),
+                  child: Center(
+                    child: Text(
+                      p.initial,
+                      style: RagaType.hero(32, rc.avatarFg),
+                    ),
                   ),
                 ),
               ),

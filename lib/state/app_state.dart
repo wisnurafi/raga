@@ -770,6 +770,18 @@ class AppState extends ChangeNotifier {
         for (final e in avatarStates.entries) e.key: e.value.toJson(),
       };
 
+  /// Persists a new look for [profileId] (from the Avatar screen).
+  /// The draft the user was editing is replaced wholesale — unlocks,
+  /// XP and streak are untouched.
+  Future<void> saveAvatarConfig(String profileId, AvatarConfig config) async {
+    final st = avatarStates[profileId];
+    if (st == null) return;
+    final next = st.copyWith(config: config);
+    avatarStates[profileId] = next;
+    await _store.saveAvatarState(profileId, next);
+    notifyListeners();
+  }
+
   /// Avatar reaction to a saved record: daily/scheduled XP, streak
   /// milestones, goal-reached check, unlock evaluation. Guarded: avatar
   /// must never break saving a record.
