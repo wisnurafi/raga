@@ -1,0 +1,236 @@
+{
+  "articles": [
+    {
+      "category_slug": "memahami-raga",
+      "content_md": "## Raga itu ngapain sih?\n\nRaga adalah kalkulator BMI yang dilengkapi riwayat, grafik tren, dan pengingat menimbang. Idenya sederhana: kamu cukup mencatat berat badan secara rutin, dan Raga yang menghitung, menyimpan, lalu menyajikan datanya dalam bentuk yang gampang dibaca. Tidak ada drama, tidak ada penilaian.\n\n## Tab Hitung: titik awalmu\n\nDi sinilah semuanya dimulai. Masukkan tinggi dan berat badanmu, tekan tombol Hitung BMI, dan kamu langsung dapat hasilnya: angka BMI, gauge berwarna, dan kategorinya. Kalau hasilnya mau disimpan, tekan Simpan ke riwayat. Kamu juga bisa bikin beberapa profil, misalnya buat anggota keluarga, dan ganti-ganti profil aktif lewat chip di atas.\n\n## Tab Riwayat: ceritanya ada di sini\n\nSatu angka timbangan tidak menceritakan apa-apa, tapi rangkaian angka selama berminggu-minggu bercerita banyak. Di tab Riwayat kamu bisa lihat grafik berat badan, ganti rentang waktu (7 hari sampai semua), dan baca insight otomatis seperti rata-rata, tren naik atau turun, dan perkiraan laju per minggu.\n\n## Tab Kesehatan: angka di balik layar\n\nTab ini menghitung tiga hal dari datamu: BMR (energi yang dibakar tubuh saat istirahat total), kebutuhan kalori harian berdasarkan level aktivitas, dan rentang berat ideal untuk tinggimu. Penting: semuanya adalah ESTIMASI dari rumus umum, bukan vonis medis. Anggap sebagai titik awal diskusi, bukan kesimpulan akhir.\n\n## Tab Streak, Arena, dan Profil\n\nStreak mencatat konsistensi menimbang mingguanmu dan target berat yang kamu pasang. Arena adalah papan komunitas buat yang sudah login dan opt-in (default-nya mati, datamu tetap privat). Di Profil ada pengaturan unit, tema, pengingat, sampai backup cloud.\n\n## Tips biar datanya jujur\n\nTimbang di kondisi yang sama setiap kali: pagi hari, setelah ke kamar mandi, sebelum makan, dengan pakaian yang mirip. Catat secara rutin, dan jangan baper sama satu angka yang aneh — lihat trennya.\n\n## Data kamu milikmu\n\nRaga tidak punya iklan dan tidak menjual data. Semua catatanmu tersimpan dulu di HP-mu sendiri, dan aplikasi ini jalan penuh meski offline. Kalau kamu mau, ada backup cloud opsional supaya datamu aman kalau ganti HP, lengkap dengan kode backup yang cuma kamu yang pegang.\n\n## Mulai dari mana?\n\nKalau baru pertama buka: selesaikan onboarding (nama, tinggi, berat awal), timbang sekali buat dapat angka pertama, dan jangan buru-buru pasang target. Pakai seminggu dulu buat kenal ritmenya. Target berat bisa dipasang nanti di tab Streak kalau kamu sudah siap, dan bisa diubah kapan saja.",
+      "featured": false,
+      "reading_minutes": 2,
+      "slug": "kenalan-dengan-raga",
+      "sources": [],
+      "summary": "Panduan singkat memakai Raga: dari mencatat berat pertama sampai membaca tren dan menjaga streak.",
+      "tags": [
+        "raga",
+        "panduan",
+        "mulai"
+      ],
+      "title": "Kenalan dengan Raga: Tur 5 Menit"
+    },
+    {
+      "category_slug": "memahami-raga",
+      "content_md": "## Angkanya dari mana?\n\nGauge di Raga menampilkan Indeks Massa Tubuh (BMI) kamu, yaitu berat badan dalam kilogram dibagi kuadrat tinggi badan dalam meter. Misalnya berat 70 kg dan tinggi 1,70 m, maka BMI-nya 70 dibagi (1,70 × 1,70), sekitar 24,2. Raga menghitung ini otomatis setiap kamu mencatat.\n\n## Warna dan kategorinya\n\nGauge memakai klasifikasi WHO untuk orang dewasa:\n\n- Di bawah 18,5: berat badan kurang\n- 18,5–24,9: normal\n- 25–29,9: kelebihan berat badan\n- 30 ke atas: obesitas\n\nSetiap rentang punya warnanya sendiri supaya sekilas langsung kebaca. Kategori ini adalah patokan skrining populasi, bukan label yang menempel di jidatmu.\n\n## Yang gauge TIDAK bilang\n\nIni bagian paling penting. Gauge tidak tahu komposisi tubuhmu — ia tidak bisa membedakan otot dan lemak. Ia juga tidak tahu usiamu, riwayat kesehatanmu, atau lemak di sekitar perutmu. Dua orang dengan angka gauge yang sama bisa punya kondisi yang sangat berbeda.\n\n## Cara pakai gauge yang sehat\n\nPakai gauge sebagai kompas, bukan hakim. Kalau angkanya di luar rentang normal dan bertahan di sana berminggu-minggu, itu sinyal untuk cari tahu lebih lanjut — misalnya baca artikel keterbatasan BMI di Akademi BMI, atau diskusi dengan tenaga kesehatan profesional. Satu angka aneh sesekali? Abaikan, lihat trennya.\n\n## Contoh cara mikirnya\n\nMisalnya gauge menunjukkan 27, kategori kelebihan berat badan. Respon yang sehat bukan panik atau langsung diet ekstrem, melainkan: pertama, cek apakah angka ini konsisten selama beberapa minggu atau cuma anomali sesekali. Kedua, lihat konteks lain — lingkar pinggang, seberapa aktif kamu, riwayat kesehatan. Ketiga, kalau angkanya bertahan, jadikan bahan diskusi dengan tenaga profesional.\n\n## Kapan angkanya perlu ditanggapi serius\n\nSatu kategori di atas normal bukan vonis, tapi kalau BMI-mu 30 ke atas dan bertahan di sana, atau naik terus selama berbulan-bulan, itu layak ditanggapi serius. Bukan dengan menyalahkan diri sendiri, melainkan dengan mencari bantuan yang tepat: dokter, ahli gizi, atau sekadar mulai dari kebiasaan kecil yang dibahas di kategori Kebiasaan Sehat.",
+      "featured": true,
+      "reading_minutes": 2,
+      "slug": "cara-baca-gauge-bmi",
+      "sources": [
+        {
+          "publisher": "WHO",
+          "title": "Obesity and overweight — fact sheet",
+          "url": "https://www.who.int/news-room/fact-sheets/detail/obesity-and-overweight"
+        },
+        {
+          "publisher": "CDC",
+          "title": "Healthy Weight",
+          "url": "https://www.cdc.gov/healthyweight/"
+        }
+      ],
+      "summary": "Arti warna dan angka di gauge BMI Raga — plus satu hal penting: BMI itu alat skrining, bukan diagnosis.",
+      "tags": [
+        "bmi",
+        "panduan",
+        "raga"
+      ],
+      "title": "Cara Membaca Gauge BMI Tanpa Panik"
+    },
+    {
+      "category_slug": "memahami-raga",
+      "content_md": "## Kenapa angka harian menipu\n\nBerat badanmu bisa naik-turun 1–2 kg dalam sehari, dan itu wajar. Penyebabnya hal-hal sepele: banyak minum, makanan asin kemarin malam, isi pencernaan, atau buat sebagian orang, siklus hormonal. Tidak satu pun dari itu berarti kamu tiba-tiba jadi lebih gemuk atau lebih kurus dalam 24 jam.\n\n## Aturan main menimbang\n\nSupaya datanya bisa dibandingkan, bikin kondisinya konsisten: timbang di pagi hari, setelah ke kamar mandi, sebelum makan dan minum, dengan pakaian yang mirip. Frekuensinya tidak harus tiap hari — seminggu sekali di hari dan jam yang sama sudah cukup bagus buat kebanyakan orang.\n\n## Cara baca grafik di Raga\n\nDi tab Riwayat, ganti rentang waktunya dan perhatikan arah garisnya, bukan titik-titiknya. Garis yang pelan-pelan turun selama berminggu-minggu artinya usahamu jalan, walau ada titik yang naik di tengah jalan. Raga juga menampilkan rata-rata dan laju per minggu supaya kamu tidak perlu menebak-nebak.\n\n## Kapan perlu waspada\n\nWaspadai perubahan yang drastis dan tidak disengaja — misalnya berat turun atau naik banyak dalam waktu singkat tanpa perubahan pola makan atau aktivitas. Itu bukan soal diet, itu sinyal untuk konsultasi ke tenaga kesehatan profesional. Tren yang sehat itu pelan dan stabil, bukan dramatis.\n\n## Rata-rata mingguan: trik sederhananya\n\nKalau angka harian bikin kamu overthinking, coba trik ini: timbang tiga kali seminggu di kondisi yang sama, lalu lihat rata-ratanya. Rata-rata mingguan jauh lebih stabil dan jujur dibanding angka harian mana pun. Bandingkan rata-rata minggu ini dengan minggu lalu — di situlah tren yang sebenarnya.\n\n## Jangan kejar angka harian\n\nKesalahan paling umum: melihat timbangan naik hampir sekilo pagi ini lalu menghukum diri dengan makan super sedikit seharian. Itu seperti menyetir sambil menatap spion — reaksinya selalu terlambat dan salah arah. Keputusan soal pola makan harus dibuat dari tren mingguan, bukan dari satu angka pagi ini.\n\n## Simpan konteksnya juga\n\nAngka tanpa konteks gampang disalahartikan. Kalau kamu sakit, kurang tidur, atau sedang banyak acara makan, catat itu — Raga menyimpan riwayatmu apa adanya, dan konteks membantumu membaca ulang grafik berbulan-bulan kemudian tanpa menyalahkan diri sendiri atas minggu yang berantakan.",
+      "featured": false,
+      "reading_minutes": 2,
+      "slug": "membaca-grafik-tren",
+      "sources": [
+        {
+          "publisher": "CDC",
+          "title": "Healthy Weight",
+          "url": "https://www.cdc.gov/healthyweight/"
+        }
+      ],
+      "summary": "Berat badan naik-turun harian itu normal. Yang penting arah trennya, bukan angka hari ini.",
+      "tags": [
+        "tren",
+        "berat-badan",
+        "panduan"
+      ],
+      "title": "Membaca Grafik Tren: Satu Angka Tidak Menceritakan Apa-apa"
+    },
+    {
+      "category_slug": "memahami-raga",
+      "content_md": "## Kenapa konsistensi menang\n\nPerubahan berat badan yang bertahan lama hampir selalu datang dari kebiasaan kecil yang dilakukan berulang-ulang, bukan dari usaha heroik seminggu. Mencatat berat, jalan kaki rutin, tidur cukup — hal-hal membosankan inilah yang diam-diam mengubah grafik trenmu. Streak di Raga dirancang untuk merayakan hal membosankan itu.\n\n## Bolos itu bukan gagal\n\nSatu hari (atau satu minggu) terlewat tidak menghapus progresmu. Yang merusak bukan bolosnya, tapi keputusan untuk berhenti total karena merasa sudah gagal. Kalau streak-mu putus, tidak apa-apa. Catat lagi hari ini, dan streak barumu mulai lagi dari satu.\n\n## Target proses, bukan cuma target hasil\n\nTarget hasil itu misalnya turun ke 65 kg. Target proses itu misalnya menimbang tiap Minggu pagi dan jalan 30 menit tiga kali seminggu. Target hasil tidak sepenuhnya dalam kendalimu, target proses iya. Raga membantumu di keduanya: target berat di tab Streak, dan streak menimbang sebagai target prosesmu.\n\n## Cara pakai streak tanpa stres\n\nJadikan streak pengingat yang ramah, bukan mandor yang galak. Kalau melihat streak bikin kamu cemas, matikan dulu pengingatnya di Profil — tidak ada hukuman apa-apa. Raga tetap menyimpan datamu, dan kamu bisa balik kapan pun kamu siap. Hubungan yang sehat dengan data dimulai dari hubungan yang sehat dengan dirimu sendiri.\n\n## Aturan jangan bolos dua kali\n\nAda aturan praktis yang populer di kalangan pembentuk kebiasaan: boleh bolos sekali, tapi jangan dua kali berturut-turut. Bolos sekali itu hidup — ada lembur, ada acara keluarga. Bolos dua kali mulai jadi pola baru. Aturan ini bukan hukum medis, cuma cara berpikir yang membantu banyak orang balik ke jalur tanpa drama.\n\n## Rayakan yang kecil\n\nOtakmu butuh bukti bahwa usahanya berarti. Delapan minggu streak, satu bulan mencatat rutin, pertama kali berani melihat grafik — itu semua layak dirayakan, meski angkanya belum ke mana-mana. Raga merayakan milestone-mu lewat Wrapped mingguan; kamu juga boleh merayakannya dengan caramu sendiri. Yang penting: jangan rayakan dengan berhenti.",
+      "featured": false,
+      "reading_minutes": 2,
+      "slug": "streak-dan-konsistensi",
+      "sources": [],
+      "summary": "Streak di Raga bukan soal sempurna tiap hari — tapi soal balik lagi setiap kali bolos.",
+      "tags": [
+        "streak",
+        "kebiasaan",
+        "motivasi"
+      ],
+      "title": "Streak dan Konsistensi: Mainnya Jangka Panjang"
+    },
+    {
+      "category_slug": "akademi-bmi",
+      "content_md": "## Rumusnya sederhana\n\nBMI (Body Mass Index atau Indeks Massa Tubuh) adalah berat badan dalam kilogram dibagi kuadrat tinggi badan dalam meter. Satu rumus, tidak butuh alat mahal, bisa dihitung di mana saja. Justru kesederhanaan inilah yang membuatnya populer sekaligus terbatas.\n\n## Kategorinya (untuk dewasa)\n\nWHO memakai patokan ini untuk orang dewasa:\n\n- Di bawah 18,5: berat badan kurang\n- 18,5–24,9: normal\n- 25–29,9: kelebihan berat badan\n- 30 ke atas: obesitas\n\nPatokan ini dibuat dari data populasi besar dan dipakai di seluruh dunia supaya datanya bisa dibandingkan antarnegara.\n\n## Sejarah singkatnya\n\nRumus ini lahir tahun 1830-an dari matematikawan Belgia, Adolphe Quetelet. Awalnya ia tidak dirancang untuk menilai kesehatan individu, melainkan untuk mempelajari tubuh manusia rata-rata dalam populasi. Fakta ini penting: sejak awal BMI adalah alat statistik populasi.\n\n## BMI itu untuk apa\n\nBMI berguna sebagai langkah skrining pertama yang murah dan cepat. Buat peneliti dan pembuat kebijakan, ia memberi gambaran besar soal tren berat badan populasi. Buat kamu, ia adalah titik awal — sinyal untuk memperhatikan, bukan kesimpulan.\n\n## BMI bukan untuk apa\n\nBMI bukan diagnosis. Ia tidak mengukur lemak tubuhmu secara langsung, tidak tahu massa ototmu, dan tidak mempertimbangkan usiamu. Menentukan status kesehatan seseorang hanya dari BMI sama seperti menilai buku dari jumlah halamannya — ada informasinya, tapi ceritanya tidak lengkap.\n\n## Kenapa masih dipakai sampai sekarang\n\nDengan segala keterbatasannya, BMI bertahan karena tiga hal: murah (tidak butuh alat), cepat (satu rumus), dan standar (datanya bisa dibandingkan antar daerah dan antar tahun). Untuk skrining awal dalam skala besar, kombinasi itu sulit dikalahkan. Masalahnya muncul kalau alat skrining dipakai sebagai vonis akhir.\n\n## BMI di Raga\n\nDi aplikasi ini, BMI adalah pintu masuk, bukan seluruh rumah. Raga menghitungnya otomatis, menampilkannya di gauge, lalu mengajakmu melihat lebih jauh: tren dari waktu ke waktu, estimasi kebutuhan kalori, dan artikel edukasi seperti yang sedang kamu baca ini. Anggap BMI sebagai kalimat pembuka percakapan tentang tubuhmu — bukan kesimpulan.",
+      "featured": true,
+      "reading_minutes": 2,
+      "slug": "bmi-itu-apa",
+      "sources": [
+        {
+          "publisher": "WHO",
+          "title": "Obesity and overweight — fact sheet",
+          "url": "https://www.who.int/news-room/fact-sheets/detail/obesity-and-overweight"
+        },
+        {
+          "publisher": "CDC",
+          "title": "Healthy Weight",
+          "url": "https://www.cdc.gov/healthyweight/"
+        }
+      ],
+      "summary": "Indeks Massa Tubuh: rumus sederhana yang berguna untuk skrining — bukan rapor kesehatan pribadimu.",
+      "tags": [
+        "bmi",
+        "dasar"
+      ],
+      "title": "BMI Itu Apa (dan Bukan Apa)"
+    },
+    {
+      "category_slug": "akademi-bmi",
+      "content_md": "## Otot vs lemak: masalah terbesarnya\n\nSatu kilogram otot dan satu kilogram lemak beratnya sama di timbangan, tapi BMI memperlakukan keduanya identik. Atlet atau orang yang rutin latihan kekuatan bisa masuk kategori kelebihan berat badan padahal kadar lemak tubuhnya rendah dan bugar. Sebaliknya, orang yang jarang bergerak bisa punya BMI normal tapi kadar lemak tubuhnya tinggi. BMI buta terhadap komposisi tubuh.\n\n## Usia ikut bermain\n\nSeiring bertambahnya usia, massa otot cenderung menurun sementara lemak tubuh bisa bertambah — dengan berat yang sama. Artinya angka BMI yang sama di usia 25 dan 65 bisa menceritakan kondisi yang berbeda. BMI juga tidak dirancang untuk ibu hamil atau anak-anak yang masih tumbuh.\n\n## Tidak semua populasi sama\n\nPenelitian menunjukkan hubungan antara BMI dan risiko kesehatan bisa berbeda antar kelompok etnis. Beberapa negara Asia, misalnya, memakai ambang batas yang sedikit lebih rendah karena risiko metabolik muncul pada BMI yang lebih kecil. Patokan global itu titik awal yang berguna, tapi bukan angka sakral yang sama untuk semua orang.\n\n## Lemak perut tidak tertangkap\n\nDua orang dengan BMI identik bisa menyimpan lemak di tempat yang berbeda — dan lemak di sekitar perut (visceral) dikaitkan dengan risiko yang lebih tinggi dibanding lemak di pinggul atau paha. BMI tidak melihat distribusi ini sama sekali.\n\n## Kesimpulannya\n\nPakai BMI bersama indikator lain: lingkar pinggang, kebugaran, tekanan darah, gula darah, dan yang terpenting, penilaian tenaga kesehatan profesional. Satu angka tidak pernah cukup untuk menyimpulkan kesehatan seseorang — termasuk kesehatanmu.\n\n## Jadi harus pakai apa?\n\nJawaban jujurnya: kombinasi. BMI untuk gambaran kasar, lingkar pinggang untuk distribusi lemak, dan untuk gambaran yang lebih lengkap ada pemeriksaan klinis seperti tekanan darah, gula darah, dan profil lipid. Tidak ada satu angka ajaib yang merangkum kesehatanmu — dan justru itu kabar baiknya: kesehatanmu tidak ditentukan oleh satu angka pun.\n\n## Cara berpikir yang lebih sehat\n\nDaripada bertanya apakah BMI-mu normal, tanyakan: apakah kebiasaanku mendukung tubuhku? Apakah aku cukup bergerak, cukup tidur, makan dengan wajar? Angka bisa menyesatkan, tapi kebiasaan jarang berbohong. Fokus pada hal yang bisa kamu kendalikan hari ini.",
+      "featured": false,
+      "reading_minutes": 2,
+      "slug": "keterbatasan-bmi",
+      "sources": [
+        {
+          "publisher": "WHO",
+          "title": "Obesity and overweight — fact sheet",
+          "url": "https://www.who.int/news-room/fact-sheets/detail/obesity-and-overweight"
+        },
+        {
+          "publisher": "CDC",
+          "title": "Healthy Weight",
+          "url": "https://www.cdc.gov/healthyweight/"
+        },
+        {
+          "publisher": "NHS",
+          "title": "NHS — Health information",
+          "url": "https://www.nhs.uk/"
+        }
+      ],
+      "summary": "BMI tidak bisa membedakan otot dan lemak — dan itu baru satu dari beberapa keterbatasannya.",
+      "tags": [
+        "bmi",
+        "batas"
+      ],
+      "title": "Keterbatasan BMI yang Wajib Kamu Tahu"
+    },
+    {
+      "category_slug": "akademi-bmi",
+      "content_md": "## Kenapa kategorinya beda\n\nKategori BMI dewasa (18,5 / 25 / 30) dibuat dari data orang dewasa yang tubuhnya sudah selesai tumbuh. Anak dan remaja masih dalam masa pertumbuhan: komposisi tubuh mereka berubah cepat mengikuti usia dan tahap pubertas. Menempelkan patokan dewasa ke tubuh yang masih tumbuh bukan cuma tidak akurat — tapi bisa menyesatkan.\n\n## Yang dipakai: persentil BMI-menurut-usia\n\nUntuk anak usia 2 tahun ke atas, profesional kesehatan memakai grafik pertumbuhan BMI-menurut-usia dan jenis kelamin. Hasilnya dibaca sebagai persentil: misalnya persentil ke-85 artinya BMI anak tersebut lebih tinggi dari 85 persen anak seusianya. Ini membandingkan anak dengan teman seusianya, bukan dengan orang dewasa.\n\n## Jangan diagnosis sendiri\n\nGrafik persentil adalah alat klinis. Membacanya butuh konteks: riwayat pertumbuhan anak, pola makan keluarga, aktivitas, dan faktor lainnya. Kalau kamu khawatir soal berat badan anakmu, langkah yang benar adalah diskusi dengan dokter anak atau ahli gizi — bukan menghakimi dari satu angka.\n\n## Untuk orang tua: jaga bahasanya\n\nIni penting. Anak yang diejek soal berat badan — bahkan dengan niat bercanda — berisiko mengalami masalah citra tubuh dan pola makan yang tidak sehat di kemudian hari. Fokuskan percakapan pada kebiasaan keluarga yang sehat: makan bersama, aktif bergerak bareng, tidur cukup. Bukan pada angka timbangan anak.\n\n## Kapan perlu ke profesional\n\nSegera konsultasi kalau ada perubahan berat yang drastis dan tidak jelas sebabnya, atau kalau anak menunjukkan tanda gangguan pola makan. Deteksi dini selalu lebih baik, dan penanganannya adalah ranah tenaga profesional, bukan aplikasi.\n\n## Yang bisa dilakukan keluarga\n\nLingkungan rumah punya pengaruh besar. Sediakan buah dan air putih yang gampang dijangkau, batasi minuman manis di rumah tanpa drama, ajak anak aktif bergerak dengan cara yang fun — main bola, sepedaan, jalan sore bareng. Tidur yang cukup juga penting karena kurang tidur dikaitkan dengan pola makan yang berantakan. Ini semua soal kebiasaan keluarga, bukan mengawasi piring anak dengan mikroskop.\n\n## Fokus pada tumbuh, bukan menyusut\n\nBahasa yang dipakai orang dewasa di sekitar anak membentuk cara anak memandang tubuhnya sendiri. Hindari komentar soal bentuk tubuh siapa pun di depan anak, termasuk soal tubuhmu sendiri. Anak yang tumbuh dengan hubungan sehat terhadap makanan dan tubuhnya punya bekal yang jauh lebih berharga daripada angka persentil yang sempurna.",
+      "featured": false,
+      "reading_minutes": 2,
+      "slug": "bmi-anak-remaja",
+      "sources": [
+        {
+          "publisher": "WHO",
+          "title": "Obesity and overweight — fact sheet",
+          "url": "https://www.who.int/news-room/fact-sheets/detail/obesity-and-overweight"
+        },
+        {
+          "publisher": "CDC",
+          "title": "Healthy Weight",
+          "url": "https://www.cdc.gov/healthyweight/"
+        }
+      ],
+      "summary": "Tubuh anak masih tumbuh, jadi kategori BMI dewasa tidak berlaku. Yang dipakai adalah persentil BMI-menurut-usia.",
+      "tags": [
+        "bmi",
+        "anak",
+        "remaja"
+      ],
+      "title": "BMI untuk Anak dan Remaja: Jangan Pakai Kategori Dewasa"
+    },
+    {
+      "category_slug": "akademi-bmi",
+      "content_md": "## Ilustrasinya begini\n\nBayangkan dua orang: sama-sama 75 kg dan 175 cm, jadi BMI-nya sama persis, 24,5. Yang satu rutin angkat beban tiga kali seminggu, yang satu mager total. Angka timbangannya kembar, tapi yang satu badannya padat berotot dan yang satu lemak tubuhnya tinggi. Inilah titik buta BMI: ia melihat berat, bukan isinya.\n\n## Kenapa atlet bisa kelebihan berat badan\n\nOtot lebih padat daripada lemak — volumenya lebih kecil untuk berat yang sama. Orang yang berotot bisa dengan mudah masuk kategori kelebihan berat badan versi BMI padahal kadar lemaknya rendah dan kapasitas fisiknya bagus. Ini bukan BMI-nya yang rusak, ini memang bukan pekerjaan BMI sejak awal.\n\n## Yang lebih penting dari angka timbangan\n\nKalau kamu latihan rutin, perhatikan hal lain selain timbangan: lingkar pinggang yang mengecil, baju yang lebih pas, napas yang tidak ngos-ngosan naik tangga, dan beban latihan yang pelan-pelan naik. Itu semua sinyal progres yang tidak bisa ditangkap satu angka BMI.\n\n## Latihan kekuatan untuk pemula\n\nKabar baiknya, membangun otot tidak harus ke gym mewah. Dua sampai tiga sesi seminggu dengan beban tubuh sendiri — squat, push-up, plank — sudah cukup buat pemula. Mulai ringan, jaga teknik, tambah pelan-pelan. Otot yang bertambah juga membantu metabolisme dan postur tubuhmu sehari-hari.\n\n## Catatannya\n\nArtikel ini bukan anjuran program latihan medis. Kalau kamu punya kondisi kesehatan tertentu — jantung, sendi, atau sedang hamil — diskusikan dulu rencana latihanmu dengan tenaga profesional sebelum mulai.\n\n## Timbangan naik padahal rajin latihan?\n\nIni jebakan klasik pemula: mulai latihan kekuatan, makan lebih teratur, tapi timbangan malah naik sekilo dua kilo. Jangan panik dulu. Di fase awal, tubuh bisa menambah massa otot sambil mengurangi lemak dalam waktu bersamaan — berat total bisa stagnan atau naik sedikit sementara komposisi tubuhmu sebenarnya membaik. Inilah kenapa cermin, meteran, dan baju yang lebih pas adalah juri yang lebih adil daripada timbangan sendirian.\n\n## Sabar dengan prosesnya\n\nMembentuk otot itu lambat — hitungannya bulan, bukan minggu. Tapi setiap sesi latihan adalah deposit. Selama lingkar pinggangmu tidak membesar dan kekuatanmu bertambah, kamu ada di jalur yang benar meski angka BMI-mu tidak bergerak ke mana-mana.",
+      "featured": false,
+      "reading_minutes": 2,
+      "slug": "otot-vs-lemak",
+      "sources": [
+        {
+          "publisher": "WHO",
+          "title": "Obesity and overweight — fact sheet",
+          "url": "https://www.who.int/news-room/fact-sheets/detail/obesity-and-overweight"
+        },
+        {
+          "publisher": "CDC",
+          "title": "Healthy Weight",
+          "url": "https://www.cdc.gov/healthyweight/"
+        }
+      ],
+      "summary": "Satu kilo otot dan satu kilo lemak beratnya sama — tapi cerita kesehatannya beda.",
+      "tags": [
+        "bmi",
+        "komposisi-tubuh",
+        "otot"
+      ],
+      "title": "Otot vs Lemak: Kenapa Dua Orang dengan BMI Sama Bisa Beda Banget"
+    },
+    {
+      "category_slug": "akademi-bmi",
+      "content_md": "## Kenapa perut jadi sorotan\n\nTidak semua lemak diciptakan sama. Lemak yang menumpuk di sekitar organ dalam perut (lemak visceral) dikaitkan dengan risiko gangguan metabolik yang lebih tinggi dibanding lemak di pinggul atau paha. BMI tidak bisa melihat di mana lemakmu disimpan — di sinilah lingkar pinggang membantu.\n\n## Cara mengukur yang benar\n\nBerdiri tegak dan rileks, lingkarkan meteran di titik tengah antara tulang rusuk terbawah dan puncak tulang panggul. Meterannya sejajar lantai, tidak menekan kulit, dan ukur setelah buang napas normal — bukan sambil menahan napas atau mengempiskan perut. Jujur saja, tidak ada yang menilai.\n\n## Ambang batasnya\n\nWHO memakai patokan untuk populasi dewasa: risiko mulai meningkat pada lingkar pinggang 94 cm ke atas untuk pria dan 80 cm ke atas untuk wanita, dengan risiko yang lebih tinggi lagi di 102 cm dan 88 cm. Ingat, ini patokan skrining populasi — tren angkamu dari waktu ke waktu sama pentingnya dengan angkanya sendiri.\n\n## Bukan pengganti, tapi pelengkap\n\nLingkar pinggang tidak menggantikan BMI, ia melengkapinya. Kombinasi keduanya memberi gambaran yang lebih jujur: BMI bicara soal berat relatif terhadap tinggi, lingkar pinggang bicara soal distribusi lemak. Dua-duanya murah, cepat, dan bisa kamu lakukan di rumah.\n\n## Kapan konsultasi\n\nKalau lingkar pinggangmu jauh di atas ambang batas dan bertahan di sana, atau naik terus selama berbulan-bulan, jadikan itu alasan untuk ngobrol dengan tenaga kesehatan profesional — bukan untuk panik. Data yang kamu kumpulkan justru membuat konsultasi itu jauh lebih produktif.\n\n## Seberapa sering mengukur\n\nTidak perlu tiap hari — lingkar pinggang berubah jauh lebih lambat daripada berat badan. Sebulan sekali sudah cukup, di kondisi yang sama (pagi hari, sebelum makan). Catat angkanya di tempat yang sama dengan catatan beratmu supaya gampang dibandingkan.\n\n## Catat bareng BMI\n\nKombinasi paling praktis buat kebanyakan orang: BMI dari Raga plus lingkar pinggang sebulan sekali. Kalau BMI-mu turun dan lingkar pinggangmu mengecil, itu sinyal kuat bahwa yang hilang memang lemak, bukan cuma air atau massa otot. Dua angka sederhana, cerita yang jauh lebih lengkap.",
+      "featured": false,
+      "reading_minutes": 2,
+      "slug": "lingkar-pinggang",
+      "sources": [
+        {
+          "publisher": "WHO",
+          "title": "Obesity and overweight — fact sheet",
+          "url": "https://www.who.int/news-room/fact-sheets/detail/obesity-and-overweight"
+        }
+      ],
+      "summary": "Lemak di sekitar perut berisiko lebih tinggi — dan mengukurnya cuma butuh meteran.",
+      "tags": [
+        "bmi",
+        "lingkar-pinggang",
+        "pengukuran"
+      ],
+      "title": "Lingkar Pinggang: Pelengkap BMI yang Murah dan Gampang"
+    }
+  ],
+  "categories": [
+    {
+      "description": "Panduan memakai aplikasi Raga: baca hasil, tren, dan streak.",
+      "slug": "memahami-raga",
+      "title": "Memahami Raga"
+    },
+    {
+      "description": "Memahami BMI secara benar: arti, batas, dan konteksnya.",
+      "slug": "akademi-bmi",
+      "title": "Akademi BMI"
+    },
+    {
+      "description": "Kalori, makronutrien, dan pola makan yang berkelanjutan.",
+      "slug": "nutrisi-energi",
+      "title": "Nutrisi & Energi"
+    },
+    {
+      "description": "Kebiasaan kecil yang dampaknya besar: tidur, gerak, konsistensi.",
+      "slug": "kebiasaan-sehat",
+      "title": "Kebiasaan Sehat"
+    },
+    {
+      "description": "Istilah-istilah kesehatan dijelaskan dengan bahasa sederhana.",
+      "slug": "glosarium-kesehatan",
+      "title": "Glosarium Kesehatan"
+    }
+  ]
+}
