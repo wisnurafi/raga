@@ -148,3 +148,111 @@ class XpEvent {
   int get hashCode =>
       Object.hash(profileId, type, key, amount, date);
 }
+
+/// All avatar data of one profile. Level and XP are always derived from
+/// [ledger] — never stored as raw numbers. Everything here is namespaced
+/// per profile: profile A can never affect profile B.
+class AvatarProfileState {
+  static const schemaVersion = 1;
+
+  final AvatarConfig config;
+  final List<XpEvent> ledger;
+  final Set<String> unlockedItemIds;
+  final Set<String> unlockSeenIds;
+  final int bestStreak;
+  final bool goalReached;
+  final double? goalBaselineKg;
+
+  const AvatarProfileState({
+    required this.config,
+    required this.ledger,
+    required this.unlockedItemIds,
+    required this.unlockSeenIds,
+    required this.bestStreak,
+    required this.goalReached,
+    required this.goalBaselineKg,
+  });
+
+  /// A fresh profile: manifest defaults, empty ledger, the always-open
+  /// items already marked seen (so a new profile doesn't drown in
+  /// unlock notifications on day one).
+  factory AvatarProfileState.initial(AvatarManifest manifest) {
+    final open = <String>{
+      for (final item in manifest.items)
+        if (item.unlock == null) item.id,
+    };
+    return AvatarProfileState(
+      config: AvatarConfig.defaults(manifest),
+      ledger: const [],
+      unlockedItemIds: open,
+      unlockSeenIds: Set.of(open),
+      bestStreak: 0,
+      goalReached: false,
+      goalBaselineKg: null,
+    );
+  }
+
+  int get totalXp => ledger.fold(0, (a, e) => a + e.amount);
+
+  bool hasEvent(String type, String key) =>
+      ledger.any((e) => e.type == type && e.key == key);
+
+  AvatarProfileState copyWith({
+    AvatarConfig? config,
+    List<XpEvent>? ledger,
+    Set<String>? unlockedItemIds,
+    Set<String>? unlockSeenIds,
+    int? bestStreak,
+    bool? goalReached,
+    double? goalBaselineKg,
+    bool clearGoalBaseline = false,
+  }) {
+    return AvatarProfileState(
+      config: config ?? this.config,
+      ledger: ledger ?? this.ledger,
+      unlockedItemIds: unlockedItemIds ?? this.unlockedItemIds,
+      unlockSeenIds: unlockSeenIds ?? this.unlockSeenIds,
+      bestStreak: bestStreak ?? this.bestStreak,
+      goalReached: goalReached ?? this.goalReached,
+      goalBaselineKg:
+          clearGoalBaseline ? null : (goalBaselineKg ?? this.goalBaselineKg),
+    );
+  }
+
+  Map<String, dynamic> toJson() => {
+        'schemaVersion': schemaVersion,
+        'config': config.toJson(),
+        'ledger': ledger.map((e) => e.toJson()).toList(),
+        'unlockedItemIds': unlockedItemIds.toList(),
+        'unlockSeenIds': unlockSeenIds.toList(),
+        'bestStreak': bestStreak,
+        'goalReached': goalReached,
+        'goalBaselineKg': goalBaselineKg,
+      };
+
+  factory AvatarProfileState.fromJson(Map<String, dynamic> j) {
+    // schemaVersion is read by the storage layer for migrations; unknown
+    // future versions must not crash old code paths that just need the
+    // config — but this factory is strict: callers migrate first.
+    final version = (j['schemaVersion'] as num?)?.toInt() ?? 0;
+    if (version != schemaVersion) {
+      throw FormatException(
+          'AvatarProfileState: unsupported schemaVersion $version');
+    }
+    return AvatarProfileState(
+      config: AvatarConfig.fromJson(j['config'] as Map<String, dynamic>),
+      ledger: ((j['ledger'] as List?) ?? const [])
+          .map((e) => XpEvent.fromJson(e as Map<String, dynamic>))
+          .toList(),
+      unlockedItemIds: ((j['unlockedItemIds'] as List?) ?? const [])
+          .map((e) => e as String)
+          .toSet(),
+      unlockSeenIds: ((j['unlockSeenIds'] as List?) ?? const [])
+          .map((e) => e as String)
+          .toSet(),
+      bestStreak: (j['bestStreak'] as num?)?.toInt() ?? 0,
+      goalReached: j['goalReached'] as bool? ?? false,
+      goalBaselineKg: (j['goalBaselineKg'] as num?)?.toDouble(),
+    );
+  }
+}
