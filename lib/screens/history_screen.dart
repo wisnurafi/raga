@@ -8,11 +8,11 @@ import '../core/theme.dart';
 import '../models/bmi_record.dart';
 import '../state/app_state.dart';
 import '../widgets/buttons.dart';
-import '../widgets/chart.dart';
 import '../widgets/chips.dart';
 import '../widgets/gauge.dart';
 import '../widgets/glass.dart';
 import '../widgets/headers.dart';
+import 'history_chart_card.dart';
 
 
 // History: 6-month strip, weight/BMI trend chart with range filter,
@@ -25,7 +25,6 @@ class HistoryScreen extends StatefulWidget {
 }
 
 class _HistoryScreenState extends State<HistoryScreen> {
-  bool _showWeight = true;
   // Default = "Semua": preserves the pre-filter behavior (all records).
   int _rangeIdx = 4;
   bool _showAll = false;
@@ -67,7 +66,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
           const SizedBox(height: 18),
           _monthStrip(context, records, metric),
           const SizedBox(height: 18),
-          _chartCard(context, ranged, metric),
+          HistoryChartCard(rangeIdx: _rangeIdx),
           const SizedBox(height: 18),
           _insightCard(context, ranged, state, metric),
           const SizedBox(height: 22),
@@ -162,128 +161,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
     );
   }
 
-  // --- trend chart card ----------------------------------------------------
-
-  double _plotValue(BmiRecord r, bool metric) => _showWeight
-      ? (metric ? r.weightKg : r.weightKg * kgToLb)
-      : r.bmi;
-
-  Widget _chartCard(
-      BuildContext context, List<BmiRecord> records, bool metric) {
-    final rc = context.rc;
-    final locale = AppState.of(context).locale;
-    // Plot individual records (oldest-first, capped at 60 points) so
-    // sparse histories still draw a line instead of "no data".
-    // records arrive newest-first: take the 60 newest first, then
-    // reverse to oldest-first for plotting.
-    final recs = records.take(60).toList().reversed.toList();
-    final values = [
-      for (final r in recs) _plotValue(r, metric),
-    ];
-
-    final latest = recs.isEmpty ? null : recs.last;
-    final bigTxt =
-        latest == null ? '–' : formatNum(_plotValue(latest, metric));
-
-    Widget? deltaPill;
-    // Delta over the whole selected range: records are newest-first,
-    // so first = newest and last = oldest.
-    if (records.length >= 2) {
-      final a = records.last;
-      final b = records.first;
-      final d = _showWeight
-          ? (metric
-              ? b.weightKg - a.weightKg
-              : (b.weightKg - a.weightKg) * kgToLb)
-          : b.bmi - a.bmi;
-      final unit = _showWeight ? (metric ? ' kg' : ' lb') : '';
-      final span = spanLabel(a.createdAt, b.createdAt, locale: locale);
-      if (d.abs() < 0.0001) {
-        deltaPill = _pill(tx(context, 'history_stable', {'span': span}),
-            rc.onCardMuted.withValues(alpha: 0.16), rc.onCardMuted);
-      } else {
-        // Solid fill + dark label, like the mockup's pills.
-        deltaPill = _pill(
-          '${d < 0 ? '↓' : '↑'} ${formatNum(d.abs())}$unit · $span',
-          d < 0 ? rc.catNormal : rc.catObese,
-          const Color(0xFF1D1B3A),
-        );
-      }
-    }
-
-    return GlassCard(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Expanded(
-                child: Text(
-                  _showWeight
-                      ? tx(context,
-                          metric ? 'history_weight_kg' : 'history_weight_lb')
-                      : 'BMI',
-                  style: RagaType.cardTitle(rc.onCard),
-                ),
-              ),
-              SizedBox(
-                width: 168,
-                child: RagaSegmented(
-                  options: [tx(context, 'history_weight'), 'BMI'],
-                  selected: _showWeight ? 0 : 1,
-                  onChanged: (i) => setState(() => _showWeight = i == 0),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 12),
-          Row(
-            children: [
-              Text(
-                bigTxt,
-                style: RagaType.hero(48, rc.onCard).copyWith(
-                  fontFeatures: const [FontFeature.tabularFigures()],
-                ),
-              ),
-              if (deltaPill != null) ...[
-                const SizedBox(width: 12),
-                Flexible(child: deltaPill),
-              ],
-            ],
-          ),
-          if (recs.isNotEmpty) ...[
-            const SizedBox(height: 8),
-            Text(
-              _statsLine(context, recs, metric),
-              style: RagaType.caption(rc.onCardMuted),
-            ),
-          ],
-          const SizedBox(height: 12),
-          HistoryChart(
-            values: values,
-            // The band only makes sense on the BMI plot.
-            showHealthyBand: !_showWeight,
-          ),
-        ],
-      ),
-    );
-  }
-
-  // "Rata-rata 62,4 kg · Terendah 61,0 · Tertinggi 64,2" for the
-  // selected range, following the Berat/BMI toggle.
-  String _statsLine(BuildContext context, List<BmiRecord> recs, bool metric) {
-    final vals = [for (final r in recs) _plotValue(r, metric)];
-    final avg = vals.reduce((a, b) => a + b) / vals.length;
-    final lo = vals.reduce((a, b) => a < b ? a : b);
-    final hi = vals.reduce((a, b) => a > b ? a : b);
-    final unit = _showWeight ? (metric ? ' kg' : ' lb') : '';
-    return tx(context, 'history_stats', {
-      'a': formatNum(avg),
-      'l': formatNum(lo),
-      'h': formatNum(hi),
-      'u': unit,
-    });
-  }
+  // --- recent entries -------------------------------------------------------
 
   // Auto-generated insight for the selected range, in the app locale.
   Widget _insightCard(BuildContext context, List<BmiRecord> records,
@@ -319,19 +197,6 @@ class _HistoryScreenState extends State<HistoryScreen> {
       ),
     );
   }
-
-  Widget _pill(String text, Color bg, Color fg) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-      decoration: BoxDecoration(
-        color: bg,
-        borderRadius: BorderRadius.circular(999),
-      ),
-      child: Text(text, style: RagaType.chip(fg).copyWith(fontSize: 13)),
-    );
-  }
-
-  // --- recent entries -------------------------------------------------------
 
   List<Widget> _entryRows(
       BuildContext context, List<BmiRecord> records, bool metric) {
