@@ -1,0 +1,37 @@
+name: Dependency check
+
+# Weekly: report outdated dependencies. Informational only — Wisnu
+# upgrades deliberately (Dependabot doesn't support Dart pub).
+
+on:
+  schedule:
+    - cron: '0 3 * * 1' # Mondays 10:00 WIB
+  workflow_dispatch:
+
+jobs:
+  outdated:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2
+        with:
+          flutter-version: '3.47.7'
+          channel: stable
+          cache: true
+
+      - name: Report outdated packages
+        run: |
+          flutter pub get
+          flutter pub outdated > outdated.txt || true
+          cat outdated.txt
+
+      - name: Upload report
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: pub-outdated
+          path: outdated.txt
