@@ -91,7 +91,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
         const SizedBox(height: 18),
         _accountCard(context, state),
         const SizedBox(height: 18),
-        // Active profile identity card.
+        // Profile section: identity card + profile switcher together.
+        _label(context, tx(context, 'profile_title')),
         GlassCard(
           padding: const EdgeInsets.fromLTRB(22, 26, 22, 26),
           child: Column(
@@ -144,8 +145,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
             ],
           ),
         ),
-        const SizedBox(height: 18),
-        _label(context, tx(context, 'profile_title')),
+        const SizedBox(height: 12),
         SingleChildScrollView(
           scrollDirection: Axis.horizontal,
           child: Row(
