@@ -1,8 +1,15 @@
 #!/usr/bin/env python3
-"""Assemble knowledge_seed.sql from content_part{1,2,3}.json.
+"""Assemble knowledge_seed.sql from content_part{1,2,3}.json (+ _en variants).
 
-Idempotent: safe to re-run in the Supabase SQL Editor. Uses dollar-quoting
-for markdown content so no escaping bugs. Resolves all FKs by slug.
+Each content file may carry a top-level "locale" ('id' default, 'en').
+English rows reuse the SAME slugs as Indonesian; tags and sources are
+inherited from the Indonesian article with the same slug (so translators
+only translate title/summary/content, glossary terms, and quiz text).
+
+Idempotent: safe to re-run in the Supabase SQL Editor. Uses
+dollar-quoting for markdown. Resolves all FKs by slug (+ locale).
+Requires migrations 20261017_knowledge_hub.sql and
+20261018_knowledge_hub_i18n.sql applied first.
 """
 import json
 import re
@@ -11,52 +18,86 @@ from pathlib import Path
 
 HERE = Path(__file__).parent
 
-p1 = json.loads((HERE / "content_part1.json").read_text(encoding="utf-8"))
-p2 = json.loads((HERE / "content_part2.json").read_text(encoding="utf-8"))
-p3 = json.loads((HERE / "content_part3.json").read_text(encoding="utf-8"))
 
-categories = p1["categories"]
-articles = p1["articles"] + p2["articles"]
-glossary = p3["glossary_terms"]
-quizzes = p3["quizzes"]
+def load(name):
+    p = HERE / name
+    if not p.exists():
+        return None
+    d = json.loads(p.read_text(encoding="utf-8"))
+    d.setdefault("locale", "id")
+    return d
+
+
+parts = [
+    load("content_part1.json"),
+    load("content_part2.json"),
+    load("content_part3.json"),
+    load("content_en_part1.json"),
+    load("content_en_part2.json"),
+    load("content_en_part3.json"),
+]
+parts = [p for p in parts if p]
+
+by_locale = {}
+for p in parts:
+    by_locale.setdefault(p["locale"], []).append(p)
+
+id_parts = by_locale.get("id", [])
+en_parts = by_locale.get("en", [])
+
+categories, articles, glossary, quizzes = [], [], [], []
+for p in id_parts + en_parts:
+    loc = p["locale"]
+    for c in p.get("categories", []):
+        categories.append({**c, "locale": loc})
+    for a in p.get("articles", []):
+        articles.append({**a, "locale": loc})
+    for g in p.get("glossary_terms", []):
+        glossary.append({**g, "locale": loc})
+    for q in p.get("quizzes", []):
+        quizzes.append({**q, "locale": loc})
 
 # ---- validation ----
-cat_slugs = {c["slug"] for c in categories}
-art_slugs = set()
 errors = []
+cat_keys = {(c["slug"], c["locale"]) for c in categories}
+id_art = {a["slug"]: a for a in articles if a["locale"] == "id"}
 for a in articles:
-    if a["slug"] in art_slugs:
-        errors.append(f"duplicate article slug: {a['slug']}")
-    art_slugs.add(a["slug"])
-    if a["category_slug"] not in cat_slugs:
-        errors.append(f"article {a['slug']}: unknown category {a['category_slug']}")
-    for f in ("title", "summary", "content_md", "reading_minutes", "tags", "sources"):
+    key = (a["slug"], a["locale"])
+    if (a["category_slug"], a["locale"]) not in cat_keys:
+        # categories only exist per-locale; en articles need en categories
+        errors.append(f"article {a['slug']}@{a['locale']}: unknown category {a['category_slug']}")
+    for f in ("title", "summary", "content_md", "reading_minutes"):
         if f not in a:
-            errors.append(f"article {a['slug']}: missing field {f}")
-    for s in a["sources"]:
-        for f in ("title", "publisher", "url"):
-            if f not in s or not s[f]:
-                errors.append(f"article {a['slug']}: source missing {f}")
+            errors.append(f"article {a['slug']}@{a['locale']}: missing {f}")
+    if a["locale"] == "en":
+        if a["slug"] not in id_art:
+            errors.append(f"en article {a['slug']}: no id counterpart")
+        for s in a.get("sources", []):
+            errors.append(f"en article {a['slug']}: sources must be inherited, not provided")
+    else:
+        for s in a.get("sources", []):
+            for f in ("title", "publisher", "url"):
+                if f not in s or not s[f]:
+                    errors.append(f"article {a['slug']}: source missing {f}")
 for g in glossary:
     if not g.get("term") or not g.get("definition"):
-        errors.append(f"glossary entry missing term/definition: {g}")
+        errors.append(f"glossary missing term/definition: {g}")
     r = g.get("related_article_slug")
-    if r and r not in art_slugs:
-        errors.append(f"glossary {g['term']}: unknown article {r}")
+    if r and (r, g["locale"]) not in {(a["slug"], a["locale"]) for a in articles}:
+        errors.append(f"glossary {g['term']}@{g['locale']}: unknown article {r}")
 for q in quizzes:
-    if q.get("article_slug") and q["article_slug"] not in art_slugs:
-        errors.append(f"quiz {q['slug']}: unknown article {q['article_slug']}")
+    if q.get("article_slug") and (q["article_slug"], q["locale"]) not in {
+        (a["slug"], a["locale"]) for a in articles
+    }:
+        errors.append(f"quiz {q['slug']}@{q['locale']}: unknown article {q['article_slug']}")
     if len(q["questions"]) != 5:
-        errors.append(f"quiz {q['slug']}: expected 5 questions, got {len(q['questions'])}")
+        errors.append(f"quiz {q['slug']}@{q['locale']}: expected 5 questions")
     for i, qu in enumerate(q["questions"]):
-        if len(qu["options"]) != 4:
-            errors.append(f"quiz {q['slug']} q{i}: expected 4 options")
-        if not (0 <= qu["correct_index"] <= 3):
-            errors.append(f"quiz {q['slug']} q{i}: bad correct_index")
-        if not qu.get("explanation"):
-            errors.append(f"quiz {q['slug']} q{i}: missing explanation")
+        if len(qu["options"]) != 4 or not (0 <= qu["correct_index"] <= 3):
+            errors.append(f"quiz {q['slug']}@{q['locale']} q{i}: bad options/index")
+        if not qu.get("explanation") or not qu.get("prompt"):
+            errors.append(f"quiz {q['slug']}@{q['locale']} q{i}: missing prompt/explanation")
 
-# dollar-quote tag must not appear in any content
 all_text = " ".join(
     [a["content_md"] for a in articles]
     + [a["summary"] for a in articles]
@@ -74,13 +115,12 @@ if errors:
         print(" -", e)
     sys.exit(1)
 
-print(f"OK: {len(categories)} categories, {len(articles)} articles, "
-      f"{len(glossary)} glossary, {len(quizzes)} quizzes "
-      f"({sum(len(q['questions']) for q in quizzes)} questions)")
+n_en = sum(1 for a in articles if a["locale"] == "en")
+print(f"OK: {len(categories)} categories, {len(articles)} articles ({n_en} en), "
+      f"{len(glossary)} glossary, {len(quizzes)} quizzes")
 
 
 def lit(s):
-    """SQL string literal with single-quote escaping (for short fields)."""
     return "'" + str(s).replace("'", "''") + "'"
 
 
@@ -91,27 +131,28 @@ def slugify(s):
 
 
 out = []
-out.append("-- Raga Knowledge Hub: seed content (Bahasa Indonesia).")
-out.append("-- Generated by supabase/seeds/build_seed.py from content_part{1,2,3}.json")
+out.append("-- Raga Knowledge Hub: seed content (id + en).")
+out.append("-- Generated by supabase/seeds/build_seed.py.")
 out.append("-- Idempotent: safe to re-run. Run AFTER 20261017_knowledge_hub.sql")
-out.append("-- in the Supabase SQL Editor (service_role context).")
+out.append("-- and 20261018_knowledge_hub_i18n.sql in the Supabase SQL Editor.")
 out.append("")
 
-# ---- categories ----
 out.append("-- categories")
 for c in categories:
     out.append(
-        "insert into public.knowledge_categories (slug, title, description, sort_order)"
-        f" values ({lit(c['slug'])}, {lit(c['title'])}, {lit(c['description'])}, 0)"
-        " on conflict (slug) do update set title = excluded.title,"
+        "insert into public.knowledge_categories (slug, title, description, sort_order, locale)"
+        f" values ({lit(c['slug'])}, {lit(c['title'])}, {lit(c['description'])}, 0, {lit(c['locale'])})"
+        " on conflict (slug, locale) do update set title = excluded.title,"
         " description = excluded.description, updated_at = now();"
     )
 out.append("")
 
-# ---- tags (collect first) ----
+# tags from Indonesian articles only (shared across locales)
 tag_labels = {}
 for a in articles:
-    for t in a["tags"]:
+    if a["locale"] != "id":
+        continue
+    for t in a.get("tags", []):
         tag_labels[slugify(t)] = t
 out.append("-- tags")
 for slug, label in sorted(tag_labels.items()):
@@ -122,44 +163,44 @@ for slug, label in sorted(tag_labels.items()):
     )
 out.append("")
 
-# ---- articles ----
 out.append("-- articles")
 for a in articles:
     out.append(
         "insert into public.knowledge_articles"
         " (slug, category_id, title, summary, content_md, reading_minutes,"
-        " status, featured, published_at, reviewed_at)"
+        " status, featured, published_at, reviewed_at, locale)"
         f" values ({lit(a['slug'])},"
-        f" (select id from public.knowledge_categories where slug = {lit(a['category_slug'])}),"
+        f" (select id from public.knowledge_categories where slug = {lit(a['category_slug'])}"
+        f" and locale = {lit(a['locale'])}),"
         f" {lit(a['title'])}, {lit(a['summary'])},"
         f" {tag}{a['content_md']}{tag},"
         f" {int(a['reading_minutes'])}, 'published',"
-        f" {'true' if a['featured'] else 'false'}, now(), now())"
-        " on conflict (slug) do update set title = excluded.title,"
+        f" {'true' if a['featured'] else 'false'}, now(), now(), {lit(a['locale'])})"
+        " on conflict (slug, locale) do update set title = excluded.title,"
         " summary = excluded.summary, content_md = excluded.content_md,"
         " reading_minutes = excluded.reading_minutes, status = 'published',"
         " featured = excluded.featured, reviewed_at = now(), updated_at = now();"
     )
 out.append("")
 
-# ---- article tags ----
-out.append("-- article tags")
+out.append("-- article tags (inherited from id article)")
 for a in articles:
-    for t in a["tags"]:
+    src = id_art.get(a["slug"], a)
+    for t in src.get("tags", []):
         out.append(
             "insert into public.knowledge_article_tags (article_id, tag_id) values ("
-            f" (select id from public.knowledge_articles where slug = {lit(a['slug'])}),"
+            f" (select id from public.knowledge_articles where slug = {lit(a['slug'])}"
+            f" and locale = {lit(a['locale'])}),"
             f" (select id from public.knowledge_tags where slug = {lit(slugify(t))}))"
             " on conflict do nothing;"
         )
 out.append("")
 
-# ---- sources (dedupe by url; knowledge_sources has no unique constraint,
-# so use WHERE NOT EXISTS instead of ON CONFLICT) ----
 seen_urls = {}
-out.append("-- sources")
+out.append("-- sources (inherited from id article)")
 for a in articles:
-    for i, s in enumerate(a["sources"]):
+    src = id_art.get(a["slug"], a)
+    for i, s in enumerate(src.get("sources", [])):
         url = s["url"]
         if url not in seen_urls:
             seen_urls[url] = s
@@ -171,43 +212,44 @@ for a in articles:
         out.append(
             "insert into public.knowledge_article_sources (article_id, source_id, sort_order)"
             " select"
-            f" (select id from public.knowledge_articles where slug = {lit(a['slug'])}),"
+            f" (select id from public.knowledge_articles where slug = {lit(a['slug'])}"
+            f" and locale = {lit(a['locale'])}),"
             f" (select id from public.knowledge_sources where url = {lit(url)} limit 1),"
             f" {i}"
             " on conflict do nothing;"
         )
 out.append("")
 
-# ---- glossary ----
 out.append("-- glossary")
 for g in glossary:
     rel = (
-        f"(select id from public.knowledge_articles where slug = {lit(g['related_article_slug'])})"
+        f"(select id from public.knowledge_articles where slug = {lit(g['related_article_slug'])}"
+        f" and locale = {lit(g['locale'])})"
         if g.get("related_article_slug")
         else "null"
     )
     out.append(
-        "insert into public.knowledge_glossary (term, definition, related_article_id)"
-        f" values ({lit(g['term'])}, {tag}{g['definition']}{tag}, {rel})"
-        " on conflict (term) do update set definition = excluded.definition,"
+        "insert into public.knowledge_glossary (term, definition, related_article_id, locale)"
+        f" values ({lit(g['term'])}, {tag}{g['definition']}{tag}, {rel}, {lit(g['locale'])})"
+        " on conflict (term, locale) do update set definition = excluded.definition,"
         " related_article_id = excluded.related_article_id, updated_at = now();"
     )
 out.append("")
 
-# ---- quizzes ----
 out.append("-- quizzes")
 for q in quizzes:
     art = (
-        f"(select id from public.knowledge_articles where slug = {lit(q['article_slug'])})"
+        f"(select id from public.knowledge_articles where slug = {lit(q['article_slug'])}"
+        f" and locale = {lit(q['locale'])})"
         if q.get("article_slug")
         else "null"
     )
     out.append(
         "insert into public.knowledge_quizzes"
-        " (slug, title, description, article_id, status, published_at)"
+        " (slug, title, description, article_id, status, published_at, locale)"
         f" values ({lit(q['slug'])}, {lit(q['title'])}, {lit(q['description'])},"
-        f" {art}, 'published', now())"
-        " on conflict (slug) do update set title = excluded.title,"
+        f" {art}, 'published', now(), {lit(q['locale'])})"
+        " on conflict (slug, locale) do update set title = excluded.title,"
         " description = excluded.description, status = 'published',"
         " updated_at = now();"
     )
@@ -215,12 +257,14 @@ for q in quizzes:
         opts = json.dumps(qu["options"], ensure_ascii=False)
         out.append(
             "delete from public.knowledge_quiz_questions where quiz_id ="
-            f" (select id from public.knowledge_quizzes where slug = {lit(q['slug'])})"
+            f" (select id from public.knowledge_quizzes where slug = {lit(q['slug'])}"
+            f" and locale = {lit(q['locale'])})"
             f" and sort_order = {i};"
             " insert into public.knowledge_quiz_questions"
             " (quiz_id, sort_order, prompt, options, correct_index, explanation)"
             " values ("
-            f" (select id from public.knowledge_quizzes where slug = {lit(q['slug'])}),"
+            f" (select id from public.knowledge_quizzes where slug = {lit(q['slug'])}"
+            f" and locale = {lit(q['locale'])}),"
             f" {i}, {lit(qu['prompt'])}, {lit(opts)}::jsonb,"
             f" {int(qu['correct_index'])}, {lit(qu['explanation'])});"
         )
