@@ -261,10 +261,12 @@ class _CollectionTile extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               Expanded(
-                child: AvatarView(
-                  manifest: manifest,
-                  config: config,
-                  size: 90,
+                child: Center(
+                  child: AvatarView(
+                    manifest: manifest,
+                    config: config,
+                    size: 90,
+                  ),
                 ),
               ),
               const SizedBox(height: 6),

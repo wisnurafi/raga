@@ -470,10 +470,12 @@ class _OptionTile extends StatelessWidget {
             child: Stack(
               fit: StackFit.expand,
               children: [
-                AvatarView(
-                  manifest: manifest,
-                  config: config,
-                  size: 80,
+                Center(
+                  child: AvatarView(
+                    manifest: manifest,
+                    config: config,
+                    size: 80,
+                  ),
                 ),
                 if (!unlocked)
                   Container(
